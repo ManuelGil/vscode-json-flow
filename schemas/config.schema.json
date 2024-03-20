@@ -1,0 +1,30 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"type": "object",
+	"properties": {
+		"jsonManager.files.include": {
+			"type": "array",
+			"default": ["json", "jsonc"],
+			"scope": "resource",
+			"description": "Glob patterns to include in the package. The default is json and jsonc."
+		},
+		"jsonManager.files.exclude": {
+			"type": "array",
+			"default": [
+				"**/node_modules/**",
+				"**/dist/**",
+				"**/out/**",
+				"**/build/**",
+				"**/.*/**"
+			],
+			"scope": "resource",
+			"description": "Glob patterns to exclude from the package. The default is node_modules, dist, out, build, and any hidden files."
+		},
+		"jsonManager.files.showPath": {
+			"type": "boolean",
+			"default": true,
+			"scope": "resource",
+			"description": "Show the path of the file in the name of the list of generated files"
+		}
+	}
+}

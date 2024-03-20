@@ -1,0 +1,8 @@
+.vscode/
+compodoc/
+coverage/
+docs/
+node_modules/
+out/
+tests/
+commitlint.config.js

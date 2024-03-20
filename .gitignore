@@ -1,0 +1,6 @@
+.vscode-test/
+*.vsix
+compodoc/
+dist
+node_modules
+out
