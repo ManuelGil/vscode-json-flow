@@ -14,7 +14,7 @@ import { getNonce } from '../helpers';
  * The JSONProvider class.
  *
  * @class
- * @classdesc The class that represents the chat provider.
+ * @classdesc The class that represents the json provider.
  * @export
  * @public
  * @implements {WebviewViewProvider}
@@ -38,7 +38,7 @@ export class JSONProvider implements WebviewViewProvider {
    * @memberof JSONProvider
    * @type {string}
    */
-  static readonly viewType: string = `${EXTENSION_ID}.chatView`;
+  static readonly viewType: string = `${EXTENSION_ID}.jsonView`;
 
   // Private properties
   /**
@@ -125,12 +125,12 @@ export class JSONProvider implements WebviewViewProvider {
   private _getHtmlForWebview(webview: Webview): string {
     // Get the local path to main script run in the webview, then convert it to a uri we can use in the webview.
     const scriptUri = webview.asWebviewUri(
-      Uri.joinPath(this._extensionUri, 'assets', 'main.js'),
+      Uri.joinPath(this._extensionUri, './out/webview', 'main.js'),
     );
 
     // Do the same for the stylesheet.
     const styleMainUri = webview.asWebviewUri(
-      Uri.joinPath(this._extensionUri, 'assets', 'main.css'),
+      Uri.joinPath(this._extensionUri, './out/webview', 'main.css'),
     );
 
     // Use a nonce to only allow a specific script to be run.
@@ -155,20 +155,11 @@ export class JSONProvider implements WebviewViewProvider {
 
     <link href="${styleMainUri}" rel="stylesheet" />
 
-    <title>Chat</title>
+    <title>JSON Preview</title>
   </head>
   <body>
-    <div class="messages">
-      <ul class="message-list">
-        <li class="message-item item-primary"><strong>Bot:</strong> How can I help you today?</li>
-      </ul>
-      <div class="message-input">
-        <input type="text" placeholder="Type your message..." />
-        <button type="button" class="btn">Send</button>
-      </div>
-    </div>
-
-    <script nonce="${nonce}" src="${scriptUri}"></script>
+    <div id="root"></div>
+    <script nonce="${nonce}" type="module" src="${scriptUri}"></script>
   </body>
 </html>
 `;
