@@ -159,7 +159,7 @@ export class JSONProvider implements WebviewViewProvider {
   </head>
   <body>
     <div id="root"></div>
-    <script nonce="${nonce}" type="module" src="${scriptUri}"></script>
+    <script nonce="${nonce}" src="${scriptUri}"></script>
   </body>
 </html>
 `;

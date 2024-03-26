@@ -47,8 +47,10 @@
 		]
 	},
 	"ignorePatterns": [
-		"out",
+		"node_modules",
 		"dist",
-		"**/*.d.ts"
+		"out",
+		"**/*.d.ts",
+		"vite.config.ts"
 	]
 }

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import visualstudiocodeLogo from '/assets/visualstudiocode.svg';
 import './App.css';
 
 function App() {
@@ -7,15 +6,6 @@ function App() {
 
   return (
     <>
-      <div>
-        <a href="https://code.visualstudio.com/" target="_blank">
-          <img
-            src={visualstudiocodeLogo}
-            className="logo react"
-            alt="React logo"
-          />
-        </a>
-      </div>
       <h1>Visual Studio Code</h1>
       <div className="card">
         <button onClick={() => setCount((count) => count + 1)}>

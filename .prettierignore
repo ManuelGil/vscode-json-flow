@@ -1,6 +1,7 @@
 /.vscode
 /compodoc
 /coverage
+/dist
 /docs
 /node_modules
 /out

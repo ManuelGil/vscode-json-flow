@@ -6,11 +6,9 @@
 		"lib": [
 			"ES2021"
 		],
-		"sourceMap": false,
-		"rootDirs": [
-			"src",
-			"webview"
-		],
+		"sourceMap": true,
+		"rootDir": "src",
+		/* Linting */
 		"strict": true /* enable all strict type-checking options */,
 		/* Additional Checks */
 		"noImplicitReturns": true /* Report error when not all code paths in function return a value. */,
@@ -18,17 +16,10 @@
 		"noUnusedParameters": true /* Report errors on unused parameters. */
 	},
 	"include": [
-		"src/**/*",
-		"webview/**/*",
-		"vite.config.ts"
+		"src/**/*"
 	],
 	"exclude": [
 		"node_modules",
 		".vscode-test"
-	],
-	"references": [
-		{
-			"path": "./tsconfig.node.json"
-		}
 	]
 }
