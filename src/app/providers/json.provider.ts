@@ -133,6 +133,17 @@ export class JSONProvider implements WebviewViewProvider {
       Uri.joinPath(this._extensionUri, './out/webview', 'main.css'),
     );
 
+    // And the codicons.
+    const codiconsUri = webview.asWebviewUri(
+      Uri.joinPath(
+        this._extensionUri,
+        'node_modules',
+        '@vscode/codicons',
+        'dist',
+        'codicon.css',
+      ),
+    );
+
     // Use a nonce to only allow a specific script to be run.
     const nonce = getNonce();
 
@@ -154,6 +165,7 @@ export class JSONProvider implements WebviewViewProvider {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <link href="${styleMainUri}" rel="stylesheet" />
+    <link href="${codiconsUri}" rel="stylesheet" />
 
     <title>JSON Preview</title>
   </head>

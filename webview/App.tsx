@@ -1,3 +1,4 @@
+import { VSCodeButton } from '@vscode/webview-ui-toolkit/react';
 import { useState } from 'react';
 import './App.css';
 
@@ -8,9 +9,10 @@ function App() {
     <>
       <h1>Visual Studio Code</h1>
       <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
+        <VSCodeButton onClick={() => setCount((count) => count + 1)}>
           count is {count}
-        </button>
+          <span slot="start" className="codicon codicon-add"></span>
+        </VSCodeButton>
         <p>
           Edit <code>webview/App.tsx</code> and save to test HMR
         </p>
