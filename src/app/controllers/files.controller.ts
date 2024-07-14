@@ -37,7 +37,7 @@ export class FilesController {
    * @public
    * @memberof FilesController
    */
-  constructor(public readonly config: ExtensionConfig) {}
+  constructor(readonly config: ExtensionConfig) {}
 
   // -----------------------------------------------------------------
   // Methods
@@ -68,7 +68,7 @@ export class FilesController {
     });
 
     if (files.length !== 0) {
-      let nodes: NodeModel[] = [];
+      const nodes: NodeModel[] = [];
 
       files.sort((a, b) => a.path.localeCompare(b.path));
 

@@ -103,7 +103,7 @@
 				{
 					"id": "json-explorer",
 					"title": "JSON Manager",
-					"icon": "assets/logo.svg"
+					"icon": "./assets/logo.svg"
 				}
 			]
 		},
