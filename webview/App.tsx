@@ -1,27 +1,81 @@
-import { VSCodeButton } from '@vscode/webview-ui-toolkit/react';
-import { useState } from 'react';
-import './App.css';
+import './App.css'
+import UpdateNode from "./components/UpdateNode.tsx";
 
-function App() {
-  const [count, setCount] = useState(0);
 
-  return (
-    <>
-      <h1>Visual Studio Code</h1>
-      <div className="card">
-        <VSCodeButton onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-          <span slot="start" className="codicon codicon-add"></span>
-        </VSCodeButton>
-        <p>
-          Edit <code>webview/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  );
+function isArray(json: unknown): json is any[] {
+  return Array.isArray(json);
 }
 
-export default App;
+function isObject(json: unknown): json is NonNullable<unknown> {
+  return typeof json === 'object' && json !== null;
+}
+
+
+type a = { id: string; data: { label: any; }; position: { x: number; y: number; }; father: string; }
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const JsonFormater: a[] = (json: unknown, x: number, deep: number, array: a[], father: string) => {
+
+  if (isArray(json)) {
+    return (
+      json.map((x) => (typeof x === 'object' ? JsonFormater(x, Math.random() * 100, deep + 100, array, father)
+        : array.push(
+          {
+            id: String(x),
+            data: { label: x },
+            position: { x: 100, y: deep },
+            father: father
+          }
+        )))
+    )
+  }
+
+  if (isObject(json)) {
+    return (
+      Object.entries(json).map(
+        ([key, value]) => {
+          array.push(
+            {
+              id: String(key),
+              data: { label: key },
+              position: { x: x, y: deep },
+              father: father
+            }
+          )
+          return JsonFormater(value, Math.random() * 100, deep + 100, array, String(key))
+        }
+      )
+    )
+  }
+  return array
+}
+const problematicJson = {
+  users: [
+    {
+      name: "tao",
+      email: "tao@gmail.com",
+      age: 31,
+      tel: 312,
+      new: true
+    }
+  ]
+};
+
+
+function App() {
+  const map = JsonFormater(problematicJson, Math.random() * 100, 100, []);
+
+  return (
+
+    <div>
+      ##
+      <div className={"w-full h-screen flex justify-center"}>
+        <UpdateNode nodess={map[0][0][0]} />
+      </div>
+      ##
+    </div>
+
+  )
+}
+
+export default App
