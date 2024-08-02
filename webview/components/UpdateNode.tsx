@@ -1,10 +1,12 @@
-import { ReactFlow, useEdgesState, useNodesState } from '@xyflow/react';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+import { ReactFlow, useEdgesState, useNodesState ,  Background} from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-const UpdateNode = ({ nodeList }: { nodeList: any }) => {
-  console.log('nodess', nodeList);
-  const [nodes, setNodes, onNodesChange] = useNodesState(nodeList);
-  const edge = nodeList
+const UpdateNode = ({ nodess }: { nodess: any }) => {
+
+  const [nodes, setNodes, onNodesChange] = useNodesState(nodess);
+
+  const edge = nodess
     .map((node: any) => {
       if (node.father) {
         return {
@@ -15,11 +17,11 @@ const UpdateNode = ({ nodeList }: { nodeList: any }) => {
       } else null;
     })
     .filter((node: any) => node);
-  console.log('edge', edge);
+
   const [edges, setEdges, onEdgesChange] = useEdgesState(edge);
 
   return (
-    <div className={'h-screen w-screen'}>
+    <div className={'w-screen h-screen'}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -31,7 +33,9 @@ const UpdateNode = ({ nodeList }: { nodeList: any }) => {
         attributionPosition="bottom-left"
         fitView
         fitViewOptions={{ padding: 0.5 }}
-      ></ReactFlow>
+      >
+      <Background/>
+      </ReactFlow>
     </div>
   );
 };
