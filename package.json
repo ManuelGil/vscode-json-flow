@@ -110,11 +110,6 @@
 		"views": {
 			"json-explorer": [
 				{
-					"id": "jsonManager.jsonView",
-					"name": "JSON Preview",
-					"type": "webview"
-				},
-				{
 					"id": "jsonManager.filesView",
 					"name": "List of Files",
 					"visibility": "visible"

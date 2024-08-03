@@ -38,17 +38,12 @@ export function activate(context: vscode.ExtensionContext) {
   // Create a new FilesController
   const filesController = new FilesController(config);
 
-  const disposableOpenFile = vscode.commands.registerCommand(
-    `${EXTENSION_ID}.files.openFile`,
-    (uri) => filesController.openFile(uri),
+  const disposableOpenJSONFile = vscode.commands.registerCommand(
+    `${EXTENSION_ID}.files.openJSONFile`,
+    () => JSONProvider.getInstance(context.extensionUri),
   );
 
-  const disposableGotoLine = vscode.commands.registerCommand(
-    `${EXTENSION_ID}.files.gotoLine`,
-    (uri, line) => filesController.gotoLine(uri, line),
-  );
-
-  context.subscriptions.push(disposableOpenFile, disposableGotoLine);
+  context.subscriptions.push(disposableOpenJSONFile);
 
   // -----------------------------------------------------------------
   // Register FilesProvider and list commands
@@ -127,15 +122,16 @@ export function activate(context: vscode.ExtensionContext) {
   // -----------------------------------------------------------------
 
   // Create a new JSONProvider
-  const jsonProvider = new JSONProvider(context.extensionUri);
-
-  // Register the JSONProvider
-  const jsonWebviewProvider = vscode.window.registerWebviewViewProvider(
-    JSONProvider.viewType,
-    jsonProvider,
-  );
-
-  context.subscriptions.push(jsonWebviewProvider);
+  if (vscode.window.registerWebviewPanelSerializer) {
+    vscode.window.registerWebviewPanelSerializer(JSONProvider.viewType, {
+      async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel) {
+        webviewPanel.webview.options = JSONProvider.getWebviewOptions(
+          context.extensionUri,
+        );
+        JSONProvider.revive(webviewPanel, context.extensionUri);
+      },
+    });
+  }
 }
 
 // this method is called when your extension is deactivated

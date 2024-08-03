@@ -89,8 +89,8 @@ export class FilesController {
             filename ?? 'Untitled',
             new ThemeIcon('file'),
             {
-              command: `${EXTENSION_ID}.files.openFile`,
-              title: 'Open File',
+              command: `${EXTENSION_ID}.files.openJSONFile`,
+              title: 'Open JSON File',
               arguments: [document.uri],
             },
             document.uri,

@@ -1,10 +1,10 @@
 import {
-  CancellationToken,
   Uri,
+  ViewColumn,
   Webview,
-  WebviewView,
-  WebviewViewProvider,
-  WebviewViewResolveContext,
+  WebviewOptions,
+  WebviewPanel,
+  window,
 } from 'vscode';
 
 import { EXTENSION_ID } from '../configs';
@@ -17,19 +17,28 @@ import { getNonce } from '../helpers';
  * @classdesc The class that represents the json provider.
  * @export
  * @public
- * @implements {WebviewViewProvider}
  * @property {string} static viewType - The view type
  * @property {WebviewView} [_view] - The view
  * @property {OpenAIService} [openAISservice] - The OpenAI service
  * @example
  * const provider = new JSONProvider(extensionUri);
  */
-export class JSONProvider implements WebviewViewProvider {
+export class JSONProvider {
   // -----------------------------------------------------------------
   // Properties
   // -----------------------------------------------------------------
 
   // Public properties
+  /**
+   * The current provider.
+   *
+   * @public
+   * @static
+   * @memberof JSONProvider
+   * @type {JSONProvider | undefined}
+   */
+  static currentProvider: JSONProvider | undefined;
+
   /**
    * The view type.
    *
@@ -39,16 +48,6 @@ export class JSONProvider implements WebviewViewProvider {
    * @type {string}
    */
   static readonly viewType: string = `${EXTENSION_ID}.jsonView`;
-
-  // Private properties
-  /**
-   * The view.
-   *
-   * @private
-   * @memberof JSONProvider
-   * @type {WebviewView}
-   */
-  private _view?: WebviewView;
 
   // -----------------------------------------------------------------
   // Constructor
@@ -62,7 +61,20 @@ export class JSONProvider implements WebviewViewProvider {
    * @public
    * @memberof JSONProvider
    */
-  constructor(private readonly _extensionUri: Uri) {}
+  private constructor(
+    private readonly _panel: WebviewPanel,
+    private readonly _extensionUri: Uri,
+  ) {
+    this._update();
+
+    this._panel.onDidDispose(() => this.dispose(), null);
+
+    this._panel.onDidChangeViewState(() => {
+      if (this._panel.visible) {
+        this._update();
+      }
+    }, null);
+  }
 
   // -----------------------------------------------------------------
   // Methods
@@ -70,46 +82,113 @@ export class JSONProvider implements WebviewViewProvider {
 
   // Public methods
   /**
-   * The resolveWebviewView method.
+   * The getInstance method.
    *
-   * @function resolveWebviewView
-   * @param {WebviewView} webviewView - The webview view
-   * @param {WebviewViewResolveContext} context - The webview view resolve context
-   * @param {CancellationToken} _token - The cancellation token
+   * @function getInstance
+   * @param {Uri} extensionUri - The extension URI
+   * @public
+   * @static
+   * @memberof JSONProvider
+   * @example
+   * JSONProvider.getInstance(extensionUri);
+   *
+   * @returns {void}
+   */
+  static getInstance(extensionUri: Uri): void {
+    const column = window.activeTextEditor
+      ? window.activeTextEditor.viewColumn
+      : ViewColumn.One;
+
+    if (JSONProvider.currentProvider) {
+      JSONProvider.currentProvider._panel.reveal(column);
+      return;
+    }
+
+    const panel = window.createWebviewPanel(
+      JSONProvider.viewType,
+      'JSON Preview',
+      ViewColumn.Beside,
+      this.getWebviewOptions(extensionUri),
+    );
+
+    JSONProvider.currentProvider = new JSONProvider(panel, extensionUri);
+  }
+
+  /**
+   * The getWebviewOptions method.
+   *
+   * @function getWebviewOptions
+   * @param {Uri} extensionUri - The extension URI
+   * @public
+   * @static
+   * @memberof JSONProvider
+   * @example
+   * const options = JSONProvider.getWebviewOptions(extensionUri);
+   *
+   * @returns {WebviewOptions} - The webview options
+   */
+  static getWebviewOptions(extensionUri: Uri): WebviewOptions {
+    return {
+      enableScripts: true,
+      localResourceRoots: [Uri.joinPath(extensionUri, './out/webview')],
+    };
+  }
+
+  /**
+   * The revive method.
+   *
+   * @function revive
+   * @param {WebviewPanel} panel - The webview panel
+   * @param {Uri} extensionUri - The extension URI
+   * @public
+   * @static
+   * @memberof JSONProvider
+   * @example
+   * JSONProvider.revive(panel, extensionUri);
+   *
+   * @returns {void}
+   */
+  static revive(panel: WebviewPanel, extensionUri: Uri) {
+    JSONProvider.currentProvider = new JSONProvider(panel, extensionUri);
+  }
+
+  /**
+   * The dispose method.
+   *
+   * @function dispose
    * @public
    * @memberof JSONProvider
    * @example
-   * provider.resolveWebviewView(webviewView, context, _token);
+   * provider.dispose();
    *
-   * @returns {void} - No return value
+   * @returns {void}
    */
-  resolveWebviewView(
-    webviewView: WebviewView,
-    _: WebviewViewResolveContext,
-    _token: CancellationToken,
-  ): void {
-    this._view = webviewView;
+  dispose() {
+    JSONProvider.currentProvider = undefined;
 
-    webviewView.webview.options = {
-      // Allow scripts in the webview
-      enableScripts: true,
-
-      localResourceRoots: [this._extensionUri],
-    };
-
-    webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
-
-    webviewView.webview.onDidReceiveMessage((data) => {
-      switch (data.type) {
-        case 'event': {
-          // this.response(data);
-          break;
-        }
-      }
-    });
+    this._panel.dispose();
   }
 
   // Private methods
+  /**
+   * The _update method.
+   *
+   * @function _update
+   * @private
+   * @memberof JSONProvider
+   * @example
+   * provider._update();
+   *
+   * @returns {void}
+   */
+  private _update(): void {
+    const webview = this._panel.webview;
+
+    // this._panel.title = json.path;
+    // this._panel.webview.html = this._getHtmlForWebview(webview, json);
+    this._panel.webview.html = this._getHtmlForWebview(webview);
+  }
+
   /**
    * The _getHtmlForWebview method.
    *
@@ -131,17 +210,6 @@ export class JSONProvider implements WebviewViewProvider {
     // Do the same for the stylesheet.
     const styleMainUri = webview.asWebviewUri(
       Uri.joinPath(this._extensionUri, './out/webview', 'main.css'),
-    );
-
-    // And the codicons.
-    const codiconsUri = webview.asWebviewUri(
-      Uri.joinPath(
-        this._extensionUri,
-        'node_modules',
-        '@vscode/codicons',
-        'dist',
-        'codicon.css',
-      ),
     );
 
     // Use a nonce to only allow a specific script to be run.
@@ -166,7 +234,6 @@ export class JSONProvider implements WebviewViewProvider {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <link href="${styleMainUri}" rel="stylesheet" />
-    <link href="${codiconsUri}" rel="stylesheet" />
 
     <title>JSON Preview</title>
   </head>
