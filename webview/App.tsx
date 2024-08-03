@@ -1,6 +1,5 @@
-import './App.css'
-import UpdateNode from "./components/UpdateNode.tsx";
-
+import './App.css';
+import UpdateNode from './components/UpdateNode.tsx';
 
 function isArray(json: unknown): json is any[] {
   return Array.isArray(json);

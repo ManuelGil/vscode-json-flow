@@ -1,9 +1,15 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-import { ReactFlow, useEdgesState, useNodesState ,  Background} from '@xyflow/react';
+import {
+  Background,
+  Controls,
+  MiniMap,
+  ReactFlow,
+  useEdgesState,
+  useNodesState,
+} from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
 const UpdateNode = ({ nodess }: { nodess: any }) => {
-
   const [nodes, setNodes, onNodesChange] = useNodesState(nodess);
 
   const edge = nodess
@@ -14,9 +20,10 @@ const UpdateNode = ({ nodess }: { nodess: any }) => {
           source: node.father,
           target: node.id,
         };
-      } else null;
+      }
+      return null;
     })
-    .filter((node: any) => node);
+    .filter((node: any) => node !== null);
 
   const [edges, setEdges, onEdgesChange] = useEdgesState(edge);
 
@@ -34,7 +41,13 @@ const UpdateNode = ({ nodess }: { nodess: any }) => {
         fitView
         fitViewOptions={{ padding: 0.5 }}
       >
-      <Background/>
+        <Background />
+        <MiniMap
+          nodeColor={(node) => {
+            return '#7f7f7f';
+          }}
+        />
+        <Controls />
       </ReactFlow>
     </div>
   );
