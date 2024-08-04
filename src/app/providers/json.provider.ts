@@ -1,4 +1,5 @@
 import {
+  Disposable,
   Uri,
   ViewColumn,
   Webview,
@@ -8,7 +9,9 @@ import {
 } from 'vscode';
 
 import { EXTENSION_ID } from '../configs';
+import { FilesController } from '../controllers';
 import { getNonce } from '../helpers';
+import { NodeModel } from '../models';
 
 /**
  * The JSONProvider class.
@@ -49,6 +52,16 @@ export class JSONProvider {
    */
   static readonly viewType: string = `${EXTENSION_ID}.jsonView`;
 
+  // Private properties
+  /**
+   * The disposables.
+   *
+   * @private
+   * @memberof JSONProvider
+   * @type {Disposable[]}
+   */
+  private _disposables: Disposable[] = [];
+
   // -----------------------------------------------------------------
   // Constructor
   // -----------------------------------------------------------------
@@ -57,6 +70,7 @@ export class JSONProvider {
    * Constructor for the JSONProvider class.
    *
    * @constructor
+   * @param {WebviewPanel} _panel - The webview panel
    * @param {Uri} _extensionUri - The extension URI
    * @public
    * @memberof JSONProvider
@@ -67,13 +81,29 @@ export class JSONProvider {
   ) {
     this._update();
 
-    this._panel.onDidDispose(() => this.dispose(), null);
+    this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
 
-    this._panel.onDidChangeViewState(() => {
-      if (this._panel.visible) {
-        this._update();
-      }
-    }, null);
+    this._panel.onDidChangeViewState(
+      () => {
+        if (this._panel.visible) {
+          this._update();
+        }
+      },
+      null,
+      this._disposables,
+    );
+
+    this._panel.webview.onDidReceiveMessage(
+      (command) => {
+        switch (command.type) {
+          case 'gotoLine':
+            FilesController.gotoLine(command.uri, command.line);
+            return;
+        }
+      },
+      null,
+      this._disposables,
+    );
   }
 
   // -----------------------------------------------------------------
@@ -82,25 +112,31 @@ export class JSONProvider {
 
   // Public methods
   /**
-   * The getInstance method.
+   * The openPreview method.
    *
-   * @function getInstance
+   * @function openPreview
    * @param {Uri} extensionUri - The extension URI
+   * @param {NodeModel} json - The JSON URI
    * @public
    * @static
    * @memberof JSONProvider
    * @example
-   * JSONProvider.getInstance(extensionUri);
+   * JSONProvider.openPreview(extensionUri);
    *
    * @returns {void}
    */
-  static getInstance(extensionUri: Uri): void {
+  static openPreview(extensionUri: Uri, json: NodeModel): void {
     const column = window.activeTextEditor
       ? window.activeTextEditor.viewColumn
       : ViewColumn.One;
 
     if (JSONProvider.currentProvider) {
       JSONProvider.currentProvider._panel.reveal(column);
+
+      JSONProvider.currentProvider._panel.webview.postMessage({
+        json: json.resourceUri,
+      });
+
       return;
     }
 
@@ -112,6 +148,10 @@ export class JSONProvider {
     );
 
     JSONProvider.currentProvider = new JSONProvider(panel, extensionUri);
+
+    JSONProvider.currentProvider._panel.webview.postMessage({
+      json: json.resourceUri,
+    });
   }
 
   /**
@@ -148,7 +188,7 @@ export class JSONProvider {
    *
    * @returns {void}
    */
-  static revive(panel: WebviewPanel, extensionUri: Uri) {
+  static revive(panel: WebviewPanel, extensionUri: Uri): void {
     JSONProvider.currentProvider = new JSONProvider(panel, extensionUri);
   }
 
@@ -167,6 +207,13 @@ export class JSONProvider {
     JSONProvider.currentProvider = undefined;
 
     this._panel.dispose();
+
+    while (this._disposables.length) {
+      const x = this._disposables.pop();
+      if (x) {
+        x.dispose();
+      }
+    }
   }
 
   // Private methods
@@ -184,8 +231,6 @@ export class JSONProvider {
   private _update(): void {
     const webview = this._panel.webview;
 
-    // this._panel.title = json.path;
-    // this._panel.webview.html = this._getHtmlForWebview(webview, json);
     this._panel.webview.html = this._getHtmlForWebview(webview);
   }
 

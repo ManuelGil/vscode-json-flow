@@ -110,7 +110,7 @@ export const EXTENSION_PAYPAL_URL: string =
  *
  * @returns {string[]} - The files to include
  */
-export const INCLUDE: string[] = ['js', 'ts', 'tsx', 'jsx', 'md'];
+export const INCLUDE: string[] = ['json', 'jsonc'];
 /**
  * EXCLUDE: The files to exclude.
  * @type {string[]}
