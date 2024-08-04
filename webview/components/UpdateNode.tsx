@@ -34,16 +34,16 @@ const UpdateNode = ({ nodess }: { nodess: any }) => {
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
-        defaultViewport={{ x: 0, y: 0, zoom: 1.5 }}
+        defaultViewport={{ x: 0, y: 0, zoom: 2 }}
         minZoom={1}
         maxZoom={4}
         attributionPosition="bottom-left"
         fitView
-        fitViewOptions={{ padding: 0.5 }}
+        fitViewOptions={{ padding: 2 }}
       >
         <Background />
         <MiniMap
-          nodeColor={(node) => {
+          nodeColor={() => {
             return '#7f7f7f';
           }}
         />
