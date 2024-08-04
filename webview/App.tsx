@@ -27,10 +27,11 @@ const JsonFormater = (json: unknown, many: number, deep: number, array: a[], fat
               display: 'flex',
               padding: 0,
               marging: 0,
+              borderColor: 'rgba(0,255,196,0.16)',
               justifyContent: 'center',
               fontSize: 8,
               background: 'transparent',
-              color: 'rgb(174,56,248)',
+              color: 'rgb(182,182,182)',
 
             },
           }
@@ -57,8 +58,6 @@ const JsonFormater = (json: unknown, many: number, deep: number, array: a[], fat
                 fontSize: 8,
                 background: 'transparent',
                 color: 'rgb(182,182,182)',
-
-
               },
             }
           )
@@ -79,7 +78,8 @@ const problematicJson = {
       address:{
         street: "127.0.0.1",
         room: 3,
-        fate: 30
+        fate: 30,
+        wtf:['string', 'string1']
       }
     }
   ]

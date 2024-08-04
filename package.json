@@ -77,18 +77,40 @@
 		},
 		"commands": [
 			{
-				"command": "jsonManager.files.refresh",
+				"command": "jsonManager.files.refreshList",
 				"title": "Refresh List",
 				"category": "JSON Manager",
 				"icon": "$(refresh)"
+			},
+			{
+				"command": "jsonManager.files.openFile",
+				"title": "Open File",
+				"category": "JSON Manager"
+			},
+			{
+				"command": "jsonManager.json.openPreview",
+				"title": "Open JSON Preview",
+				"category": "JSON Manager"
 			}
 		],
 		"menus": {
 			"view/title": [
 				{
-					"command": "jsonManager.files.refresh",
-					"when": "view == vscode-json-manager.filesView",
+					"command": "jsonManager.files.refreshList",
+					"when": "view == jsonManager.filesView",
 					"group": "navigation"
+				}
+			],
+			"view/item/context": [
+				{
+					"command": "jsonManager.files.openFile",
+					"when": "view == jsonManager.filesView && viewItem == file",
+					"group": "files"
+				},
+				{
+					"command": "jsonManager.json.openPreview",
+					"when": "view == jsonManager.filesView && viewItem == file",
+					"group": "json"
 				}
 			]
 		},

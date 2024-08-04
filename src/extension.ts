@@ -38,12 +38,12 @@ export function activate(context: vscode.ExtensionContext) {
   // Create a new FilesController
   const filesController = new FilesController(config);
 
-  const disposableOpenJSONFile = vscode.commands.registerCommand(
-    `${EXTENSION_ID}.files.openJSONFile`,
-    () => JSONProvider.getInstance(context.extensionUri),
+  const disposableOpenFile = vscode.commands.registerCommand(
+    `${EXTENSION_ID}.files.openFile`,
+    (uri) => filesController.openFile(uri),
   );
 
-  context.subscriptions.push(disposableOpenJSONFile);
+  context.subscriptions.push(disposableOpenFile);
 
   // -----------------------------------------------------------------
   // Register FilesProvider and list commands
@@ -62,7 +62,7 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   const disposableRefreshList = vscode.commands.registerCommand(
-    `${EXTENSION_ID}.files.refresh`,
+    `${EXTENSION_ID}.files.refreshList`,
     () => filesProvider.refresh(),
   );
 
@@ -132,6 +132,18 @@ export function activate(context: vscode.ExtensionContext) {
       },
     });
   }
+
+  // -----------------------------------------------------------------
+  // Register the commands
+  // -----------------------------------------------------------------
+
+  // Register the command to open the JSON preview
+  const disposableOpenJSONPreview = vscode.commands.registerCommand(
+    `${EXTENSION_ID}.json.openPreview`,
+    (uri) => JSONProvider.openPreview(context.extensionUri, uri),
+  );
+
+  context.subscriptions.push(disposableOpenJSONPreview);
 }
 
 // this method is called when your extension is deactivated

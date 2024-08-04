@@ -4,12 +4,11 @@ import {
   Selection,
   TextEditorRevealType,
   ThemeIcon,
-  Uri,
   window,
   workspace,
 } from 'vscode';
 
-import { EXTENSION_ID, ExtensionConfig } from '../configs';
+import { ExtensionConfig } from '../configs';
 import { directoryMap, getRelativePath } from '../helpers';
 import { NodeModel } from '../models';
 
@@ -88,13 +87,9 @@ export class FilesController {
           new NodeModel(
             filename ?? 'Untitled',
             new ThemeIcon('file'),
-            {
-              command: `${EXTENSION_ID}.files.openJSONFile`,
-              title: 'Open JSON File',
-              arguments: [document.uri],
-            },
+            undefined,
             document.uri,
-            document.fileName,
+            'file',
           ),
         );
       }
@@ -109,7 +104,7 @@ export class FilesController {
    * The openFile method.
    *
    * @function openFile
-   * @param {NodeModel} uri - The file URI
+   * @param {NodeModel} node - The node model
    * @public
    * @memberof FilesController
    * @example
@@ -117,10 +112,12 @@ export class FilesController {
    *
    * @returns {Promise<void>} - The promise
    */
-  openFile(uri: Uri) {
-    workspace.openTextDocument(uri).then((filename) => {
-      window.showTextDocument(filename);
-    });
+  openFile(node: NodeModel) {
+    if (node.resourceUri) {
+      workspace.openTextDocument(node.resourceUri).then((filename) => {
+        window.showTextDocument(filename);
+      });
+    }
   }
 
   /**
@@ -136,7 +133,7 @@ export class FilesController {
    *
    * @returns {void} - The promise
    */
-  gotoLine(uri: string, line: number) {
+  static gotoLine(uri: string, line: number) {
     workspace.openTextDocument(uri).then((document) => {
       window.showTextDocument(document).then((editor) => {
         const pos = new Position(line, 0);
