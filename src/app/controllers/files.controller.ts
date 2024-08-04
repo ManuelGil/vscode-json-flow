@@ -8,7 +8,7 @@ import {
   workspace,
 } from 'vscode';
 
-import { ExtensionConfig } from '../configs';
+import { EXTENSION_ID, ExtensionConfig } from '../configs';
 import { directoryMap, getRelativePath } from '../helpers';
 import { NodeModel } from '../models';
 
@@ -87,7 +87,11 @@ export class FilesController {
           new NodeModel(
             filename ?? 'Untitled',
             new ThemeIcon('file'),
-            undefined,
+            {
+              command: `${EXTENSION_ID}.json.openPreview`,
+              title: 'Open Preview',
+              arguments: [document.uri],
+            },
             document.uri,
             'file',
           ),
@@ -116,6 +120,32 @@ export class FilesController {
     if (node.resourceUri) {
       workspace.openTextDocument(node.resourceUri).then((filename) => {
         window.showTextDocument(filename);
+      });
+    }
+  }
+
+  /**
+   * The getFileProperties method.
+   *
+   * @function getFileProperties
+   * @param {NodeModel} node - The node model
+   * @public
+   * @memberof FilesController
+   * @example
+   * controller.getFileProperties('file:///path/to/file');
+   *
+   * @returns {void} - The promise
+   */
+  getFileProperties(node: NodeModel) {
+    if (node.resourceUri) {
+      workspace.openTextDocument(node.resourceUri).then((document) => {
+        const { fileName, languageId, lineCount } = document;
+
+        window.showInformationMessage(
+          `File: ${fileName}\n
+          Language: ${languageId}\n
+          Lines: ${lineCount}`,
+        );
       });
     }
   }

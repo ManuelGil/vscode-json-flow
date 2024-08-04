@@ -88,6 +88,11 @@
 				"category": "JSON Manager"
 			},
 			{
+				"command": "jsonManager.files.getFileProperties",
+				"title": "Get File Properties",
+				"category": "JSON Manager"
+			},
+			{
 				"command": "jsonManager.json.openPreview",
 				"title": "Open JSON Preview",
 				"category": "JSON Manager"
@@ -105,12 +110,17 @@
 				{
 					"command": "jsonManager.files.openFile",
 					"when": "view == jsonManager.filesView && viewItem == file",
-					"group": "files"
+					"group": "1_navigation"
 				},
 				{
 					"command": "jsonManager.json.openPreview",
 					"when": "view == jsonManager.filesView && viewItem == file",
-					"group": "json"
+					"group": "2_preview"
+				},
+				{
+					"command": "jsonManager.files.getFileProperties",
+					"when": "view == jsonManager.filesView && viewItem == file",
+					"group": "3_properties"
 				}
 			]
 		},

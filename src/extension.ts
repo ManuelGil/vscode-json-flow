@@ -43,7 +43,12 @@ export function activate(context: vscode.ExtensionContext) {
     (uri) => filesController.openFile(uri),
   );
 
-  context.subscriptions.push(disposableOpenFile);
+  const disposableGtFileProperties = vscode.commands.registerCommand(
+    `${EXTENSION_ID}.files.getFileProperties`,
+    (uri) => filesController.getFileProperties(uri),
+  );
+
+  context.subscriptions.push(disposableOpenFile, disposableGtFileProperties);
 
   // -----------------------------------------------------------------
   // Register FilesProvider and list commands

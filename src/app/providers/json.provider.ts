@@ -132,22 +132,16 @@ export class JSONProvider {
 
     if (JSONProvider.currentProvider) {
       JSONProvider.currentProvider._panel.reveal(column);
+    } else {
+      const panel = window.createWebviewPanel(
+        JSONProvider.viewType,
+        'JSON Preview',
+        ViewColumn.Beside,
+        this.getWebviewOptions(extensionUri),
+      );
 
-      JSONProvider.currentProvider._panel.webview.postMessage({
-        json: json.resourceUri,
-      });
-
-      return;
+      JSONProvider.currentProvider = new JSONProvider(panel, extensionUri);
     }
-
-    const panel = window.createWebviewPanel(
-      JSONProvider.viewType,
-      'JSON Preview',
-      ViewColumn.Beside,
-      this.getWebviewOptions(extensionUri),
-    );
-
-    JSONProvider.currentProvider = new JSONProvider(panel, extensionUri);
 
     JSONProvider.currentProvider._panel.webview.postMessage({
       json: json.resourceUri,
