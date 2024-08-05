@@ -1,96 +1,89 @@
 import './App.css';
 import UpdateNode from './components/UpdateNode.tsx';
 
-function isArray(json: unknown): json is any[] {
-  return Array.isArray(json);
-}
 
-function isObject(json: unknown): json is NonNullable<unknown> {
-  return typeof json === 'object' && json !== null;
-}
+type jsonType = {
+  id: string;
+  data: { label: any };
+  position: { x: number; y: number };
+  father: string;
+  style: any;
+};
 
+const style = {
+  width: 80,
+  display: 'flex',
+  padding: 0,
+  marging: 0,
+  borderColor: 'gray',
+  justifyContent: 'center',
+  fontSize: 8,
+  background: 'transparent',
+  color: 'rgb(182,182,182)',
+};
 
-type a = { id: string; data: { label: any; }; position: { x: number; y: number; }; father: string; style:any}
-const JsonFormater = (json: unknown, many: number, deep: number, array: a[], father: string): any => {
+const JsonFormater = (
+  json: unknown,
+  many: number,
+  deep: number,
+  array: any[],
+  father: string,
+): any => {
+  if (Array.isArray(json)) {
+    json.forEach((items) => {
+      const item = {
+        id: String(items),
+        data: { label: items },
+        position: { x: 100, y: deep },
+        father: father,
+        style: style,
+      };
+      if (typeof items === 'object') {
+        JsonFormater(items, many, deep + 100, array, father);
+      } else {
+        array.push(item);
+      }
+    });
+  } else if (typeof json === 'object' && json !== null) {
+    Object.entries(json).forEach(([key, value], index) => {
+      const items = {
+        id: String(key),
+        data: { label: `${key}: ${value}` },
+        position: { x: index * 100, y: deep },
+        father: father,
+        style: style,
+      };
 
-  if (isArray(json)) {
-    return (
-      json.map((x) => (typeof x === 'object' ? JsonFormater(x, many, deep + 100, array, father)
-        : array.push(
-          {
-            id: String(x),
-            data: { label: x },
-            position: { x: 100, y: deep },
-            father: father,
-            style: {
-              width: 60,
-              display: 'flex',
-              padding: 0,
-              marging: 0,
-              borderColor: 'rgba(0,255,196,0.16)',
-              justifyContent: 'center',
-              fontSize: 8,
-              background: 'transparent',
-              color: 'rgb(182,182,182)',
-
-            },
-          }
-        )))
-    )
+      array.push(items);
+      JsonFormater(value, many + 1, deep * 1.5, array, String(key));
+    });
   }
-  if (isObject(json)) {
-    return (
-      Object.entries(json).map(
-        ([key, value], index) => {
-          array.push(
-            {
-              id: String(key),
-              data: { label: key },
-              position: { x: index  * 100, y: deep },
-              father: father,
-              style: {
-                width: 60,
-                display: 'flex',
-                padding: 0,
-                marging: 0,
-                borderColor: 'gray',
-                justifyContent: 'center',
-                fontSize: 8,
-                background: 'transparent',
-                color: 'rgb(182,182,182)',
-              },
-            }
-          )
-          return JsonFormater(value, many+1, deep * 1.5, array, String(key))
-        }
-      )
-    )
-  }
-  return array
-}
+  return array;
+};
 
 const problematicJson = {
   users: [
     {
-      name: "tao",
-      email: "tao@gmail.com",
+      name: 'tao',
+      email: 'tao@gmail.com',
       age: 31,
-      address:{
-        street: "127.0.0.1",
+      address: {
+        street: '127.0.0.1',
         room: 3,
         fate: 30,
-        wtf:['string', 'string1']
-      }
-    }
-  ]
+        array:['a','b','c','d','e','f'],
+      },
+    },
+  ],
 };
 
 
 function App() {
   const map = JsonFormater(problematicJson, Math.random() * 100, 10, [], "");
+  console.log("MAP",map)
   return (
     <div className={"bg-stone-900"}>
-        <UpdateNode nodess={map[0][0][0]} />
+        <UpdateNode nodess={map} />
     </div>
   )
 }
