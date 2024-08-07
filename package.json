@@ -93,6 +93,11 @@
 				"category": "JSON Manager"
 			},
 			{
+				"command": "jsonManager.files.copyContent",
+				"title": "Copy Content to Clipboard",
+				"category": "JSON Manager"
+			},
+			{
 				"command": "jsonManager.json.openPreview",
 				"title": "Open JSON Preview",
 				"category": "JSON Manager"
@@ -118,9 +123,14 @@
 					"group": "2_preview"
 				},
 				{
+					"command": "jsonManager.files.copyContent",
+					"when": "view == jsonManager.filesView && viewItem == file",
+					"group": "3_copypaste"
+				},
+				{
 					"command": "jsonManager.files.getFileProperties",
 					"when": "view == jsonManager.filesView && viewItem == file",
-					"group": "3_properties"
+					"group": "4_properties"
 				}
 			]
 		},

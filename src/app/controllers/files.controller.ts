@@ -1,4 +1,5 @@
 import {
+  env,
   Position,
   Range,
   Selection,
@@ -146,6 +147,27 @@ export class FilesController {
           Language: ${languageId}\n
           Lines: ${lineCount}`,
         );
+      });
+    }
+  }
+
+  /**
+   * The copyContent method.
+   *
+   * @function copyContent
+   * @param {NodeModel} node - The node model
+   * @public
+   * @memberof FilesController
+   * @example
+   * controller.copyContent('file:///path/to/file');
+   *
+   * @returns {void} - The promise
+   */
+  copyContent(node: NodeModel) {
+    if (node.resourceUri) {
+      workspace.openTextDocument(node.resourceUri).then((document) => {
+        env.clipboard.writeText(document.getText());
+        window.showInformationMessage('Content copied to clipboard');
       });
     }
   }
