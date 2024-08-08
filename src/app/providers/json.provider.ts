@@ -1,3 +1,4 @@
+import { readFileSync } from 'fs';
 import {
   Disposable,
   Uri,
@@ -11,7 +12,6 @@ import {
 import { EXTENSION_ID } from '../configs';
 import { FilesController } from '../controllers';
 import { getNonce } from '../helpers';
-import { NodeModel } from '../models';
 
 /**
  * The JSONProvider class.
@@ -116,7 +116,7 @@ export class JSONProvider {
    *
    * @function openPreview
    * @param {Uri} extensionUri - The extension URI
-   * @param {NodeModel} json - The JSON URI
+   * @param {Uri} json - The JSON URI
    * @public
    * @static
    * @memberof JSONProvider
@@ -125,26 +125,24 @@ export class JSONProvider {
    *
    * @returns {void}
    */
-  static openPreview(extensionUri: Uri, json: NodeModel): void {
-    const column = window.activeTextEditor
-      ? window.activeTextEditor.viewColumn
-      : ViewColumn.One;
-
+  static openPreview(extensionUri: Uri, json: Uri): void {
     if (JSONProvider.currentProvider) {
-      JSONProvider.currentProvider._panel.reveal(column);
+      JSONProvider.currentProvider._panel.reveal(ViewColumn.One);
     } else {
       const panel = window.createWebviewPanel(
         JSONProvider.viewType,
         'JSON Preview',
-        ViewColumn.Beside,
+        ViewColumn.One,
         this.getWebviewOptions(extensionUri),
       );
 
       JSONProvider.currentProvider = new JSONProvider(panel, extensionUri);
     }
 
+    const jsonContent = readFileSync(json.fsPath, 'utf8');
+
     JSONProvider.currentProvider._panel.webview.postMessage({
-      json: json.resourceUri,
+      json: jsonContent,
     });
   }
 

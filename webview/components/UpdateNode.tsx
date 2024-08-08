@@ -1,4 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 import {
   Background,
   Controls,
@@ -14,10 +13,10 @@ const UpdateNode = ({ nodess }: { nodess: any }) => {
 
   const edge = nodess
     .map((node: any) => {
-      if (node.father) {
+      if (node.parent) {
         return {
           id: 'e' + node.id,
-          source: node.father,
+          source: node.parent,
           target: node.id,
         };
       }
@@ -28,7 +27,7 @@ const UpdateNode = ({ nodess }: { nodess: any }) => {
   const [edges, setEdges, onEdgesChange] = useEdgesState(edge);
 
   return (
-    <div className={'w-screen h-screen'}>
+    <div className={'h-screen w-screen'}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -39,7 +38,7 @@ const UpdateNode = ({ nodess }: { nodess: any }) => {
         maxZoom={4}
         attributionPosition="bottom-left"
         fitView
-        fitViewOptions={{ padding: 2 }}
+        fitViewOptions={{ padding: 1 }}
       >
         <Background />
         <MiniMap
