@@ -1,13 +1,4 @@
-import {
-  env,
-  Position,
-  Range,
-  Selection,
-  TextEditorRevealType,
-  ThemeIcon,
-  window,
-  workspace,
-} from 'vscode';
+import { env, ThemeIcon, window, workspace } from 'vscode';
 
 import { EXTENSION_ID, ExtensionConfig } from '../configs';
 import { directoryMap, getRelativePath } from '../helpers';
@@ -170,31 +161,5 @@ export class FilesController {
         window.showInformationMessage('Content copied to clipboard');
       });
     }
-  }
-
-  /**
-   * The gotoLine method.
-   *
-   * @function gotoLine
-   * @param {string} uri - The file URI
-   * @param {number} line - The line number
-   * @public
-   * @memberof FilesController
-   * @example
-   * controller.gotoLine('file:///path/to/file', 1);
-   *
-   * @returns {void} - The promise
-   */
-  static gotoLine(uri: string, line: number) {
-    workspace.openTextDocument(uri).then((document) => {
-      window.showTextDocument(document).then((editor) => {
-        const pos = new Position(line, 0);
-        editor.revealRange(
-          new Range(pos, pos),
-          TextEditorRevealType.InCenterIfOutsideViewport,
-        );
-        editor.selection = new Selection(pos, pos);
-      });
-    });
   }
 }

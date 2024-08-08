@@ -81,8 +81,6 @@ const problematicJson = {
 
 
 function App() {
-  // @ts-ignore
-  const vscode = acquireVsCodeApi();
   const [json, setJson] = useState(problematicJson);
 
   useEffect(() => {

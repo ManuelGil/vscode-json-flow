@@ -10,7 +10,6 @@ import {
 } from 'vscode';
 
 import { EXTENSION_ID } from '../configs';
-import { FilesController } from '../controllers';
 import { getNonce } from '../helpers';
 
 /**
@@ -92,18 +91,6 @@ export class JSONProvider {
       null,
       this._disposables,
     );
-
-    this._panel.webview.onDidReceiveMessage(
-      (command) => {
-        switch (command.type) {
-          case 'gotoLine':
-            FilesController.gotoLine(command.uri, command.line);
-            return;
-        }
-      },
-      null,
-      this._disposables,
-    );
   }
 
   // -----------------------------------------------------------------
@@ -142,7 +129,7 @@ export class JSONProvider {
     const jsonContent = readFileSync(json.fsPath, 'utf8');
 
     JSONProvider.currentProvider._panel.webview.postMessage({
-      json: jsonContent,
+      json: JSON.parse(jsonContent),
     });
   }
 
