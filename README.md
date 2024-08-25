@@ -93,6 +93,7 @@ See [CHANGELOG.md](./CHANGELOG.md)
 ## Authors
 
 - **Manuel Gil** - _Owner_ - [ManuelGil](https://github.com/ManuelGil)
+- **Santiago Rey** - _Collaborator_ - [ksreyr](https://github.com/ksreyr)
 
 See also the list of [contributors](https://github.com/ManuelGil/vscode-json-manager/contributors) who participated in this project.
 
