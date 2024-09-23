@@ -129,7 +129,7 @@ export class JSONProvider {
     const jsonContent = readFileSync(json.fsPath, 'utf8');
 
     JSONProvider.currentProvider._panel.webview.postMessage({
-      json: JSON.parse(jsonContent),
+      json: { root: JSON.parse(jsonContent) },
     });
   }
 

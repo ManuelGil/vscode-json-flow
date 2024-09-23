@@ -15,6 +15,12 @@ This extension allows you to manage your JSON files in a more efficient way. It 
   - [Table of Contents](#table-of-contents)
   - [Requirements](#requirements)
   - [Project Settings](#project-settings)
+  - [Development](#development)
+    - [Getting Started](#getting-started)
+    - [React Webview](#react-webview)
+  - [Build](#build)
+    - [Compile Webview](#compile-webview)
+    - [Compile Extension](#compile-extension)
   - [Connect with me](#connect-with-me)
   - [Other Extensions](#other-extensions)
   - [Contributing](#contributing)
@@ -61,6 +67,78 @@ Configure your project by creating or updating a settings.json file at the proje
 
 Your project is now set up to automatically format code upon saving.
 
+## Development
+
+For the development of this extension, you need to have Node.js installed on your machine. You can download it from the [official website](https://nodejs.org/).
+
+### Getting Started
+
+1. Clone the repository:
+
+   ```bash
+   git clone
+   ```
+
+2. Install the dependencies:
+
+   ```bash
+   npm install
+   ```
+
+3. Open the project in VSCode:
+
+   ```bash
+   code .
+   ```
+
+4. Press `F5` to open a new window with the extension loaded.
+5. Make your changes in the `src` directory.
+
+### React Webview
+
+To test the extension in a webview, run the following command:
+
+   ```bash
+   npm run dev
+   ```
+
+This command will open a new window with the extension loaded.
+
+Make your changes in the `webview` directory.
+
+## Build
+
+### Compile Webview
+
+1. Run the build command:
+
+   ```bash
+   npm run build
+   ```
+
+2. Run the compile command:
+
+   ```bash
+   npm run compile
+   ```
+
+3. The compiled files will be in the `out` directory.
+4. Press `F5` to open a new window with the extension loaded.
+
+### Compile Extension
+
+1. Run the package command:
+
+   ```bash
+   vsce package
+   ```
+
+2. Run the publish command:
+
+   ```bash
+   vsce publish
+   ```
+
 ## Connect with me
 
 [![GitHub followers](https://img.shields.io/github/followers/ManuelGil?style=for-the-badge&logo=github)](https://github.com/ManuelGil)
@@ -94,6 +172,7 @@ See [CHANGELOG.md](./CHANGELOG.md)
 
 - **Manuel Gil** - _Owner_ - [ManuelGil](https://github.com/ManuelGil)
 - **Santiago Rey** - _Collaborator_ - [ksreyr](https://github.com/ksreyr)
+- **Andry Orellana** - _Collaborator_ - [AndryOre](https://github.com/AndryOre)
 
 See also the list of [contributors](https://github.com/ManuelGil/vscode-json-manager/contributors) who participated in this project.
 

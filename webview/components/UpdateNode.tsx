@@ -1,3 +1,4 @@
+import { useEffect, useMemo } from 'react';
 import {
   Background,
   Controls,
@@ -8,23 +9,29 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-const UpdateNode = ({ nodess }: { nodess: any }) => {
-  const [nodes, setNodes, onNodesChange] = useNodesState(nodess);
+const UpdateNode = ({ nodesInitial }: { nodesInitial: any }) => {
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
-  const edge = nodess
-    .map((node: any) => {
-      if (node.parent) {
-        return {
-          id: 'e' + node.id,
-          source: node.parent,
-          target: node.id,
-        };
-      }
-      return null;
-    })
-    .filter((node: any) => node !== null);
+  const memoizedEdges = useMemo(() => {
+    return nodesInitial
+      .map((node: any) => {
+        if (node.parent) {
+          return {
+            id: 'e' + node.id,
+            source: node.parent,
+            target: node.id,
+          };
+        }
+        return null;
+      })
+      .filter((node: any) => node !== null);
+  }, [nodesInitial]);
 
-  const [edges, setEdges, onEdgesChange] = useEdgesState(edge);
+  useEffect(() => {
+    setNodes(nodesInitial);
+    setEdges(memoizedEdges);
+  }, [nodesInitial, memoizedEdges, setNodes, setEdges]);
 
   return (
     <div className={'h-screen w-screen'}>

@@ -63,25 +63,8 @@ const JsonFormater = (
   return array;
 };
 
-const problematicJson = {
-  users: [
-    {
-      name: 'tao',
-      email: 'tao@gmail.com',
-      age: 31,
-      address: {
-        street: '127.0.0.1',
-        room: 3,
-        fate: 30,
-        array: ['a', 'b', 'c', 'd', 'e', 'f'],
-      },
-    },
-  ],
-};
-
-
 function App() {
-  const [json, setJson] = useState(problematicJson);
+  const [json, setJson] = useState();
 
   useEffect(() => {
     window.addEventListener('message', (event) => {
@@ -90,11 +73,11 @@ function App() {
     });
   }, []);
 
-  const map = JsonFormater(json, Math.random() * 100, 10, [], '');
-  console.log('MAP', map);
+  const jsonData = JsonFormater(json, Math.random() * 100, 10, [], '');
+  console.log('MAP', jsonData);
   return (
     <div className={'bg-stone-900'}>
-      <UpdateNode nodess={map} />
+      <UpdateNode nodesInitial={jsonData} />
     </div>
   );
 }
