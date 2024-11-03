@@ -1,7 +1,7 @@
 {
-	"name": "vscode-json-manager",
-	"displayName": "JSON Manager",
-	"description": "JSON Manager is a Visual Studio Code extension that allows you to manage your JSON files in a more efficient way.",
+	"name": "vscode-json-flow",
+	"displayName": "JSON Flow",
+	"description": "JSON Flow is a Visual Studio Code extension that allows you to manage your JSON files in a more efficient way.",
 	"version": "1.0.0",
 	"preview": true,
 	"icon": "icon.png",
@@ -32,19 +32,19 @@
 		"extension",
 		"vscode"
 	],
-	"homepage": "https://github.com/ManuelGil/vscode-json-manager",
+	"homepage": "https://github.com/ManuelGil/vscode-json-flow",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/ManuelGil/vscode-json-manager"
+		"url": "https://github.com/ManuelGil/vscode-json-flow"
 	},
 	"bugs": {
-		"url": "https://github.com/ManuelGil/vscode-json-manager/issues"
+		"url": "https://github.com/ManuelGil/vscode-json-flow/issues"
 	},
 	"activationEvents": [],
 	"main": "./out/extension.js",
 	"contributes": {
 		"configuration": {
-			"title": "JSON Manager",
+			"title": "JSON Flow",
 			"properties": {
 				"jsonManager.files.include": {
 					"type": "array",
@@ -79,23 +79,23 @@
 			{
 				"command": "jsonManager.files.refreshList",
 				"title": "Refresh List",
-				"category": "JSON Manager",
+				"category": "JSON Flow",
 				"icon": "$(refresh)"
 			},
 			{
 				"command": "jsonManager.files.openFile",
 				"title": "Open File",
-				"category": "JSON Manager"
+				"category": "JSON Flow"
 			},
 			{
 				"command": "jsonManager.files.getFileProperties",
 				"title": "Get File Properties",
-				"category": "JSON Manager"
+				"category": "JSON Flow"
 			},
 			{
 				"command": "jsonManager.files.copyContent",
 				"title": "Copy Content to Clipboard",
-				"category": "JSON Manager"
+				"category": "JSON Flow"
 			}
 		],
 		"menus": {
@@ -134,7 +134,7 @@
 			"activitybar": [
 				{
 					"id": "json-explorer",
-					"title": "JSON Manager",
+					"title": "JSON Flow",
 					"icon": "./assets/logo.svg"
 				}
 			]

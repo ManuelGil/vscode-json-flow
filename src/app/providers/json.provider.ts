@@ -1,4 +1,3 @@
-import { readFileSync } from 'fs';
 import {
   Disposable,
   Uri,
@@ -110,27 +109,25 @@ export class JSONProvider {
    * @example
    * JSONProvider.openPreview(extensionUri);
    *
-   * @returns {void}
+   * @returns {WebviewPanel}
    */
-  static openPreview(extensionUri: Uri, json: Uri): void {
+  static createPanel(extensionUri: Uri): WebviewPanel {
     if (JSONProvider.currentProvider) {
       JSONProvider.currentProvider._panel.reveal(ViewColumn.One);
-    } else {
-      const panel = window.createWebviewPanel(
-        JSONProvider.viewType,
-        'JSON Preview',
-        ViewColumn.One,
-        this.getWebviewOptions(extensionUri),
-      );
 
-      JSONProvider.currentProvider = new JSONProvider(panel, extensionUri);
+      return JSONProvider.currentProvider._panel;
     }
 
-    const jsonContent = readFileSync(json.fsPath, 'utf8');
+    const panel = window.createWebviewPanel(
+      JSONProvider.viewType,
+      'JSON Preview',
+      ViewColumn.One,
+      this.getWebviewOptions(extensionUri),
+    );
 
-    JSONProvider.currentProvider._panel.webview.postMessage({
-      json: { root: JSON.parse(jsonContent) },
-    });
+    JSONProvider.currentProvider = new JSONProvider(panel, extensionUri);
+
+    return panel;
   }
 
   /**

@@ -20,7 +20,7 @@ export const EXTENSION_ID: string = 'jsonManager';
  *
  * @returns {string} - The name of the extension
  */
-export const EXTENSION_NAME: string = 'JSON Manager';
+export const EXTENSION_NAME: string = 'JSON Flow';
 
 /**
  * EXTENSION_REPOSITORY_URL: The repository URL of the extension.
@@ -33,7 +33,7 @@ export const EXTENSION_NAME: string = 'JSON Manager';
  * @returns {string} - The repository URL of the extension
  */
 export const EXTENSION_REPOSITORY_URL: string =
-  'https://github.com/ManuelGil/vscode-json-manager';
+  'https://github.com/ManuelGil/vscode-json-flow';
 
 /**
  * EXTENSION_MARKETPLACE_URL: The marketplace URL of the extension.
@@ -46,7 +46,7 @@ export const EXTENSION_REPOSITORY_URL: string =
  * @returns {string} - The marketplace URL of the extension
  */
 export const EXTENSION_MARKETPLACE_URL: string =
-  'https://marketplace.visualstudio.com/items?itemName=imgildev.vscode-json-manager';
+  'https://marketplace.visualstudio.com/items?itemName=imgildev.vscode-json-flow';
 
 /**
  * EXTENSION_BUGS_URL: The bugs URL of the extension.
@@ -59,7 +59,7 @@ export const EXTENSION_MARKETPLACE_URL: string =
  * @returns {string} - The bugs URL of the extension
  */
 export const EXTENSION_BUGS_URL: string =
-  'https://github.com/ManuelGil/vscode-json-manager/issues';
+  'https://github.com/ManuelGil/vscode-json-flow/issues';
 
 /**
  * EXTENSION_SOCIAL_MEDIA_URL: The social media URL of the extension.

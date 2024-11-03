@@ -1,17 +1,17 @@
-# JSON Manager
+# JSON Flow
 
-[![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/imgildev.vscode-json-manager?style=for-the-badge&label=VS%20Marketplace&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=imgildev.vscode-json-manager)
-[![Visual Studio Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/imgildev.vscode-json-manager?style=for-the-badge&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=imgildev.vscode-json-manager)
-[![Visual Studio Marketplace Downloads](https://img.shields.io/visual-studio-marketplace/d/imgildev.vscode-json-manager?style=for-the-badge&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=imgildev.vscode-json-manager)
-[![Visual Studio Marketplace Rating](https://img.shields.io/visual-studio-marketplace/r/imgildev.vscode-json-manager?style=for-the-badge&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=imgildev.vscode-json-manager&ssr=false#review-details)
-[![GitHub Repo stars](https://img.shields.io/github/stars/ManuelGil/vscode-json-manager?style=for-the-badge&logo=github)](https://github.com/ManuelGil/vscode-json-manager)
-[![GitHub license](https://img.shields.io/github/license/ManuelGil/vscode-json-manager?style=for-the-badge&logo=github)](https://github.com/ManuelGil/vscode-json-manager/blob/main/LICENSE)
+[![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/imgildev.vscode-json-flow?style=for-the-badge&label=VS%20Marketplace&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=imgildev.vscode-json-flow)
+[![Visual Studio Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/imgildev.vscode-json-flow?style=for-the-badge&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=imgildev.vscode-json-flow)
+[![Visual Studio Marketplace Downloads](https://img.shields.io/visual-studio-marketplace/d/imgildev.vscode-json-flow?style=for-the-badge&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=imgildev.vscode-json-flow)
+[![Visual Studio Marketplace Rating](https://img.shields.io/visual-studio-marketplace/r/imgildev.vscode-json-flow?style=for-the-badge&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=imgildev.vscode-json-flow&ssr=false#review-details)
+[![GitHub Repo stars](https://img.shields.io/github/stars/ManuelGil/vscode-json-flow?style=for-the-badge&logo=github)](https://github.com/ManuelGil/vscode-json-flow)
+[![GitHub license](https://img.shields.io/github/license/ManuelGil/vscode-json-flow?style=for-the-badge&logo=github)](https://github.com/ManuelGil/vscode-json-flow/blob/main/LICENSE)
 
 This extension allows you to manage your JSON files in a more efficient way. It provides a set of commands to manipulate JSON files, such as sorting, formatting, and minifying.
 
 ## Table of Contents
 
-- [JSON Manager](#json-manager)
+- [JSON Flow](#json-flow)
   - [Table of Contents](#table-of-contents)
   - [Requirements](#requirements)
   - [Project Settings](#project-settings)
@@ -174,8 +174,8 @@ See [CHANGELOG.md](./CHANGELOG.md)
 - **Santiago Rey** - _Collaborator_ - [ksreyr](https://github.com/ksreyr)
 - **Andry Orellana** - _Collaborator_ - [AndryOre](https://github.com/AndryOre)
 
-See also the list of [contributors](https://github.com/ManuelGil/vscode-json-manager/contributors) who participated in this project.
+See also the list of [contributors](https://github.com/ManuelGil/vscode-json-flow/contributors) who participated in this project.
 
 ## License
 
-JSON Manager is licensed under the MIT License - see the [MIT License](https://opensource.org/licenses/MIT) for details.
+JSON Flow is licensed under the MIT License - see the [MIT License](https://opensource.org/licenses/MIT) for details.

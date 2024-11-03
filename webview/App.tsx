@@ -63,13 +63,20 @@ const JsonFormater = (
   return array;
 };
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+const vscode = acquireVsCodeApi();
+
 function App() {
-  const [json, setJson] = useState();
+  const oldJson = vscode.getState();
+
+  const [json, setJson] = useState(oldJson);
 
   useEffect(() => {
     window.addEventListener('message', (event) => {
       const message = event.data;
       setJson(message.json);
+      vscode.setState(message.json);
     });
   }, []);
 

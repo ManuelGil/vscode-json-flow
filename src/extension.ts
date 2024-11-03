@@ -3,6 +3,7 @@
 import * as vscode from 'vscode';
 
 // Import the Configs, Controllers, and Providers
+import { readFileSync } from 'fs';
 import { EXTENSION_ID, ExtensionConfig } from './app/configs';
 import { FeedbackController, FilesController } from './app/controllers';
 import { FeedbackProvider, FilesProvider, JSONProvider } from './app/providers';
@@ -154,7 +155,17 @@ export function activate(context: vscode.ExtensionContext) {
   // Register the command to open the JSON preview
   const disposableOpenJSONPreview = vscode.commands.registerCommand(
     `${EXTENSION_ID}.json.openPreview`,
-    (uri) => JSONProvider.openPreview(context.extensionUri, uri),
+    (uri) => {
+      const panel = JSONProvider.createPanel(context.extensionUri);
+
+      setTimeout(() => {
+        const jsonContent = readFileSync(uri.fsPath, 'utf8');
+
+        panel.webview.postMessage({
+          json: { root: JSON.parse(jsonContent) },
+        });
+      }, 500);
+    },
   );
 
   context.subscriptions.push(disposableOpenJSONPreview);
