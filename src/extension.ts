@@ -44,9 +44,19 @@ export function activate(context: vscode.ExtensionContext) {
     (uri) => filesController.openFile(uri),
   );
 
+  const disposableConvertToJson = vscode.commands.registerCommand(
+    `${EXTENSION_ID}.files.convertToJson`,
+    (uri) => filesController.convertToJson(uri),
+  );
+
   const disposableGetFileProperties = vscode.commands.registerCommand(
     `${EXTENSION_ID}.files.getFileProperties`,
     (uri) => filesController.getFileProperties(uri),
+  );
+
+  const disponsableCopyContentAsJson = vscode.commands.registerCommand(
+    `${EXTENSION_ID}.files.copyContentAsJson`,
+    (uri) => filesController.copyContentAsJson(uri),
   );
 
   const disponsableCopyContent = vscode.commands.registerCommand(
@@ -56,7 +66,9 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     disposableOpenFile,
+    disposableConvertToJson,
     disposableGetFileProperties,
+    disponsableCopyContentAsJson,
     disponsableCopyContent,
   );
 
@@ -163,7 +175,11 @@ export function activate(context: vscode.ExtensionContext) {
         const json = parseJSONContent(document.getText(), languageId);
         const fileName = document.fileName.split(/[\\/]/).pop() || 'JSON Flow';
 
-        panel.title = document.fileName;
+        panel.title = fileName;
+
+        if (json === null) {
+          return;
+        }
 
         setTimeout(() => {
           panel.webview.postMessage({

@@ -34,7 +34,7 @@ const JsonFormater = (
       const item: jsonType = {
         id: String(items),
         data: { label: String(items) },
-        position: { x: 100, y: depth },
+        position: { x: 100, y: depth * 10 },
         parent,
         style,
       };
@@ -51,7 +51,7 @@ const JsonFormater = (
         data: {
           label: key + (typeof value === 'object' ? '' : `: ${value}`),
         },
-        position: { x: index * 100, y: depth },
+        position: { x: index * 100, y: depth * 10 },
         parent,
         style,
       };

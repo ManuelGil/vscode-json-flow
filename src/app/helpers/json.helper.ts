@@ -7,10 +7,21 @@ import * as toml from 'toml';
 import { window } from 'vscode';
 import * as yaml from 'yaml';
 
+/**
+ * The parseJSONContent function.
+ *
+ * @function parseJSONContent
+ * @param {string} content - The content to parse
+ * @param {string} type - The type of content
+ * @returns {object | null} - The parsed content
+ */
 export const parseJSONContent = (
   content: string,
   type: string,
 ): object | null => {
+  const errors: ParseError[] = [];
+  let result;
+
   switch (type) {
     case 'json':
       try {
@@ -22,8 +33,7 @@ export const parseJSONContent = (
       }
 
     case 'jsonc':
-      const errors: ParseError[] = [];
-      const result = parse(content, errors);
+      result = parse(content, errors);
       if (errors.length === 0) {
         return result;
       } else {

@@ -22,15 +22,40 @@
 		"Other"
 	],
 	"keywords": [
+		"cfg",
+		"conf",
+		"env",
+		"explorer",
+		"extension",
+		"files",
+		"flow",
+		"hcl",
+		"ini",
+		"json explorer",
+		"json files",
+		"json flow",
+		"json list",
+		"json manager",
+		"json view",
+		"json-explorer",
+		"json-files",
+		"json-flow",
+		"json-list",
+		"json-manager",
+		"json-view",
 		"json",
 		"jsonc",
-		"manager",
-		"files",
-		"explorer",
 		"list",
+		"manager",
+		"properties",
+		"toml",
 		"view",
-		"extension",
-		"vscode"
+		"vscode",
+		"vscode-extension",
+		"vscode-json-flow",
+		"xml",
+		"yaml",
+		"yml"
 	],
 	"homepage": "https://github.com/ManuelGil/vscode-json-flow",
 	"repository": {
@@ -98,8 +123,18 @@
 				"category": "JSON Flow"
 			},
 			{
+				"command": "jsonManager.files.convertToJson",
+				"title": "Convert to JSON",
+				"category": "JSON Flow"
+			},
+			{
 				"command": "jsonManager.files.getFileProperties",
 				"title": "Get File Properties",
+				"category": "JSON Flow"
+			},
+			{
+				"command": "jsonManager.files.copyContentAsJson",
+				"title": "Copy Content as JSON",
 				"category": "JSON Flow"
 			},
 			{
@@ -123,14 +158,24 @@
 					"group": "1_navigation"
 				},
 				{
+					"command": "jsonManager.files.convertToJson",
+					"when": "view == jsonManager.filesView && viewItem == file",
+					"group": "2_modification"
+				},
+				{
 					"command": "jsonManager.files.copyContent",
 					"when": "view == jsonManager.filesView && viewItem == file",
-					"group": "2_cutcopypaste"
+					"group": "3_cutcopypaste@1"
+				},
+				{
+					"command": "jsonManager.files.copyContentAsJson",
+					"when": "view == jsonManager.filesView && viewItem == file",
+					"group": "3_cutcopypaste@2"
 				},
 				{
 					"command": "jsonManager.files.getFileProperties",
 					"when": "view == jsonManager.filesView && viewItem == file",
-					"group": "3_properties"
+					"group": "4_properties"
 				}
 			]
 		},

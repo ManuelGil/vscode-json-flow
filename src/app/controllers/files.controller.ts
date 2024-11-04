@@ -1,7 +1,7 @@
 import { env, ThemeIcon, window, workspace } from 'vscode';
 
 import { EXTENSION_ID, ExtensionConfig } from '../configs';
-import { directoryMap, getRelativePath } from '../helpers';
+import { directoryMap, getRelativePath, parseJSONContent } from '../helpers';
 import { NodeModel } from '../models';
 
 /**
@@ -117,27 +117,29 @@ export class FilesController {
   }
 
   /**
-   * The getFileProperties method.
+   * The convertToJson method.
    *
-   * @function getFileProperties
+   * @function convertToJson
    * @param {NodeModel} node - The node model
    * @public
    * @memberof FilesController
    * @example
-   * controller.getFileProperties('file:///path/to/file');
+   * controller.convertToJson('file:///path/to/file');
    *
    * @returns {void} - The promise
    */
-  getFileProperties(node: NodeModel) {
+  convertToJson(node: NodeModel) {
     if (node.resourceUri) {
-      workspace.openTextDocument(node.resourceUri).then((document) => {
-        const { fileName, languageId, lineCount } = document;
+      workspace.openTextDocument(node.resourceUri).then(async (document) => {
+        const { languageId } = document;
+        const json = parseJSONContent(document.getText(), languageId);
 
-        window.showInformationMessage(
-          `File: ${fileName}\n
-          Language: ${languageId}\n
-          Lines: ${lineCount}`,
-        );
+        const jsonDocument = await workspace.openTextDocument({
+          language: 'json',
+          content: JSON.stringify(json, null, 2),
+        });
+
+        window.showTextDocument(jsonDocument);
       });
     }
   }
@@ -159,6 +161,56 @@ export class FilesController {
       workspace.openTextDocument(node.resourceUri).then((document) => {
         env.clipboard.writeText(document.getText());
         window.showInformationMessage('Content copied to clipboard');
+      });
+    }
+  }
+
+  /**
+   * The copyContentAsJson method.
+   *
+   * @function copyContentAsJson
+   * @param {NodeModel} node - The node model
+   * @public
+   * @memberof FilesController
+   * @example
+   * controller.copyContentAsJson('file:///path/to/file');
+   *
+   * @returns {void} - The promise
+   */
+  copyContentAsJson(node: NodeModel) {
+    if (node.resourceUri) {
+      workspace.openTextDocument(node.resourceUri).then(async (document) => {
+        const { languageId } = document;
+        const json = parseJSONContent(document.getText(), languageId);
+
+        env.clipboard.writeText(JSON.stringify(json, null, 2));
+        window.showInformationMessage('Content copied as JSON to clipboard');
+      });
+    }
+  }
+
+  /**
+   * The getFileProperties method.
+   *
+   * @function getFileProperties
+   * @param {NodeModel} node - The node model
+   * @public
+   * @memberof FilesController
+   * @example
+   * controller.getFileProperties('file:///path/to/file');
+   *
+   * @returns {void} - The promise
+   */
+  getFileProperties(node: NodeModel) {
+    if (node.resourceUri) {
+      workspace.openTextDocument(node.resourceUri).then((document) => {
+        const { fileName, languageId, lineCount } = document;
+
+        window.showInformationMessage(
+          `File: ${fileName}\n
+          Language: ${languageId}\n
+          Lines: ${lineCount}`,
+        );
       });
     }
   }
