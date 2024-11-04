@@ -2,6 +2,7 @@ import * as dotenv from 'dotenv';
 import { XMLParser } from 'fast-xml-parser';
 import hcl from 'hcl-parser';
 import * as ini from 'ini';
+import json5 from 'json5';
 import { parse, ParseError } from 'jsonc-parser';
 import * as toml from 'toml';
 import { window } from 'vscode';
@@ -42,6 +43,15 @@ export const parseJSONContent = (
         return null;
       }
 
+    case 'json5':
+      try {
+        return json5.parse(content);
+      } catch (error) {
+        console.error('Error parsing JSON5:', error);
+        return null;
+      }
+
+    case 'dockerfile':
     case 'yaml':
       try {
         return yaml.parse(content);
