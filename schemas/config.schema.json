@@ -4,9 +4,22 @@
 	"properties": {
 		"jsonManager.files.include": {
 			"type": "array",
-			"default": ["json", "jsonc"],
+			"default": [
+				"json",
+				"jsonc",
+				"yaml",
+				"yml",
+				"toml",
+				"ini",
+				"cfg",
+				"conf",
+				"properties",
+				"env",
+				"xml",
+				"hcl"
+			],
 			"scope": "resource",
-			"description": "Glob patterns to include in the package. The default is json and jsonc."
+			"description": "Glob patterns to include in the package."
 		},
 		"jsonManager.files.exclude": {
 			"type": "array",

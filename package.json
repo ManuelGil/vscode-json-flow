@@ -50,7 +50,17 @@
 					"type": "array",
 					"default": [
 						"json",
-						"jsonc"
+						"jsonc",
+						"yaml",
+						"yml",
+						"toml",
+						"ini",
+						"cfg",
+						"conf",
+						"properties",
+						"env",
+						"xml",
+						"hcl"
 					],
 					"scope": "resource",
 					"description": "Glob patterns to include in the package. The default is json and jsonc."
@@ -178,8 +188,16 @@
 	"dependencies": {
 		"@vscode/webview-ui-toolkit": "^1.4.0",
 		"@xyflow/react": "^12.0.4",
+		"dotenv": "^16.4.5",
+		"fast-xml-parser": "^4.5.0",
+		"hcl-parser": "^0.1.1",
+		"ini": "^5.0.0",
+		"json5": "^2.2.3",
+		"jsonc-parser": "^3.3.1",
 		"react": "^18.3.1",
-		"react-dom": "^18.3.1"
+		"react-dom": "^18.3.1",
+		"toml": "^3.0.0",
+		"yaml": "^2.6.0"
 	},
 	"devDependencies": {
 		"@commitlint/cli": "^19.4.0",

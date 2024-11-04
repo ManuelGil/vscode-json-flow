@@ -3,9 +3,9 @@
 import * as vscode from 'vscode';
 
 // Import the Configs, Controllers, and Providers
-import { readFileSync } from 'fs';
 import { EXTENSION_ID, ExtensionConfig } from './app/configs';
 import { FeedbackController, FilesController } from './app/controllers';
+import { parseJSONContent } from './app/helpers';
 import { FeedbackProvider, FilesProvider, JSONProvider } from './app/providers';
 
 // this method is called when your extension is activated
@@ -152,19 +152,25 @@ export function activate(context: vscode.ExtensionContext) {
   // Register the commands
   // -----------------------------------------------------------------
 
-  // Register the command to open the JSON preview
+  // Register the command to open the JSON Flow
   const disposableOpenJSONPreview = vscode.commands.registerCommand(
     `${EXTENSION_ID}.json.openPreview`,
     (uri) => {
       const panel = JSONProvider.createPanel(context.extensionUri);
 
-      setTimeout(() => {
-        const jsonContent = readFileSync(uri.fsPath, 'utf8');
+      vscode.workspace.openTextDocument(uri.fsPath).then((document) => {
+        const { languageId } = document;
+        const json = parseJSONContent(document.getText(), languageId);
+        const fileName = document.fileName.split(/[\\/]/).pop() || 'JSON Flow';
 
-        panel.webview.postMessage({
-          json: { root: JSON.parse(jsonContent) },
-        });
-      }, 500);
+        panel.title = document.fileName;
+
+        setTimeout(() => {
+          panel.webview.postMessage({
+            data: { [fileName]: json },
+          });
+        }, 500);
+      });
     },
   );
 

@@ -75,13 +75,13 @@ function App() {
   useEffect(() => {
     window.addEventListener('message', (event) => {
       const message = event.data;
-      setJson(message.json);
-      vscode.setState(message.json);
+      setJson(message.data);
+      vscode.setState(message.data);
     });
   }, []);
 
   const jsonData = JsonFormater(json, Math.random() * 100, 10, [], '');
-  console.log('MAP', jsonData);
+
   return (
     <div className={'bg-stone-900'}>
       <UpdateNode nodesInitial={jsonData} />

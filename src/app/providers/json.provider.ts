@@ -120,7 +120,7 @@ export class JSONProvider {
 
     const panel = window.createWebviewPanel(
       JSONProvider.viewType,
-      'JSON Preview',
+      'JSON Flow',
       ViewColumn.One,
       this.getWebviewOptions(extensionUri),
     );
@@ -256,7 +256,7 @@ export class JSONProvider {
 
     <link href="${styleMainUri}" rel="stylesheet" />
 
-    <title>JSON Preview</title>
+    <title>JSON Flow</title>
   </head>
   <body>
     <div id="root"></div>
