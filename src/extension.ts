@@ -4,8 +4,11 @@ import * as vscode from 'vscode';
 
 // Import the Configs, Controllers, and Providers
 import { EXTENSION_ID, ExtensionConfig } from './app/configs';
-import { FeedbackController, FilesController } from './app/controllers';
-import { parseJSONContent } from './app/helpers';
+import {
+  FeedbackController,
+  FilesController,
+  JsonController,
+} from './app/controllers';
 import { FeedbackProvider, FilesProvider, JSONProvider } from './app/providers';
 
 // this method is called when your extension is activated
@@ -73,35 +76,28 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   // -----------------------------------------------------------------
-  // Register FilesProvider and list commands
+  // Register JSON commands
   // -----------------------------------------------------------------
 
-  // Create a new FilesProvider
-  const filesProvider = new FilesProvider(filesController);
+  // Create a new JsonController
+  const jsonController = new JsonController(context);
 
-  // Register the list provider
-  const filesTreeView = vscode.window.createTreeView(
-    `${EXTENSION_ID}.filesView`,
-    {
-      treeDataProvider: filesProvider,
-      showCollapseAll: true,
-    },
+  // Register the command to open the JSON Flow
+  const disposableShowPreview = vscode.commands.registerCommand(
+    `${EXTENSION_ID}.json.showPreview`,
+    (uri) => jsonController.showPreview(uri),
   );
 
-  const disposableRefreshList = vscode.commands.registerCommand(
-    `${EXTENSION_ID}.files.refreshList`,
-    () => filesProvider.refresh(),
+  // Register the command to show the JSON Flow for the selected part
+  const disposableShowPartialPreview = vscode.commands.registerCommand(
+    `${EXTENSION_ID}.json.showPartialPreview`,
+    () => jsonController.showPartialPreview(),
   );
 
-  context.subscriptions.push(filesTreeView, disposableRefreshList);
-
-  // -----------------------------------------------------------------
-  // Register FilesProvider and ListMethodsProvider events
-  // -----------------------------------------------------------------
-
-  vscode.workspace.onDidSaveTextDocument(() => {
-    filesProvider.refresh();
-  });
+  context.subscriptions.push(
+    disposableShowPreview,
+    disposableShowPartialPreview,
+  );
 
   // -----------------------------------------------------------------
   // Register FeedbackProvider and Feedback commands
@@ -145,6 +141,37 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   // -----------------------------------------------------------------
+  // Register FilesProvider and list commands
+  // -----------------------------------------------------------------
+
+  // Create a new FilesProvider
+  const filesProvider = new FilesProvider(filesController);
+
+  // Register the list provider
+  const filesTreeView = vscode.window.createTreeView(
+    `${EXTENSION_ID}.filesView`,
+    {
+      treeDataProvider: filesProvider,
+      showCollapseAll: true,
+    },
+  );
+
+  const disposableRefreshList = vscode.commands.registerCommand(
+    `${EXTENSION_ID}.files.refreshList`,
+    () => filesProvider.refresh(),
+  );
+
+  context.subscriptions.push(filesTreeView, disposableRefreshList);
+
+  // -----------------------------------------------------------------
+  // Register FilesProvider and ListMethodsProvider events
+  // -----------------------------------------------------------------
+
+  vscode.workspace.onDidSaveTextDocument(() => {
+    filesProvider.refresh();
+  });
+
+  // -----------------------------------------------------------------
   // Register the JSONProvider
   // -----------------------------------------------------------------
 
@@ -159,38 +186,6 @@ export function activate(context: vscode.ExtensionContext) {
       },
     });
   }
-
-  // -----------------------------------------------------------------
-  // Register the commands
-  // -----------------------------------------------------------------
-
-  // Register the command to open the JSON Flow
-  const disposableOpenJSONPreview = vscode.commands.registerCommand(
-    `${EXTENSION_ID}.json.openPreview`,
-    (uri) => {
-      const panel = JSONProvider.createPanel(context.extensionUri);
-
-      vscode.workspace.openTextDocument(uri.fsPath).then((document) => {
-        const { languageId } = document;
-        const json = parseJSONContent(document.getText(), languageId);
-        const fileName = document.fileName.split(/[\\/]/).pop() || 'JSON Flow';
-
-        panel.title = fileName;
-
-        if (json === null) {
-          return;
-        }
-
-        setTimeout(() => {
-          panel.webview.postMessage({
-            data: { [fileName]: json },
-          });
-        }, 500);
-      });
-    },
-  );
-
-  context.subscriptions.push(disposableOpenJSONPreview);
 }
 
 // this method is called when your extension is deactivated

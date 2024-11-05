@@ -98,16 +98,16 @@ export class JSONProvider {
 
   // Public methods
   /**
-   * The openPreview method.
+   * The createPanel method.
    *
-   * @function openPreview
+   * @function createPanel
    * @param {Uri} extensionUri - The extension URI
    * @param {Uri} json - The JSON URI
    * @public
    * @static
    * @memberof JSONProvider
    * @example
-   * JSONProvider.openPreview(extensionUri);
+   * JSONProvider.createPanel(extensionUri);
    *
    * @returns {WebviewPanel}
    */

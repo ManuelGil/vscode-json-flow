@@ -72,7 +72,7 @@
 		"configuration": {
 			"title": "JSON Flow",
 			"properties": {
-				"jsonManager.files.include": {
+				"jsonFlow.files.include": {
 					"type": "array",
 					"default": [
 						"json",
@@ -92,7 +92,7 @@
 					"scope": "resource",
 					"description": "Glob patterns to include in the package. The default is json and jsonc."
 				},
-				"jsonManager.files.exclude": {
+				"jsonFlow.files.exclude": {
 					"type": "array",
 					"default": [
 						"**/node_modules/**",
@@ -104,7 +104,7 @@
 					"scope": "resource",
 					"description": "Glob patterns to exclude from the package. The default is node_modules, dist, out, build, and any hidden files."
 				},
-				"jsonManager.files.showPath": {
+				"jsonFlow.files.showPath": {
 					"type": "boolean",
 					"default": true,
 					"scope": "resource",
@@ -114,76 +114,100 @@
 		},
 		"commands": [
 			{
-				"command": "jsonManager.files.refreshList",
+				"command": "jsonFlow.files.refreshList",
 				"title": "Refresh List",
 				"category": "JSON Flow",
 				"icon": "$(refresh)"
 			},
 			{
-				"command": "jsonManager.files.openFile",
+				"command": "jsonFlow.files.openFile",
 				"title": "Open File",
 				"category": "JSON Flow"
 			},
 			{
-				"command": "jsonManager.files.convertToJson",
+				"command": "jsonFlow.files.convertToJson",
 				"title": "Convert to JSON",
 				"category": "JSON Flow"
 			},
 			{
-				"command": "jsonManager.files.getFileProperties",
+				"command": "jsonFlow.files.getFileProperties",
 				"title": "Get File Properties",
 				"category": "JSON Flow"
 			},
 			{
-				"command": "jsonManager.files.copyContentAsJson",
+				"command": "jsonFlow.files.copyContentAsJson",
 				"title": "Copy Content as JSON",
 				"category": "JSON Flow"
 			},
 			{
-				"command": "jsonManager.files.copyContent",
+				"command": "jsonFlow.files.copyContent",
 				"title": "Copy Content to Clipboard",
 				"category": "JSON Flow"
+			},
+			{
+				"command": "jsonFlow.json.showPartialPreview",
+				"title": "Show Selected JSON",
+				"category": "JSON Flow"
+			}
+		],
+		"submenus": [
+			{
+				"id": "jsonFlow.editor.submenu",
+				"label": "JSON Flow"
 			}
 		],
 		"menus": {
 			"view/title": [
 				{
-					"command": "jsonManager.files.refreshList",
-					"when": "view == jsonManager.filesView",
+					"command": "jsonFlow.files.refreshList",
+					"when": "view == jsonFlow.filesView",
 					"group": "navigation"
 				}
 			],
 			"view/item/context": [
 				{
-					"command": "jsonManager.files.openFile",
-					"when": "view == jsonManager.filesView && viewItem == file",
+					"command": "jsonFlow.files.openFile",
+					"when": "view == jsonFlow.filesView && viewItem == file",
 					"group": "1_navigation"
 				},
 				{
-					"command": "jsonManager.files.convertToJson",
-					"when": "view == jsonManager.filesView && viewItem == file",
+					"command": "jsonFlow.files.convertToJson",
+					"when": "view == jsonFlow.filesView && viewItem == file",
 					"group": "2_modification"
 				},
 				{
-					"command": "jsonManager.files.copyContent",
-					"when": "view == jsonManager.filesView && viewItem == file",
+					"command": "jsonFlow.files.copyContent",
+					"when": "view == jsonFlow.filesView && viewItem == file",
 					"group": "3_cutcopypaste@1"
 				},
 				{
-					"command": "jsonManager.files.copyContentAsJson",
-					"when": "view == jsonManager.filesView && viewItem == file",
+					"command": "jsonFlow.files.copyContentAsJson",
+					"when": "view == jsonFlow.filesView && viewItem == file",
 					"group": "3_cutcopypaste@2"
 				},
 				{
-					"command": "jsonManager.files.getFileProperties",
-					"when": "view == jsonManager.filesView && viewItem == file",
+					"command": "jsonFlow.files.getFileProperties",
+					"when": "view == jsonFlow.filesView && viewItem == file",
 					"group": "4_properties"
+				}
+			],
+			"editor/context": [
+				{
+					"submenu": "jsonFlow.editor.submenu",
+					"group": "1_modification",
+					"when": "editorHasSelection"
+				}
+			],
+			"jsonFlow.editor.submenu": [
+				{
+					"command": "jsonFlow.json.showPartialPreview",
+					"alt": "Show Selected JSON"
 				}
 			]
 		},
 		"viewsWelcome": [
 			{
-				"view": "jsonManager.filesView",
+				"view": "jsonFlow.filesView",
 				"contents": "To effectively capture files, ensure you include the file type within the workspace settings.\n[Open Workspace Setting](command:workbench.action.openWorkspaceSettingsFile)\nTo learn more about how to use the Starter Kit [read our docs](https://docs.sml.li)."
 			}
 		],
@@ -199,12 +223,12 @@
 		"views": {
 			"json-explorer": [
 				{
-					"id": "jsonManager.filesView",
+					"id": "jsonFlow.filesView",
 					"name": "List of Files",
 					"visibility": "visible"
 				},
 				{
-					"id": "jsonManager.feedbackView",
+					"id": "jsonFlow.feedbackView",
 					"name": "Help and Feedback",
 					"visibility": "visible"
 				}

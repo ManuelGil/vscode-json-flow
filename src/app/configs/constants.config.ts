@@ -8,7 +8,7 @@
  *
  * @returns {string} - The unique identifier of the extension
  */
-export const EXTENSION_ID: string = 'jsonManager';
+export const EXTENSION_ID: string = 'jsonFlow';
 
 /**
  * EXTENSION_NAME: The name of the extension.

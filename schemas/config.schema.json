@@ -2,7 +2,7 @@
 	"$schema": "http://json-schema.org/draft-07/schema#",
 	"type": "object",
 	"properties": {
-		"jsonManager.files.include": {
+		"jsonFlow.files.include": {
 			"type": "array",
 			"default": [
 				"json",
@@ -22,7 +22,7 @@
 			"scope": "resource",
 			"description": "Glob patterns to include in the package."
 		},
-		"jsonManager.files.exclude": {
+		"jsonFlow.files.exclude": {
 			"type": "array",
 			"default": [
 				"**/node_modules/**",
@@ -34,7 +34,7 @@
 			"scope": "resource",
 			"description": "Glob patterns to exclude from the package. The default is node_modules, dist, out, build, and any hidden files."
 		},
-		"jsonManager.files.showPath": {
+		"jsonFlow.files.showPath": {
 			"type": "boolean",
 			"default": true,
 			"scope": "resource",

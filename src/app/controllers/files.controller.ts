@@ -80,7 +80,7 @@ export class FilesController {
             filename ?? 'Untitled',
             new ThemeIcon('file'),
             {
-              command: `${EXTENSION_ID}.json.openPreview`,
+              command: `${EXTENSION_ID}.json.showPreview`,
               title: 'Open Preview',
               arguments: [document.uri],
             },

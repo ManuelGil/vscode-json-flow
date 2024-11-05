@@ -48,18 +48,18 @@ Configure your project by creating or updating a settings.json file at the proje
 
    ```jsonc
    {
-     "jsonManager.files.include": [
+     "jsonFlow.files.include": [
          "json",
          "jsonc"
      ], // The file extensions to watch for changes. Example: "json", "jsonc"
-     "jsonManager.files.exclude": [
+     "jsonFlow.files.exclude": [
          "**/node_modules/**",
          "**/dist/**",
          "**/out/**",
          "**/build/**",
          "**/.*/**"
      ], // The files to exclude from watching. Example: "**/node_modules/**", "**/dist/**", "**/out/**", "**/build/**", "**/.*/**"
-     "jsonManager.files.showPath": true, // Show the path of the file in the file name. Example: "home.component.tsx (pages/home)"
+     "jsonFlow.files.showPath": true, // Show the path of the file in the file name. Example: "home.component.tsx (pages/home)"
    }
    ```
 
