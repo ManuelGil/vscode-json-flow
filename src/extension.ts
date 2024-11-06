@@ -123,21 +123,11 @@ export function activate(context: vscode.ExtensionContext) {
     `${EXTENSION_ID}.feedback.rateUs`,
     () => feedbackProvider.controller.rateUs(),
   );
-  const disposableFollowUs = vscode.commands.registerCommand(
-    `${EXTENSION_ID}.feedback.followUs`,
-    () => feedbackProvider.controller.followUs(),
-  );
-  const disposableSupportUs = vscode.commands.registerCommand(
-    `${EXTENSION_ID}.feedback.supportUs`,
-    () => feedbackProvider.controller.supportUs(),
-  );
 
   context.subscriptions.push(
     feedbackTreeView,
     disposableReportIssues,
     disposableRateUs,
-    disposableFollowUs,
-    disposableSupportUs,
   );
 
   // -----------------------------------------------------------------

@@ -203,13 +203,13 @@ export class FilesController {
    */
   getFileProperties(node: NodeModel) {
     if (node.resourceUri) {
-      workspace.openTextDocument(node.resourceUri).then((document) => {
-        const { fileName, languageId, lineCount } = document;
+      workspace.openTextDocument(node.resourceUri).then(async (document) => {
+        const { fileName, languageId, lineCount, version } = document;
 
-        window.showInformationMessage(
-          `File: ${fileName}\n
-          Language: ${languageId}\n
-          Lines: ${lineCount}`,
+        // Show the message
+        await window.showInformationMessage(
+          `File Name: ${fileName}\nLanguage: ${languageId}\nLines: ${lineCount}\nVersion: ${version}`,
+          { modal: true },
         );
       });
     }

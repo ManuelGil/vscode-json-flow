@@ -162,14 +162,6 @@ export class FeedbackProvider implements TreeDataProvider<NodeModel> {
         title: 'Rate Us',
         command: `${EXTENSION_ID}.feedback.rateUs`,
       }),
-      new NodeModel('Follow Us', new ThemeIcon('twitter'), {
-        title: 'Follow Us',
-        command: `${EXTENSION_ID}.feedback.followUs`,
-      }),
-      new NodeModel('Support Us', new ThemeIcon('heart'), {
-        title: 'Support Us',
-        command: `${EXTENSION_ID}.feedback.supportUs`,
-      }),
     ];
   }
 }

@@ -7,21 +7,35 @@
 [![GitHub Repo stars](https://img.shields.io/github/stars/ManuelGil/vscode-json-flow?style=for-the-badge&logo=github)](https://github.com/ManuelGil/vscode-json-flow)
 [![GitHub license](https://img.shields.io/github/license/ManuelGil/vscode-json-flow?style=for-the-badge&logo=github)](https://github.com/ManuelGil/vscode-json-flow/blob/main/LICENSE)
 
-This extension allows you to manage your JSON files in a more efficient way. It provides a set of commands to manipulate JSON files, such as sorting, formatting, and minifying.
+Transform your JSON files into interactive node-based graphs directly in Visual Studio Code. JSON Flow makes working with structured data effortless and visually intuitive, turning raw data into dynamic, interactive visualizations. Perfect for developers, analysts, and data enthusiasts who want to understand and navigate complex JSON structures with ease.
+
+[![JSON Flow](https://raw.githubusercontent.com/ManuelGil/vscode-json-flow/main/images/json-flow.png)](https://marketplace.visualstudio.com/items?itemName=imgildev.vscode-json-flow)
 
 ## Table of Contents
 
 - [JSON Flow](#json-flow)
   - [Table of Contents](#table-of-contents)
   - [Requirements](#requirements)
+  - [Features](#features)
+    - [Interactive Data Visualization](#interactive-data-visualization)
+    - [Enhanced JSON Management](#enhanced-json-management)
+    - [Supported File Formats](#supported-file-formats)
+      - [JSON Family](#json-family)
+      - [YAML](#yaml)
+      - [TOML](#toml)
+      - [INI Format](#ini-format)
+      - [Properties and Environment Files](#properties-and-environment-files)
+      - [XML](#xml)
+      - [HCL](#hcl)
+    - [File Explorer](#file-explorer)
+  - [Usage](#usage)
   - [Project Settings](#project-settings)
   - [Development](#development)
     - [Getting Started](#getting-started)
     - [React Webview](#react-webview)
   - [Build](#build)
     - [Compile Webview](#compile-webview)
-    - [Compile Extension](#compile-extension)
-  - [Connect with me](#connect-with-me)
+  - [VSXpert Template](#vsxpert-template)
   - [Other Extensions](#other-extensions)
   - [Contributing](#contributing)
   - [Code of Conduct](#code-of-conduct)
@@ -32,6 +46,81 @@ This extension allows you to manage your JSON files in a more efficient way. It 
 ## Requirements
 
 - VSCode 1.76.0 or later
+
+## Features
+
+### Interactive Data Visualization
+
+- **Node-Based Graphs**: Instantly visualize your JSON data as interactive node-based graphs, making complex structures easy to interpret and navigate.
+- **Dynamic Data Exploration**: Use zoom and navigation controls to explore your data in real-time, providing a seamless, intuitive way to dive into JSON structures.
+
+### Enhanced JSON Management
+
+- **File Explorer**: Access and manage JSON files efficiently with the built-in file explorer, offering a range of organizational and file management tools.
+- **File Conversion**: Easily convert formats like YAML, TOML, INI, and others to JSON with a single click, streamlining your workflow and expanding compatibility.
+- **Show Selection as JSON**: Preview selected content in the JSON Flow view, simplifying data exploration and helping you make sense of your data at a glance.
+- **Copy Content to Clipboard**: Copy the content of the selected file to the clipboard, simplifying data sharing and integration with other tools.
+- **Copy Content as JSON**: Copy the content of the selected file as JSON, enabling seamless data transfer and integration with other applications.
+- **Get File Properties**: Quickly access the basic properties of the selected file, including path, language, and line count, streamlining file management and organization.
+
+### Supported File Formats
+
+#### JSON Family
+
+- **`json`**: Standard JSON files for all your data needs.
+- **`jsonc`**: JSON with comments — great for configuration files that need explanations.
+- **`json5`**: A more relaxed JSON format, offering improved readability and flexibility.
+
+#### YAML
+
+- **`yaml`** & **`yml`**: Widely used for configuration files, CI/CD pipelines, cloud deployment settings, and more.
+
+#### TOML
+
+- **`toml`**: A user-friendly config file format, especially popular in Rust and other applications needing readability.
+
+#### INI Format
+
+- **`ini`, `cfg`, `conf`**: Classic key-value format for app and system settings, widely used in software configurations.
+
+#### Properties and Environment Files
+
+- **`properties`**: Java-style configuration files, perfect for managing app settings.
+- **`env`**: Environment variable files commonly used for application configurations and secrets.
+
+#### XML
+
+- **`xml`**: A versatile, structured data format used in a variety of applications and document storage.
+
+#### HCL
+
+- **`hcl`**: HashiCorp Configuration Language, often used in DevOps tools like Terraform.
+
+### File Explorer
+
+| Title  | Purpose |
+| --- | --- |
+| Open File | Open the selected file |
+| Convert to JSON | Convert the selected file to JSON |
+| Copy Content to Clipboard | Copy the content of the selected file to the clipboard |
+| Copy Content as JSON | Copy the content of the selected file as JSON |
+| Get File Properties | Get the properties of the selected file |
+| Show Selection as JSON | Show the Selection in the JSON Flow view |
+
+## Usage
+
+1. Open a JSON file in Visual Studio Code.
+
+2. Click on the JSON Flow icon in the top right corner of the editor.
+
+3. The JSON Flow view will open, displaying your JSON data as an interactive node-based graph.
+
+4. Click on the navigation buttons to zoom in and out, and explore your data in real-time.
+
+   - **Zoom In**: Click on the `+` button to zoom in on the graph.
+   - **Zoom Out**: Click on the `-` button to zoom out on the graph.
+
+![JSON Flow](https://raw.githubusercontent.com/ManuelGil/vscode-json-flow/main/images/json-flow.gif)
 
 ## Project Settings
 
@@ -125,36 +214,17 @@ Make your changes in the `webview` directory.
 3. The compiled files will be in the `out` directory.
 4. Press `F5` to open a new window with the extension loaded.
 
-### Compile Extension
+## VSXpert Template
 
-1. Run the package command:
-
-   ```bash
-   vsce package
-   ```
-
-2. Run the publish command:
-
-   ```bash
-   vsce publish
-   ```
-
-## Connect with me
-
-[![GitHub followers](https://img.shields.io/github/followers/ManuelGil?style=for-the-badge&logo=github)](https://github.com/ManuelGil)
-[![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/imgildev?style=for-the-badge&logo=x)](https://twitter.com/imgildev)
+This extension was created using [VSXpert](https://vsxpert.com), a template that helps you create Visual Studio Code extensions with ease. VSXpert provides a simple and easy-to-use structure to get you started quickly.
 
 ## Other Extensions
 
-- [NestJS File Generator](https://marketplace.visualstudio.com/items?itemName=imgildev.vscode-nestjs-generator)
-- [NestJS Snippets](https://marketplace.visualstudio.com/items?itemName=imgildev.vscode-nestjs-snippets-extension)
 - [Angular File Generator](https://marketplace.visualstudio.com/items?itemName=imgildev.vscode-angular-generator)
+- [NestJS File Generator](https://marketplace.visualstudio.com/items?itemName=imgildev.vscode-nestjs-generator)
 - [T3 Stack / NextJS / ReactJS File Generator](https://marketplace.visualstudio.com/items?itemName=imgildev.vscode-nextjs-generator)
-- [CodeIgniter 4 Snippets](https://marketplace.visualstudio.com/items?itemName=imgildev.vscode-codeigniter4-snippets)
-- [CodeIgniter 4 Shield Snippets](https://marketplace.visualstudio.com/items?itemName=imgildev.vscode-codeigniter4-shield-snippets)
+- [Auto Barrel](https://marketplace.visualstudio.com/items?itemName=imgildev.vscode-auto-barrel)
 - [CodeIgniter 4 Spark](https://marketplace.visualstudio.com/items?itemName=imgildev.vscode-codeigniter4-spark)
-- [Moodle Pack](https://marketplace.visualstudio.com/items?itemName=imgildev.vscode-moodle-snippets)
-- [Mustache Template Engine - Snippets & Autocomplete](https://marketplace.visualstudio.com/items?itemName=imgildev.vscode-mustache-snippets)
 
 ## Contributing
 

@@ -62,45 +62,6 @@ export const EXTENSION_BUGS_URL: string =
   'https://github.com/ManuelGil/vscode-json-flow/issues';
 
 /**
- * EXTENSION_SOCIAL_MEDIA_URL: The social media URL of the extension.
- * @type {string}
- * @public
- * @memberof Constants
- * @example
- * console.log(EXTENSION_SOCIAL_MEDIA_URL);
- *
- * @returns {string} - The social media URL of the extension
- */
-export const EXTENSION_SOCIAL_MEDIA_URL: string =
-  'https://github.com/ManuelGil';
-
-/**
- * EXTENSION_SPONSOR_URL: The sponsor URL of the extension.
- * @type {string}
- * @public
- * @memberof Constants
- * @example
- * console.log(EXTENSION_SPONSOR_URL);
- *
- * @returns {string} - The sponsor URL of the extension
- */
-export const EXTENSION_SPONSOR_URL: string =
-  'https://github.com/sponsors/ManuelGil';
-
-/**
- * EXTENSION_PAYPAL_URL: The PayPal URL of the extension.
- * @type {string}
- * @public
- * @memberof Constants
- * @example
- * console.log(EXTENSION_PAYPAL_URL);
- *
- * @returns {string} - The PayPal URL of the extension
- */
-export const EXTENSION_PAYPAL_URL: string =
-  'https://www.paypal.com/paypalme/ManuelFGil';
-
-/**
  * INCLUDE: The files to include.
  * @type {string[]}
  * @public
