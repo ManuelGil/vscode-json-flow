@@ -3,113 +3,146 @@ import { XMLParser } from 'fast-xml-parser';
 import hcl from 'hcl-parser';
 import * as ini from 'ini';
 import json5 from 'json5';
-import { parse, ParseError } from 'jsonc-parser';
+import jsonc, { parse, ParseError } from 'jsonc-parser';
 import * as toml from 'toml';
 import { window } from 'vscode';
 import * as yaml from 'yaml';
+
+/**
+ * The FileType type.
+ *
+ * @type {FileType}
+ */
+export type FileType =
+  | 'json'
+  | 'jsonc'
+  | 'json5'
+  | 'dockercompose'
+  | 'yaml'
+  | 'toml'
+  | 'ini'
+  | 'properties'
+  | 'env'
+  | 'xml'
+  | 'hcl';
+
+/**
+ * Type guard to verify if a value is a valid FileType.
+ *
+ * @param value - The value to check.
+ * @returns {value is FileType} - True if the value is a valid FileType, false otherwise.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const isFileTypeSupported = (value: any): value is FileType => {
+  const validFileTypes: FileType[] = [
+    'json',
+    'jsonc',
+    'json5',
+    'dockercompose',
+    'yaml',
+    'toml',
+    'ini',
+    'properties',
+    'env',
+    'xml',
+    'hcl',
+  ];
+
+  return validFileTypes.includes(value);
+};
 
 /**
  * The parseJSONContent function.
  *
  * @function parseJSONContent
  * @param {string} content - The content to parse
- * @param {string} type - The type of content
+ * @param {FileType} type - The type of content
  * @returns {object | null} - The parsed content
  */
 export const parseJSONContent = (
   content: string,
-  type: string,
+  type: FileType,
 ): object | null => {
-  const errors: ParseError[] = [];
-  let result;
-
-  switch (type) {
-    case 'json':
-      try {
+  try {
+    switch (type) {
+      case 'json':
         return JSON.parse(content);
-      } catch (error) {
-        console.error('Error parsing JSON:', error);
-        window.showErrorMessage('Error parsing JSON:' + error);
-        return null;
+
+      case 'jsonc': {
+        const errors: ParseError[] = [];
+        const parsed = parse(content, errors);
+
+        if (errors.length > 0) {
+          handleJsoncErrors(errors);
+        }
+
+        return errors.length === 0 ? parsed : null;
       }
 
-    case 'jsonc':
-      result = parse(content, errors);
-      if (errors.length === 0) {
-        return result;
-      } else {
-        console.error('Error parsing JSONC:', errors);
-        window.showErrorMessage('Error parsing JSONC:' + errors);
-        return null;
-      }
-
-    case 'json5':
-      try {
+      case 'json5':
         return json5.parse(content);
-      } catch (error) {
-        console.error('Error parsing JSON5:', error);
-        return null;
-      }
 
-    case 'dockerfile':
-    case 'yaml':
-      try {
+      case 'dockercompose':
+      case 'yaml':
         return yaml.parse(content);
-      } catch (error) {
-        console.error('Error parsing YAML:', error);
-        window.showErrorMessage('Error parsing YAML:' + error);
-        return null;
-      }
 
-    case 'toml':
-      try {
+      case 'toml':
         return toml.parse(content);
-      } catch (error) {
-        console.error('Error parsing TOML:', error);
-        window.showErrorMessage('Error parsing TOML:' + error);
-        return null;
-      }
 
-    case 'ini':
-    case 'properties':
-      try {
+      case 'ini':
+      case 'properties':
         return ini.parse(content);
-      } catch (error) {
-        console.error('Error parsing INI/Properties:', error);
-        window.showErrorMessage('Error parsing INI/Properties:' + error);
-        return null;
-      }
 
-    case 'env':
-      try {
+      case 'env':
         return dotenv.parse(content);
-      } catch (error) {
-        console.error('Error parsing ENV:', error);
-        window.showErrorMessage('Error parsing ENV:' + error);
-        return null;
-      }
 
-    case 'xml':
-      try {
+      case 'xml':
+        // eslint-disable-next-line no-case-declarations
         const parser = new XMLParser();
         return parser.parse(content);
-      } catch (error) {
-        console.error('Error parsing XML:', error);
-        window.showErrorMessage('Error parsing XML:' + error);
-        return null;
-      }
 
-    case 'hcl':
-      try {
+      case 'hcl':
         return hcl.parse(content);
-      } catch (error) {
-        console.error('Error parsing HCL:', error);
-        window.showErrorMessage('Error parsing HCL:' + error);
-        return null;
-      }
 
-    default:
-      window.showErrorMessage('Invalid file type');
-      return null;
+      default:
+        window.showErrorMessage('Invalid file type');
+        return null;
+    }
+  } catch (error) {
+    window.showErrorMessage(
+      `Error parsing ${type.toUpperCase()}: ${error.message}`,
+    );
+    return null;
   }
+};
+
+/**
+ * Handle JSONC parsing errors.
+ *
+ * @param {ParseError[]} errors - Array of JSONC parse errors
+ */
+const handleJsoncErrors = (errors: ParseError[]) => {
+  const errorMessages = {
+    [jsonc.ParseErrorCode.InvalidSymbol]: 'Invalid symbol',
+    [jsonc.ParseErrorCode.InvalidNumberFormat]: 'Invalid number format',
+    [jsonc.ParseErrorCode.PropertyNameExpected]: 'Property name expected',
+    [jsonc.ParseErrorCode.ValueExpected]: 'Value expected',
+    [jsonc.ParseErrorCode.ColonExpected]: 'Colon expected',
+    [jsonc.ParseErrorCode.CommaExpected]: 'Comma expected',
+    [jsonc.ParseErrorCode.CloseBraceExpected]: 'Close brace expected',
+    [jsonc.ParseErrorCode.CloseBracketExpected]: 'Close bracket expected',
+    [jsonc.ParseErrorCode.EndOfFileExpected]: 'End of file expected',
+    [jsonc.ParseErrorCode.InvalidCommentToken]: 'Invalid comment token',
+    [jsonc.ParseErrorCode.UnexpectedEndOfComment]: 'Unexpected end of comment',
+    [jsonc.ParseErrorCode.UnexpectedEndOfString]: 'Unexpected end of string',
+    [jsonc.ParseErrorCode.UnexpectedEndOfNumber]: 'Unexpected end of number',
+    [jsonc.ParseErrorCode.InvalidUnicode]: 'Invalid unicode',
+    [jsonc.ParseErrorCode.InvalidEscapeCharacter]: 'Invalid escape character',
+    [jsonc.ParseErrorCode.InvalidCharacter]: 'Invalid character',
+  };
+
+  errors.forEach((error) => {
+    const message = errorMessages[error.error] || 'Unknown error';
+    window.showErrorMessage(`Error parsing JSONC: ${message}`);
+  });
 };

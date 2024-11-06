@@ -1,7 +1,13 @@
 import { env, ThemeIcon, window, workspace } from 'vscode';
 
 import { EXTENSION_ID, ExtensionConfig } from '../configs';
-import { directoryMap, getRelativePath, parseJSONContent } from '../helpers';
+import {
+  directoryMap,
+  FileType,
+  getRelativePath,
+  isFileTypeSupported,
+  parseJSONContent,
+} from '../helpers';
 import { NodeModel } from '../models';
 
 /**
@@ -131,14 +137,36 @@ export class FilesController {
   convertToJson(node: NodeModel) {
     if (node.resourceUri) {
       workspace.openTextDocument(node.resourceUri).then(async (document) => {
-        const { languageId } = document;
-        const json = parseJSONContent(document.getText(), languageId);
+        // Get the language ID and file name
+        const { languageId, fileName } = document;
 
+        // Determine the file type, defaulting to 'json' if unsupported
+        let fileType = languageId;
+
+        if (!isFileTypeSupported(fileType)) {
+          const fileExtension = fileName.split('.').pop();
+
+          fileType = fileExtension;
+        }
+
+        // Parse JSON content
+        const jsonContent = parseJSONContent(
+          document.getText(),
+          fileType as FileType,
+        );
+
+        // Check if the content is null
+        if (jsonContent === null) {
+          return;
+        }
+
+        // Open the JSON document
         const jsonDocument = await workspace.openTextDocument({
           language: 'json',
-          content: JSON.stringify(json, null, 2),
+          content: JSON.stringify(jsonContent, null, 2),
         });
 
+        // Show the JSON document
         window.showTextDocument(jsonDocument);
       });
     }
@@ -180,10 +208,33 @@ export class FilesController {
   copyContentAsJson(node: NodeModel) {
     if (node.resourceUri) {
       workspace.openTextDocument(node.resourceUri).then(async (document) => {
-        const { languageId } = document;
-        const json = parseJSONContent(document.getText(), languageId);
+        // Get the language ID and file name
+        const { languageId, fileName } = document;
 
-        env.clipboard.writeText(JSON.stringify(json, null, 2));
+        // Determine the file type, defaulting to 'json' if unsupported
+        let fileType = languageId;
+
+        if (!isFileTypeSupported(fileType)) {
+          const fileExtension = fileName.split('.').pop();
+
+          fileType = fileExtension;
+        }
+
+        // Parse JSON content
+        const jsonContent = parseJSONContent(
+          document.getText(),
+          fileType as FileType,
+        );
+
+        // Check if the content is null
+        if (jsonContent === null) {
+          return;
+        }
+
+        // Copy the JSON content to the clipboard
+        env.clipboard.writeText(JSON.stringify(jsonContent, null, 2));
+
+        // Show the message
         window.showInformationMessage('Content copied as JSON to clipboard');
       });
     }

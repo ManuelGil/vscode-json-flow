@@ -1,5 +1,5 @@
 import { ExtensionContext, Range, Uri, window, workspace } from 'vscode';
-import { parseJSONContent } from '../helpers';
+import { FileType, isFileTypeSupported, parseJSONContent } from '../helpers';
 import { JSONProvider } from '../providers';
 
 /**
@@ -14,6 +14,21 @@ import { JSONProvider } from '../providers';
  * const controller = new JsonController(context);
  */
 export class JsonController {
+  // -----------------------------------------------------------------
+  // Properties
+  // -----------------------------------------------------------------
+
+  // Private properties
+  /**
+   * The preview delay constant.
+   * @type {number}
+   * @private
+   * @memberof JsonController
+   * @example
+   * private _processingDelay: number = 1000;
+   */
+  private _processingDelay: number = 500; // Delay constant for preview initialization
+
   // -----------------------------------------------------------------
   // Constructor
   // -----------------------------------------------------------------
@@ -46,24 +61,45 @@ export class JsonController {
    * @returns {void}
    */
   showPreview(uri: Uri): void {
-    const panel = JSONProvider.createPanel(this.context.extensionUri);
-
+    // Open the text document
     workspace.openTextDocument(uri.fsPath).then((document) => {
-      const { languageId } = document;
-      const json = parseJSONContent(document.getText(), languageId);
-      const fileName = document.fileName.split(/[\\/]/).pop() || 'JSON Flow';
+      // Get the language ID and file name
+      const { languageId, fileName } = document;
 
-      panel.title = fileName;
+      // Determine the file type, defaulting to 'json' if unsupported
+      let fileType = languageId;
 
-      if (json === null) {
+      if (!isFileTypeSupported(fileType)) {
+        const fileExtension = fileName.split('.').pop();
+
+        fileType = fileExtension;
+      }
+
+      // Parse JSON content
+      const jsonContent = parseJSONContent(
+        document.getText(),
+        fileType as FileType,
+      );
+
+      // Check if the JSON content is null
+      if (jsonContent === null) {
         return;
       }
 
+      // Derive the file name for the preview panel title
+      const displayName = fileName.split(/[\\/]/).pop() || 'JSON Flow';
+
+      // Initialize the webview panel
+      const panel = JSONProvider.createPanel(this.context.extensionUri);
+
+      panel.title = displayName;
+
+      // Post the message to the webview with a delay
       setTimeout(() => {
         panel.webview.postMessage({
-          data: { [fileName]: json },
+          data: { [displayName]: jsonContent },
         });
-      }, 500);
+      }, this._processingDelay);
     });
   }
 
@@ -79,15 +115,16 @@ export class JsonController {
    * @returns {void}
    */
   showPartialPreview(): void {
-    const panel = JSONProvider.createPanel(this.context.extensionUri);
-
+    // Get the active text editor
     const editor = window.activeTextEditor;
 
+    // Check if there is an active editor
     if (!editor) {
       window.showErrorMessage('No active editor!');
       return;
     }
 
+    // Check if there is a selection
     const selection = editor.selection;
 
     if (selection.isEmpty) {
@@ -95,6 +132,7 @@ export class JsonController {
       return;
     }
 
+    // Get the selection range
     const selectionRange = new Range(
       selection.start.line,
       selection.start.character,
@@ -102,22 +140,42 @@ export class JsonController {
       selection.end.character,
     );
 
-    const text = editor.document.getText(selectionRange) || '';
-    const { languageId } = editor.document;
-    const json = parseJSONContent(text, languageId);
-    const fileName =
-      editor.document.fileName.split(/[\\/]/).pop() || 'JSON Flow';
+    // Get the language ID and file name
+    const { languageId, fileName } = editor.document;
 
-    panel.title = fileName;
+    // Determine the file type, defaulting to 'json' if unsupported
+    let fileType = languageId;
 
-    if (json === null) {
+    if (!isFileTypeSupported(fileType)) {
+      const fileExtension = fileName.split('.').pop();
+
+      fileType = fileExtension;
+    }
+
+    // Parse JSON content
+    const jsonContent = parseJSONContent(
+      editor.document.getText(selectionRange),
+      fileType as FileType,
+    );
+
+    // Check if the JSON content is null
+    if (jsonContent === null) {
       return;
     }
 
+    // Derive the file name for the preview panel title
+    const displayName = fileName.split(/[\\/]/).pop() || 'JSON Flow';
+
+    // Initialize the webview panel
+    const panel = JSONProvider.createPanel(this.context.extensionUri);
+
+    panel.title = displayName;
+
+    // Post the message to the webview with a delay
     setTimeout(() => {
       panel.webview.postMessage({
-        data: { root: json },
+        data: { [displayName]: jsonContent },
       });
-    }, 500);
+    }, this._processingDelay);
   }
 }

@@ -112,12 +112,6 @@ export class JSONProvider {
    * @returns {WebviewPanel}
    */
   static createPanel(extensionUri: Uri): WebviewPanel {
-    if (JSONProvider.currentProvider) {
-      JSONProvider.currentProvider._panel.reveal(ViewColumn.One);
-
-      return JSONProvider.currentProvider._panel;
-    }
-
     const panel = window.createWebviewPanel(
       JSONProvider.viewType,
       'JSON Flow',
