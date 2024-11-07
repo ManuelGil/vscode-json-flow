@@ -143,20 +143,36 @@ export class JsonController {
     // Get the language ID and file name
     const { languageId, fileName } = editor.document;
 
-    // Determine the file type, defaulting to 'json' if unsupported
     let fileType = languageId;
+
+    let text = editor.document.getText(selectionRange);
+
+    if (
+      [
+        'javascript',
+        'javascriptreact',
+        'typescript',
+        'typescriptreact',
+      ].includes(fileType)
+    ) {
+      fileType = 'json';
+
+      text = text
+        .replace(/'([^']+)'/g, '"$1"')
+        .replace(/(['"])?([a-zA-Z0-9_]+)(['"])?:/g, '"$2":')
+        .replace(/,*\s*\n*\]/g, ']')
+        .replace(/{\s*\n*/g, '{')
+        .replace(/,*\s*\n*}/g, '}');
+    }
 
     if (!isFileTypeSupported(fileType)) {
       const fileExtension = fileName.split('.').pop();
 
-      fileType = fileExtension;
+      fileType = isFileTypeSupported(fileExtension) ? fileExtension : 'json';
     }
 
     // Parse JSON content
-    const jsonContent = parseJSONContent(
-      editor.document.getText(selectionRange),
-      fileType as FileType,
-    );
+    const jsonContent = parseJSONContent(text, fileType as FileType);
 
     // Check if the JSON content is null
     if (jsonContent === null) {

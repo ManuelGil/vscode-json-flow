@@ -52,14 +52,9 @@ export function activate(context: vscode.ExtensionContext) {
     (uri) => filesController.convertToJson(uri),
   );
 
-  const disposableGetFileProperties = vscode.commands.registerCommand(
-    `${EXTENSION_ID}.files.getFileProperties`,
-    (uri) => filesController.getFileProperties(uri),
-  );
-
-  const disponsableCopyContentAsJson = vscode.commands.registerCommand(
-    `${EXTENSION_ID}.files.copyContentAsJson`,
-    (uri) => filesController.copyContentAsJson(uri),
+  const disposableConvertPartialToJson = vscode.commands.registerCommand(
+    `${EXTENSION_ID}.files.convertPartialToJson`,
+    () => filesController.convertPartialToJson(),
   );
 
   const disponsableCopyContent = vscode.commands.registerCommand(
@@ -67,12 +62,29 @@ export function activate(context: vscode.ExtensionContext) {
     (uri) => filesController.copyContent(uri),
   );
 
+  const disponsableCopyContentAsJson = vscode.commands.registerCommand(
+    `${EXTENSION_ID}.files.copyContentAsJson`,
+    (uri) => filesController.copyContentAsJson(uri),
+  );
+
+  const disponsableCopyContentPartialAsJson = vscode.commands.registerCommand(
+    `${EXTENSION_ID}.files.copyContentPartialAsJson`,
+    () => filesController.copyContentPartialAsJson(),
+  );
+
+  const disposableGetFileProperties = vscode.commands.registerCommand(
+    `${EXTENSION_ID}.files.getFileProperties`,
+    (uri) => filesController.getFileProperties(uri),
+  );
+
   context.subscriptions.push(
     disposableOpenFile,
     disposableConvertToJson,
-    disposableGetFileProperties,
-    disponsableCopyContentAsJson,
+    disposableConvertPartialToJson,
     disponsableCopyContent,
+    disponsableCopyContentAsJson,
+    disponsableCopyContentPartialAsJson,
+    disposableGetFileProperties,
   );
 
   // -----------------------------------------------------------------

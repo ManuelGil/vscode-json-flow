@@ -71,7 +71,23 @@ export const EXTENSION_BUGS_URL: string =
  *
  * @returns {string[]} - The files to include
  */
-export const INCLUDE: string[] = ['json', 'jsonc'];
+export const INCLUDE: string[] = [
+  'json',
+  'jsonc',
+  'json5',
+  'cfg',
+  'csv',
+  'env',
+  'hcl',
+  'ini',
+  'properties',
+  'toml',
+  'tsv',
+  'xml',
+  'yaml',
+  'yml',
+];
+
 /**
  * EXCLUDE: The files to exclude.
  * @type {string[]}

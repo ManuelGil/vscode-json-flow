@@ -1,4 +1,4 @@
-import { env, ThemeIcon, window, workspace } from 'vscode';
+import { env, Range, ThemeIcon, window, workspace } from 'vscode';
 
 import { EXTENSION_ID, ExtensionConfig } from '../configs';
 import {
@@ -173,6 +173,92 @@ export class FilesController {
   }
 
   /**
+   * The convertPartialToJson method.
+   *
+   * @function convertPartialToJson
+   * @public
+   * @memberof FilesController
+   * @example
+   * controller.convertPartialToJson();
+   *
+   * @returns {void} - The promise
+   */
+  async convertPartialToJson() {
+    // Get the active text editor
+    const editor = window.activeTextEditor;
+
+    // Check if there is an active editor
+    if (!editor) {
+      window.showErrorMessage('No active editor!');
+      return;
+    }
+
+    // Check if there is a selection
+    const selection = editor.selection;
+
+    if (selection.isEmpty) {
+      window.showErrorMessage('No selection!');
+      return;
+    }
+
+    // Get the selection range
+    const selectionRange = new Range(
+      selection.start.line,
+      selection.start.character,
+      selection.end.line,
+      selection.end.character,
+    );
+
+    // Get the language ID and file name
+    const { languageId, fileName } = editor.document;
+
+    let fileType = languageId;
+
+    let text = editor.document.getText(selectionRange);
+
+    if (
+      [
+        'javascript',
+        'javascriptreact',
+        'typescript',
+        'typescriptreact',
+      ].includes(fileType)
+    ) {
+      fileType = 'json';
+
+      text = text
+        .replace(/'([^']+)'/g, '"$1"')
+        .replace(/(['"])?([a-zA-Z0-9_]+)(['"])?:/g, '"$2":')
+        .replace(/,*\s*\n*\]/g, ']')
+        .replace(/{\s*\n*/g, '{')
+        .replace(/,*\s*\n*}/g, '}');
+    }
+
+    if (!isFileTypeSupported(fileType)) {
+      const fileExtension = fileName.split('.').pop();
+
+      fileType = isFileTypeSupported(fileExtension) ? fileExtension : 'json';
+    }
+
+    // Parse JSON content
+    const jsonContent = parseJSONContent(text, fileType as FileType);
+
+    // Check if the JSON content is null
+    if (jsonContent === null) {
+      return;
+    }
+
+    // Open the JSON document
+    const jsonDocument = await workspace.openTextDocument({
+      language: 'json',
+      content: JSON.stringify(jsonContent, null, 2),
+    });
+
+    // Show the JSON document
+    window.showTextDocument(jsonDocument);
+  }
+
+  /**
    * The copyContent method.
    *
    * @function copyContent
@@ -238,6 +324,89 @@ export class FilesController {
         window.showInformationMessage('Content copied as JSON to clipboard');
       });
     }
+  }
+
+  /**
+   * The copyContentPartialAsJson method.
+   *
+   * @function copyContentPartialAsJson
+   * @public
+   * @memberof FilesController
+   * @example
+   * controller.copyContentPartialAsJson();
+   *
+   * @returns {void} - The promise
+   */
+  copyContentPartialAsJson() {
+    // Get the active text editor
+    const editor = window.activeTextEditor;
+
+    // Check if there is an active editor
+    if (!editor) {
+      window.showErrorMessage('No active editor!');
+      return;
+    }
+
+    // Check if there is a selection
+    const selection = editor.selection;
+
+    if (selection.isEmpty) {
+      window.showErrorMessage('No selection!');
+      return;
+    }
+
+    // Get the selection range
+    const selectionRange = new Range(
+      selection.start.line,
+      selection.start.character,
+      selection.end.line,
+      selection.end.character,
+    );
+
+    // Get the language ID and file name
+    const { languageId, fileName } = editor.document;
+
+    let fileType = languageId;
+
+    let text = editor.document.getText(selectionRange);
+
+    if (
+      [
+        'javascript',
+        'javascriptreact',
+        'typescript',
+        'typescriptreact',
+      ].includes(fileType)
+    ) {
+      fileType = 'json';
+
+      text = text
+        .replace(/'([^']+)'/g, '"$1"')
+        .replace(/(['"])?([a-zA-Z0-9_]+)(['"])?:/g, '"$2":')
+        .replace(/,*\s*\n*\]/g, ']')
+        .replace(/{\s*\n*/g, '{')
+        .replace(/,*\s*\n*}/g, '}');
+    }
+
+    if (!isFileTypeSupported(fileType)) {
+      const fileExtension = fileName.split('.').pop();
+
+      fileType = isFileTypeSupported(fileExtension) ? fileExtension : 'json';
+    }
+
+    // Parse JSON content
+    const jsonContent = parseJSONContent(text, fileType as FileType);
+
+    // Check if the JSON content is null
+    if (jsonContent === null) {
+      return;
+    }
+
+    // Copy the JSON content to the clipboard
+    env.clipboard.writeText(JSON.stringify(jsonContent, null, 2));
+
+    // Show the message
+    window.showInformationMessage('Content copied as JSON to clipboard');
   }
 
   /**

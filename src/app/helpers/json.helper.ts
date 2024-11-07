@@ -14,17 +14,20 @@ import * as yaml from 'yaml';
  * @type {FileType}
  */
 export type FileType =
-  | 'json'
-  | 'jsonc'
-  | 'json5'
+  | 'csv'
   | 'dockercompose'
-  | 'yaml'
-  | 'toml'
-  | 'ini'
-  | 'properties'
   | 'env'
+  | 'hcl'
+  | 'ini'
+  | 'json'
+  | 'json5'
+  | 'jsonc'
+  | 'properties'
+  | 'toml'
+  | 'tsv'
   | 'xml'
-  | 'hcl';
+  | 'yaml'
+  | 'yml';
 
 /**
  * Type guard to verify if a value is a valid FileType.
@@ -35,17 +38,20 @@ export type FileType =
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const isFileTypeSupported = (value: any): value is FileType => {
   const validFileTypes: FileType[] = [
-    'json',
-    'jsonc',
-    'json5',
+    'csv',
     'dockercompose',
-    'yaml',
-    'toml',
-    'ini',
-    'properties',
     'env',
-    'xml',
     'hcl',
+    'ini',
+    'json',
+    'json5',
+    'jsonc',
+    'properties',
+    'toml',
+    'tsv',
+    'xml',
+    'yaml',
+    'yml',
   ];
 
   return validFileTypes.includes(value);
@@ -84,6 +90,7 @@ export const parseJSONContent = (
 
       case 'dockercompose':
       case 'yaml':
+      case 'yml':
         return yaml.parse(content);
 
       case 'toml':
@@ -96,13 +103,40 @@ export const parseJSONContent = (
       case 'env':
         return dotenv.parse(content);
 
-      case 'xml':
-        // eslint-disable-next-line no-case-declarations
+      case 'xml': {
         const parser = new XMLParser();
         return parser.parse(content);
+      }
 
       case 'hcl':
         return hcl.parse(content);
+
+      case 'csv': {
+        const rows = content.trim().split('\n');
+        const headers = rows[0].split(',').map((row) => row.replace('\r', ''));
+        return rows.slice(1).map((row) => {
+          const values = row.split(',');
+          return headers.reduce((acc, header, index) => {
+            acc[header] = values[index];
+            return acc;
+          }, {});
+        });
+      }
+
+      case 'tsv': {
+        const rows = content
+          .trim()
+          .split('\n')
+          .map((row) => row.replace('\r', ''));
+        const headers = rows[0].split('\t');
+        return rows.slice(1).map((row) => {
+          const values = row.split('\t');
+          return headers.reduce((acc, header, index) => {
+            acc[header] = values[index];
+            return acc;
+          }, {});
+        });
+      }
 
       default:
         window.showErrorMessage('Invalid file type');

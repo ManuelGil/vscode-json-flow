@@ -26,6 +26,8 @@ Transform your JSON files into interactive node-based graphs directly in Visual 
       - [INI Format](#ini-format)
       - [Properties and Environment Files](#properties-and-environment-files)
       - [XML](#xml)
+      - [CSV](#csv)
+      - [TSV](#tsv)
       - [HCL](#hcl)
     - [File Explorer](#file-explorer)
   - [Usage](#usage)
@@ -81,7 +83,7 @@ Transform your JSON files into interactive node-based graphs directly in Visual 
 
 #### INI Format
 
-- **`ini`, `cfg`, `conf`**: Classic key-value format for app and system settings, widely used in software configurations.
+- **`ini`, `cfg`**: Classic key-value format for app and system settings, widely used in software configurations.
 
 #### Properties and Environment Files
 
@@ -91,6 +93,14 @@ Transform your JSON files into interactive node-based graphs directly in Visual 
 #### XML
 
 - **`xml`**: A versatile, structured data format used in a variety of applications and document storage.
+
+#### CSV
+
+- **`csv`**: Comma-separated values, ideal for tabular data storage and exchange.
+
+#### TSV
+
+- **`tsv`**: Tab-separated values, another popular format for storing and sharing tabular data.
 
 #### HCL
 
