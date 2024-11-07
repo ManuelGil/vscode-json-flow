@@ -168,7 +168,7 @@ export class JsonController {
     if (!isFileTypeSupported(fileType)) {
       const fileExtension = fileName.split('.').pop();
 
-      fileType = isFileTypeSupported(fileExtension) ? fileExtension : 'json';
+      fileType = isFileTypeSupported(fileExtension) ? fileExtension : 'jsonc';
     }
 
     // Parse JSON content

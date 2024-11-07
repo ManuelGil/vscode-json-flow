@@ -3,7 +3,6 @@ import { XMLParser } from 'fast-xml-parser';
 import hcl from 'hcl-parser';
 import * as ini from 'ini';
 import json5 from 'json5';
-import jsonc, { parse, ParseError } from 'jsonc-parser';
 import * as toml from 'toml';
 import { window } from 'vscode';
 import * as yaml from 'yaml';
@@ -74,17 +73,7 @@ export const parseJSONContent = (
       case 'json':
         return JSON.parse(content);
 
-      case 'jsonc': {
-        const errors: ParseError[] = [];
-        const parsed = parse(content, errors);
-
-        if (errors.length > 0) {
-          handleJsoncErrors(errors);
-        }
-
-        return errors.length === 0 ? parsed : null;
-      }
-
+      case 'jsonc':
       case 'json5':
         return json5.parse(content);
 
@@ -148,35 +137,4 @@ export const parseJSONContent = (
     );
     return null;
   }
-};
-
-/**
- * Handle JSONC parsing errors.
- *
- * @param {ParseError[]} errors - Array of JSONC parse errors
- */
-const handleJsoncErrors = (errors: ParseError[]) => {
-  const errorMessages = {
-    [jsonc.ParseErrorCode.InvalidSymbol]: 'Invalid symbol',
-    [jsonc.ParseErrorCode.InvalidNumberFormat]: 'Invalid number format',
-    [jsonc.ParseErrorCode.PropertyNameExpected]: 'Property name expected',
-    [jsonc.ParseErrorCode.ValueExpected]: 'Value expected',
-    [jsonc.ParseErrorCode.ColonExpected]: 'Colon expected',
-    [jsonc.ParseErrorCode.CommaExpected]: 'Comma expected',
-    [jsonc.ParseErrorCode.CloseBraceExpected]: 'Close brace expected',
-    [jsonc.ParseErrorCode.CloseBracketExpected]: 'Close bracket expected',
-    [jsonc.ParseErrorCode.EndOfFileExpected]: 'End of file expected',
-    [jsonc.ParseErrorCode.InvalidCommentToken]: 'Invalid comment token',
-    [jsonc.ParseErrorCode.UnexpectedEndOfComment]: 'Unexpected end of comment',
-    [jsonc.ParseErrorCode.UnexpectedEndOfString]: 'Unexpected end of string',
-    [jsonc.ParseErrorCode.UnexpectedEndOfNumber]: 'Unexpected end of number',
-    [jsonc.ParseErrorCode.InvalidUnicode]: 'Invalid unicode',
-    [jsonc.ParseErrorCode.InvalidEscapeCharacter]: 'Invalid escape character',
-    [jsonc.ParseErrorCode.InvalidCharacter]: 'Invalid character',
-  };
-
-  errors.forEach((error) => {
-    const message = errorMessages[error.error] || 'Unknown error';
-    window.showErrorMessage(`Error parsing JSONC: ${message}`);
-  });
 };

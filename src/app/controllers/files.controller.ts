@@ -224,7 +224,7 @@ export class FilesController {
         'typescriptreact',
       ].includes(fileType)
     ) {
-      fileType = 'json';
+      fileType = 'jsonc';
 
       text = text
         .replace(/'([^']+)'/g, '"$1"')
@@ -237,7 +237,7 @@ export class FilesController {
     if (!isFileTypeSupported(fileType)) {
       const fileExtension = fileName.split('.').pop();
 
-      fileType = isFileTypeSupported(fileExtension) ? fileExtension : 'json';
+      fileType = isFileTypeSupported(fileExtension) ? fileExtension : 'jsonc';
     }
 
     // Parse JSON content
@@ -391,7 +391,7 @@ export class FilesController {
     if (!isFileTypeSupported(fileType)) {
       const fileExtension = fileName.split('.').pop();
 
-      fileType = isFileTypeSupported(fileExtension) ? fileExtension : 'json';
+      fileType = isFileTypeSupported(fileExtension) ? fileExtension : 'jsonc';
     }
 
     // Parse JSON content
