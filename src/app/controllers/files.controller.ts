@@ -1,13 +1,10 @@
-import { env, l10n, Range, ThemeIcon, window, workspace } from 'vscode';
+import { readdirSync } from 'fs';
+import { minimatch } from 'minimatch';
+import { join } from 'path';
+import { env, l10n, Range, ThemeIcon, Uri, window, workspace } from 'vscode';
 
 import { EXTENSION_ID, ExtensionConfig } from '../configs';
-import {
-  directoryMap,
-  FileType,
-  getRelativePath,
-  isFileTypeSupported,
-  parseJSONContent,
-} from '../helpers';
+import { FileType, isFileTypeSupported, parseJSONContent } from '../helpers';
 import { NodeModel } from '../models';
 
 /**
@@ -45,7 +42,6 @@ export class FilesController {
    * The getFiles method.
    *
    * @function getFiles
-   * @param {number} maxResults - The maximum number of results
    * @public
    * @async
    * @memberof FilesController
@@ -54,15 +50,29 @@ export class FilesController {
    *
    * @returns {Promise<NodeModel[] | void>} - The list of files
    */
-  async getFiles(
-    maxResults: number = Number.MAX_SAFE_INTEGER,
-  ): Promise<NodeModel[] | void> {
+  async getFiles(): Promise<NodeModel[] | void> {
     // Get the files in the folder
-    const files = await directoryMap('/', {
-      extensions: this.config.include,
-      ignore: this.config.exclude,
-      maxResults,
-    });
+    let folders: string[] = [];
+    let files: Uri[] = [];
+
+    if (!workspace.workspaceFolders) return;
+
+    folders = workspace.workspaceFolders.map((folder) => folder.uri.fsPath);
+
+    const { include, exclude } = this.config;
+
+    const includedFilePatterns = `**/*.{${include.join(',')}}`;
+    const excludedFilePatterns = Array.isArray(exclude) ? exclude : [exclude];
+
+    for (const folder of folders) {
+      const result = await this.findFiles(
+        folder,
+        [includedFilePatterns],
+        excludedFilePatterns,
+      );
+
+      files.push(...result);
+    }
 
     if (files.length !== 0) {
       const nodes: NodeModel[] = [];
@@ -72,7 +82,7 @@ export class FilesController {
       for (const file of files) {
         const document = await workspace.openTextDocument(file);
 
-        const path = await getRelativePath(document.fileName);
+        const path = workspace.asRelativePath(document.fileName);
         let filename = path.split('/').pop();
 
         if (filename && this.config.showPath) {
@@ -442,5 +452,61 @@ export class FilesController {
         await window.showInformationMessage(message, { modal: true });
       });
     }
+  }
+
+  // Private methods
+  /**
+   * The getFilePropertiesPartial method.
+   *
+   * @function getFilePropertiesPartial
+   * @public
+   * @memberof FilesController
+   * @example
+   * controller.getFilePropertiesPartial();
+   *
+   * @returns {void} - The promise
+   */
+  private async findFiles(
+    baseDir: string, // Base directory to start searching from
+    include: string[], // Include pattern(s) as a single string or an array
+    exclude: string[],
+    allowRecursion: boolean = true, // Exclude pattern(s) as a single string or an array
+  ): Promise<Uri[]> {
+    const includePatterns = Array.isArray(include) ? include : [include];
+    const excludePatterns = Array.isArray(exclude) ? exclude : [exclude];
+
+    const result: Uri[] = [];
+    const stack: string[] = [baseDir]; // Stack for directories to explore
+
+    while (stack.length > 0) {
+      const currentDir = stack.pop(); // Get the next directory from the stack
+
+      if (currentDir) {
+        const entries = readdirSync(currentDir, { withFileTypes: true });
+
+        for (const entry of entries) {
+          const fullPath = join(currentDir, entry.name);
+
+          if (entry.isDirectory() && allowRecursion) {
+            // Push the directory onto the stack to explore it later
+            stack.push(fullPath);
+          } else if (entry.isFile()) {
+            // Check if the file matches include and exclude patterns
+            const isIncluded = includePatterns.some((pattern) =>
+              minimatch(fullPath, pattern),
+            );
+            const isExcluded = excludePatterns.some((pattern) =>
+              minimatch(fullPath, pattern),
+            );
+
+            if (isIncluded && !isExcluded) {
+              result.push(Uri.file(fullPath));
+            }
+          }
+        }
+      }
+    }
+
+    return result;
   }
 }
