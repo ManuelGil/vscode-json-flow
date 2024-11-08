@@ -1,0 +1,11 @@
+{
+	"jsonFlow.files.refreshList": "Refresh List",
+	"jsonFlow.files.openFile": "Open File",
+	"jsonFlow.files.convertToJson": "Convert to JSON",
+	"jsonFlow.files.convertPartialToJson": "Convert Selection to JSON",
+	"jsonFlow.files.copyContent": "Copy Content to Clipboard",
+	"jsonFlow.files.copyContentAsJson": "Copy Content as JSON",
+	"jsonFlow.files.copyContentPartialAsJson": "Copy Selection as JSON",
+	"jsonFlow.files.getFileProperties": "Get File Properties",
+	"jsonFlow.json.showPartialPreview": "Show Selection as JSON"
+}

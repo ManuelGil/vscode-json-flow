@@ -1,4 +1,4 @@
-import { env, Range, ThemeIcon, window, workspace } from 'vscode';
+import { env, l10n, Range, ThemeIcon, window, workspace } from 'vscode';
 
 import { EXTENSION_ID, ExtensionConfig } from '../configs';
 import {
@@ -189,7 +189,8 @@ export class FilesController {
 
     // Check if there is an active editor
     if (!editor) {
-      window.showErrorMessage('No active editor!');
+      const message = l10n.t('No active editor!');
+      window.showErrorMessage(message);
       return;
     }
 
@@ -197,7 +198,8 @@ export class FilesController {
     const selection = editor.selection;
 
     if (selection.isEmpty) {
-      window.showErrorMessage('No selection!');
+      const message = l10n.t('No selection!');
+      window.showErrorMessage(message);
       return;
     }
 
@@ -231,7 +233,7 @@ export class FilesController {
         .replace(/(['"])?([a-zA-Z0-9_]+)(['"])?:/g, '"$2":')
         .replace(/,*\s*\n*\]/g, ']')
         .replace(/{\s*\n*/g, '{')
-        .replace(/,*\s*\n*}/g, '}');
+        .replace(/,*\s*\n*};*/g, '}');
     }
 
     if (!isFileTypeSupported(fileType)) {
@@ -273,8 +275,9 @@ export class FilesController {
   copyContent(node: NodeModel) {
     if (node.resourceUri) {
       workspace.openTextDocument(node.resourceUri).then((document) => {
+        const message = l10n.t('Content copied to clipboard');
         env.clipboard.writeText(document.getText());
-        window.showInformationMessage('Content copied to clipboard');
+        window.showInformationMessage(message);
       });
     }
   }
@@ -321,7 +324,8 @@ export class FilesController {
         env.clipboard.writeText(JSON.stringify(jsonContent, null, 2));
 
         // Show the message
-        window.showInformationMessage('Content copied as JSON to clipboard');
+        const message = l10n.t('Content copied as JSON to clipboard');
+        window.showInformationMessage(message);
       });
     }
   }
@@ -343,7 +347,8 @@ export class FilesController {
 
     // Check if there is an active editor
     if (!editor) {
-      window.showErrorMessage('No active editor!');
+      const message = l10n.t('No active editor!');
+      window.showErrorMessage(message);
       return;
     }
 
@@ -351,7 +356,8 @@ export class FilesController {
     const selection = editor.selection;
 
     if (selection.isEmpty) {
-      window.showErrorMessage('No selection!');
+      const message = l10n.t('No selection!');
+      window.showErrorMessage(message);
       return;
     }
 
@@ -385,7 +391,7 @@ export class FilesController {
         .replace(/(['"])?([a-zA-Z0-9_]+)(['"])?:/g, '"$2":')
         .replace(/,*\s*\n*\]/g, ']')
         .replace(/{\s*\n*/g, '{')
-        .replace(/,*\s*\n*}/g, '}');
+        .replace(/,*\s*\n*};*/g, '}');
     }
 
     if (!isFileTypeSupported(fileType)) {
@@ -406,7 +412,8 @@ export class FilesController {
     env.clipboard.writeText(JSON.stringify(jsonContent, null, 2));
 
     // Show the message
-    window.showInformationMessage('Content copied as JSON to clipboard');
+    const message = l10n.t('Content copied as JSON to clipboard');
+    window.showInformationMessage(message);
   }
 
   /**
@@ -427,10 +434,12 @@ export class FilesController {
         const { fileName, languageId, lineCount, version } = document;
 
         // Show the message
-        await window.showInformationMessage(
-          `File Name: ${fileName}\nLanguage: ${languageId}\nLines: ${lineCount}\nVersion: ${version}`,
-          { modal: true },
+        const message = l10n.t(
+          'File Name: {0}\nLanguage: {1}\nLines: {2}\nVersion: {3}',
+          [fileName, languageId, lineCount, version],
         );
+
+        await window.showInformationMessage(message, { modal: true });
       });
     }
   }

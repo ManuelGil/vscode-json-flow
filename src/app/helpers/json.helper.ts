@@ -4,7 +4,7 @@ import hcl from 'hcl-parser';
 import * as ini from 'ini';
 import json5 from 'json5';
 import * as toml from 'toml';
-import { window } from 'vscode';
+import { l10n, window } from 'vscode';
 import * as yaml from 'yaml';
 
 /**
@@ -34,8 +34,7 @@ export type FileType =
  * @param value - The value to check.
  * @returns {value is FileType} - True if the value is a valid FileType, false otherwise.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const isFileTypeSupported = (value: any): value is FileType => {
+export const isFileTypeSupported = (value: unknown): value is FileType => {
   const validFileTypes: FileType[] = [
     'csv',
     'dockercompose',
@@ -53,7 +52,7 @@ export const isFileTypeSupported = (value: any): value is FileType => {
     'yml',
   ];
 
-  return validFileTypes.includes(value);
+  return validFileTypes.includes(value as FileType);
 };
 
 /**
@@ -127,14 +126,19 @@ export const parseJSONContent = (
         });
       }
 
-      default:
-        window.showErrorMessage('Invalid file type');
+      default: {
+        const message = l10n.t('Invalid file type!');
+        window.showErrorMessage(message);
         return null;
+      }
     }
   } catch (error) {
-    window.showErrorMessage(
-      `Error parsing ${type.toUpperCase()}: ${error.message}`,
-    );
+    const message = l10n.t('Error parsing {0}: {1}', [
+      type.toUpperCase(),
+      error.message,
+    ]);
+
+    window.showErrorMessage(message);
     return null;
   }
 };

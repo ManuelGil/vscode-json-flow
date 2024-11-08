@@ -1,0 +1,9 @@
+{
+	"No active editor!": "Kein aktiver Editor!",
+	"No selection!": "Keine Auswahl!",
+	"Invalid file type!": "Ungültiger Dateityp!",
+	"Error parsing {0}: {1}": "Fehler beim Parsen von {0}: {1}",
+	"Content copied to clipboard": "Inhalt in die Zwischenablage kopiert",
+	"Content copied as JSON to clipboard": "Inhalt als JSON in die Zwischenablage kopiert",
+	"File Name: {0}\nLanguage: {1}\nLines: {2}\nVersion: {3}": "Dateiname: {0}\nSprache: {1}\nZeilen: {2}\nVersion: {3}"
+}

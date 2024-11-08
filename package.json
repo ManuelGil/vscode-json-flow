@@ -2,7 +2,7 @@
 	"name": "vscode-json-flow",
 	"displayName": "JSON Flow",
 	"description": "JSON Flow turns JSON and other formats into interactive node graphs, simplifying data exploration and management in VS Code. It supports JSON, JSONC, JSON5, CFG, CSV, ENV, HCL, INI, PROPERTIES, TOML, TSV, XML, YAML, and YML.",
-	"version": "1.1.0",
+	"version": "1.2.0",
 	"preview": true,
 	"icon": "icon.png",
 	"license": "MIT",
@@ -79,6 +79,7 @@
 	},
 	"activationEvents": [],
 	"main": "./out/extension.js",
+	"l10n": "./l10n",
 	"contributes": {
 		"configuration": {
 			"title": "JSON Flow",
@@ -127,48 +128,48 @@
 		"commands": [
 			{
 				"command": "jsonFlow.files.refreshList",
-				"title": "Refresh List",
+				"title": "%jsonFlow.files.refreshList%",
 				"category": "JSON Flow",
 				"icon": "$(refresh)"
 			},
 			{
 				"command": "jsonFlow.files.openFile",
-				"title": "Open File",
+				"title": "%jsonFlow.files.openFile%",
 				"category": "JSON Flow"
 			},
 			{
 				"command": "jsonFlow.files.convertToJson",
-				"title": "Convert to JSON",
+				"title": "%jsonFlow.files.convertToJson%",
 				"category": "JSON Flow"
 			},
 			{
 				"command": "jsonFlow.files.convertPartialToJson",
-				"title": "Convert Selection to JSON",
+				"title": "%jsonFlow.files.convertPartialToJson%",
 				"category": "JSON Flow"
 			},
 			{
 				"command": "jsonFlow.files.copyContent",
-				"title": "Copy Content to Clipboard",
+				"title": "%jsonFlow.files.copyContent%",
 				"category": "JSON Flow"
 			},
 			{
 				"command": "jsonFlow.files.copyContentAsJson",
-				"title": "Copy Content as JSON",
+				"title": "%jsonFlow.files.copyContentAsJson%",
 				"category": "JSON Flow"
 			},
 			{
 				"command": "jsonFlow.files.copyContentPartialAsJson",
-				"title": "Copy Selection as JSON",
+				"title": "%jsonFlow.files.copyContentPartialAsJson%",
 				"category": "JSON Flow"
 			},
 			{
 				"command": "jsonFlow.files.getFileProperties",
-				"title": "Get File Properties",
+				"title": "%jsonFlow.files.getFileProperties%",
 				"category": "JSON Flow"
 			},
 			{
 				"command": "jsonFlow.json.showPartialPreview",
-				"title": "Show Selection as JSON",
+				"title": "%jsonFlow.json.showPartialPreview%",
 				"category": "JSON Flow"
 			}
 		],
@@ -223,17 +224,17 @@
 			"jsonFlow.editor.submenu": [
 				{
 					"command": "jsonFlow.json.showPartialPreview",
-					"title": "Show Selection as JSON",
+					"title": "%jsonFlow.json.showPartialPreview%",
 					"group": "1_view"
 				},
 				{
 					"command": "jsonFlow.files.convertPartialToJson",
-					"title": "Convert Selection to JSON",
+					"title": "%jsonFlow.files.convertPartialToJson%",
 					"group": "2_modification"
 				},
 				{
 					"command": "jsonFlow.files.copyContentPartialAsJson",
-					"title": "Copy Selection as JSON",
+					"title": "%jsonFlow.files.copyContentPartialAsJson%",
 					"group": "3_cutcopypaste"
 				}
 			]
@@ -316,6 +317,7 @@
 		"@typescript-eslint/eslint-plugin": "^6.21.0",
 		"@typescript-eslint/parser": "^6.21.0",
 		"@vitejs/plugin-react": "^4.3.1",
+		"@vscode/l10n-dev": "^0.0.35",
 		"autoprefixer": "^10.4.20",
 		"cpy-cli": "^5.0.0",
 		"eslint": "^8.57.0",

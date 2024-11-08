@@ -1,4 +1,4 @@
-import { ExtensionContext, Range, Uri, window, workspace } from 'vscode';
+import { ExtensionContext, l10n, Range, Uri, window, workspace } from 'vscode';
 import { FileType, isFileTypeSupported, parseJSONContent } from '../helpers';
 import { JSONProvider } from '../providers';
 
@@ -120,7 +120,8 @@ export class JsonController {
 
     // Check if there is an active editor
     if (!editor) {
-      window.showErrorMessage('No active editor!');
+      const message = l10n.t('No active editor!');
+      window.showErrorMessage(message);
       return;
     }
 
@@ -128,7 +129,8 @@ export class JsonController {
     const selection = editor.selection;
 
     if (selection.isEmpty) {
-      window.showErrorMessage('No selection!');
+      const message = l10n.t('No selection!');
+      window.showErrorMessage(message);
       return;
     }
 
@@ -162,7 +164,7 @@ export class JsonController {
         .replace(/(['"])?([a-zA-Z0-9_]+)(['"])?:/g, '"$2":')
         .replace(/,*\s*\n*\]/g, ']')
         .replace(/{\s*\n*/g, '{')
-        .replace(/,*\s*\n*}/g, '}');
+        .replace(/,*\s*\n*};*/g, '}');
     }
 
     if (!isFileTypeSupported(fileType)) {
