@@ -1,4 +1,7 @@
 {
+	"jsonFlow.files.include": "Patrones Glob para incluir en el paquete. El valor predeterminado es json y jsonc",
+	"jsonFlow.files.exclude": "Patrones Glob para excluir del paquete. El valor predeterminado es node_modules, dist, out, build y cualquier archivo oculto",
+	"jsonFlow.files.showPath": "Mostrar la ruta del archivo en el nombre de la lista de archivos generados",
 	"jsonFlow.files.refreshList": "Refrescar Lista",
 	"jsonFlow.files.openFile": "Abrir Archivo",
 	"jsonFlow.files.convertToJson": "Convertir a JSON",
@@ -7,5 +10,8 @@
 	"jsonFlow.files.copyContentAsJson": "Copiar Contenido como JSON",
 	"jsonFlow.files.copyContentPartialAsJson": "Copiar Selección como JSON",
 	"jsonFlow.files.getFileProperties": "Obtener Propiedades del Archivo",
-	"jsonFlow.json.showPartialPreview": "Mostrar Selección como JSON"
+	"jsonFlow.json.showPartialPreview": "Mostrar Selección como JSON",
+	"jsonFlow.filesView": "Lista de Archivos",
+	"jsonFlow.feedbackView": "Ayuda y Comentarios",
+	"viewsWelcome.jsonFlow.filesView": "Para capturar archivos de forma efectiva, asegúrese de incluir el tipo de archivo dentro de la configuración del espacio de trabajo.\n[Abrir Configuración del Espacio de Trabajo](command:workbench.action.openWorkspaceSettingsFile)\nPara obtener más información sobre cómo usar JSON Flow [lea nuestra documentación](https://github.com/ManuelGil/vscode-json-flow)."
 }

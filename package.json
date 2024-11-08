@@ -2,7 +2,7 @@
 	"name": "vscode-json-flow",
 	"displayName": "JSON Flow",
 	"description": "JSON Flow turns JSON and other formats into interactive node graphs, simplifying data exploration and management in VS Code. It supports JSON, JSONC, JSON5, CFG, CSV, ENV, HCL, INI, PROPERTIES, TOML, TSV, XML, YAML, and YML.",
-	"version": "1.2.0",
+	"version": "1.2.1",
 	"preview": true,
 	"icon": "icon.png",
 	"license": "MIT",
@@ -103,7 +103,7 @@
 						"yml"
 					],
 					"scope": "resource",
-					"description": "Glob patterns to include in the package. The default is json and jsonc."
+					"description": "%jsonFlow.files.include%"
 				},
 				"jsonFlow.files.exclude": {
 					"type": "array",
@@ -115,13 +115,13 @@
 						"**/.*/**"
 					],
 					"scope": "resource",
-					"description": "Glob patterns to exclude from the package. The default is node_modules, dist, out, build, and any hidden files."
+					"description": "%jsonFlow.files.exclude%"
 				},
 				"jsonFlow.files.showPath": {
 					"type": "boolean",
 					"default": true,
 					"scope": "resource",
-					"description": "Show the path of the file in the name of the list of generated files"
+					"description": "%jsonFlow.files.showPath%"
 				}
 			}
 		},
@@ -242,7 +242,7 @@
 		"viewsWelcome": [
 			{
 				"view": "jsonFlow.filesView",
-				"contents": "To effectively capture files, ensure you include the file type within the workspace settings.\n[Open Workspace Setting](command:workbench.action.openWorkspaceSettingsFile)\nTo learn more about how to use the Starter Kit [read our docs](https://docs.sml.li)."
+				"contents": "%viewsWelcome.jsonFlow.filesView%"
 			}
 		],
 		"viewsContainers": {
@@ -258,12 +258,12 @@
 			"json-explorer": [
 				{
 					"id": "jsonFlow.filesView",
-					"name": "List of Files",
+					"name": "%jsonFlow.filesView%",
 					"visibility": "visible"
 				},
 				{
 					"id": "jsonFlow.feedbackView",
-					"name": "Help and Feedback",
+					"name": "%jsonFlow.feedbackView%",
 					"visibility": "visible"
 				}
 			]

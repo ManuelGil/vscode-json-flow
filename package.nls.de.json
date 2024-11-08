@@ -1,4 +1,7 @@
 {
+	"jsonFlow.files.include": "Glob-Muster, die im Paket enthalten sein sollen. Der Standardwert ist json und jsonc",
+	"jsonFlow.files.exclude": "Glob-Muster, die aus dem Paket ausgeschlossen werden sollen. Der Standardwert ist node_modules, dist, out, build und alle versteckten Dateien",
+	"jsonFlow.files.showPath": "Den Dateipfad im Namen der Liste der generierten Dateien anzeigen",
 	"jsonFlow.files.refreshList": "Liste aktualisieren",
 	"jsonFlow.files.openFile": "Datei öffnen",
 	"jsonFlow.files.convertToJson": "In JSON konvertieren",
@@ -7,5 +10,8 @@
 	"jsonFlow.files.copyContentAsJson": "Inhalt als JSON kopieren",
 	"jsonFlow.files.copyContentPartialAsJson": "Auswahl als JSON kopieren",
 	"jsonFlow.files.getFileProperties": "Dateieigenschaften abrufen",
-	"jsonFlow.json.showPartialPreview": "Auswahl als JSON anzeigen"
+	"jsonFlow.json.showPartialPreview": "Auswahl als JSON anzeigen",
+	"jsonFlow.filesView": "Dateiliste",
+	"jsonFlow.feedbackView": "Hilfe und Feedback",
+	"viewsWelcome.jsonFlow.filesView": "Um Dateien effektiv zu erfassen, stellen Sie sicher, dass Sie den Dateityp in den Einstellungen des Arbeitsbereichs einschließen.\n[Arbeitsbereichseinstellung öffnen](command:workbench.action.openWorkspaceSettingsFile)\nWeitere Informationen zur Verwendung von JSON Flow [finden Sie in unserer Dokumentation](https://github.com/ManuelGil/vscode-json-flow)."
 }

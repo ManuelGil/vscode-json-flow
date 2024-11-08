@@ -1,6 +1,7 @@
 import {
   Event,
   EventEmitter,
+  l10n,
   ProviderResult,
   ThemeIcon,
   TreeDataProvider,
@@ -154,11 +155,11 @@ export class FeedbackProvider implements TreeDataProvider<NodeModel> {
    */
   private getFeedbacks(): NodeModel[] {
     return [
-      new NodeModel('Report Issues', new ThemeIcon('bug'), {
+      new NodeModel(l10n.t('Report Issues'), new ThemeIcon('bug'), {
         title: 'Report Issues',
         command: `${EXTENSION_ID}.feedback.reportIssues`,
       }),
-      new NodeModel('Rate Us', new ThemeIcon('star'), {
+      new NodeModel(l10n.t('Rate Us'), new ThemeIcon('star'), {
         title: 'Rate Us',
         command: `${EXTENSION_ID}.feedback.rateUs`,
       }),
