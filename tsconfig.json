@@ -3,10 +3,7 @@
 		"module": "NodeNext",
 		"target": "ES2021",
 		"outDir": "out",
-		"lib": [
-			"ES2021",
-			"DOM"
-		],
+		"lib": ["ES2021", "DOM"],
 		"sourceMap": true,
 		"rootDir": "src",
 		/* Linting */
@@ -16,11 +13,6 @@
 		"noFallthroughCasesInSwitch": true /* Report errors for fallthrough cases in switch statement. */,
 		"noUnusedParameters": true /* Report errors on unused parameters. */
 	},
-	"include": [
-		"src/**/*"
-	],
-	"exclude": [
-		"node_modules",
-		".vscode-test"
-	]
+	"include": ["src/**/*"],
+	"exclude": ["node_modules", ".vscode-test"]
 }

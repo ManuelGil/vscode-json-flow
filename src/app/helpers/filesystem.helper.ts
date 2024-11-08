@@ -1,4 +1,11 @@
-import { access, existsSync, mkdirSync, open, writeFile } from 'fs';
+import {
+  access,
+  existsSync,
+  mkdirSync,
+  open,
+  PathOrFileDescriptor,
+  writeFile,
+} from 'fs';
 import { dirname, join } from 'path';
 import { FilePermission, FileStat, Uri, window, workspace } from 'vscode';
 
@@ -68,26 +75,31 @@ export const saveFile = async (
   }
 
   return new Promise((resolve, reject) => {
-    access(file, (err: any) => {
+    access(file, (err: unknown) => {
       if (err) {
-        open(file, 'w+', (err: any, fd: any) => {
+        open(file, 'w+', (err: unknown, fd: unknown) => {
           if (err) {
             reject(false);
           }
 
-          writeFile(fd, data, 'utf8', (err: any) => {
-            if (err) {
-              reject(false);
-            }
+          writeFile(
+            fd as PathOrFileDescriptor,
+            data,
+            'utf8',
+            (err: unknown) => {
+              if (err) {
+                reject(false);
+              }
 
-            const openPath = Uri.file(file);
+              const openPath = Uri.file(file);
 
-            workspace.openTextDocument(openPath).then((filename) => {
-              window.showTextDocument(filename);
-            });
+              workspace.openTextDocument(openPath).then((filename) => {
+                window.showTextDocument(filename);
+              });
 
-            resolve(true);
-          });
+              resolve(true);
+            },
+          );
         });
       }
     });
@@ -113,7 +125,7 @@ export const deleteFiles = async (
   const files = await workspace.findFiles(`${path}/**/*`);
 
   files.forEach((file) => {
-    access(file.path, (err: any) => {
+    access(file.path, (err: unknown) => {
       if (err) {
         throw err;
       }

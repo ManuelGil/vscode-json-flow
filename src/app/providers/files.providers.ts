@@ -98,6 +98,7 @@ export class FilesProvider implements TreeDataProvider<NodeModel> {
    *
    * @see https://code.visualstudio.com/api/references/vscode-api#TreeDataProvider
    */
+  // biome-ignore lint/correctness/noUndeclaredVariables: we dont control vscode's api
   getTreeItem(element: NodeModel): TreeItem | Thenable<TreeItem> {
     return element;
   }

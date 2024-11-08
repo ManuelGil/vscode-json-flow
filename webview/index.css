@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-
 .react-flow__minimap {
-    display: block;
+  display: block;
 }

@@ -14,19 +14,6 @@ import { EXTENSION_BUGS_URL, EXTENSION_MARKETPLACE_URL } from '../configs';
  */
 export class FeedbackController {
   // -----------------------------------------------------------------
-  // Constructor
-  // -----------------------------------------------------------------
-
-  /**
-   * Constructor for the FeedbackController class.
-   *
-   * @constructor
-   * @public
-   * @memberof FeedbackController
-   */
-  constructor() {}
-
-  // -----------------------------------------------------------------
   // Methods
   // -----------------------------------------------------------------
 

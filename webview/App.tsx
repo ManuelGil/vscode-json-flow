@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import './App.css';
 import UpdateNode from './components/UpdateNode.tsx';
 
-type jsonType = {
+type JsonType = {
   id: string;
   data: { label: string };
   position: { x: number; y: number };
@@ -26,12 +26,12 @@ const JsonFormater = (
   json: unknown,
   many: number,
   depth: number,
-  array: jsonType[],
+  array: JsonType[],
   parent: string,
-): jsonType[] => {
+): JsonType[] => {
   if (Array.isArray(json)) {
     json.forEach((items) => {
-      const item: jsonType = {
+      const item: JsonType = {
         id: String(items),
         data: { label: String(items) },
         position: { x: 100, y: depth * 10 },
@@ -46,7 +46,7 @@ const JsonFormater = (
     });
   } else if (typeof json === 'object' && json !== null) {
     Object.entries(json).forEach(([key, value], index) => {
-      const items: jsonType = {
+      const items: JsonType = {
         id: String(key),
         data: {
           label: key + (typeof value === 'object' ? '' : `: ${value}`),

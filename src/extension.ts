@@ -191,4 +191,5 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 // this method is called when your extension is deactivated
+// biome-ignore lint/suspicious/noEmptyBlockStatements: we dont control vscode's api
 export function deactivate() {}
