@@ -63,8 +63,8 @@ const JsonFormater = (
   return array;
 };
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
+// biome-ignore lint/correctness/noUndeclaredVariables: vscode is a global variable
 const vscode = acquireVsCodeApi();
 
 function App() {

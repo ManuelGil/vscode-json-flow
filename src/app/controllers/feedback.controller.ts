@@ -42,7 +42,7 @@ export class FeedbackController {
    */
   rateUs(): void {
     env.openExternal(
-      Uri.parse(`${EXTENSION_MARKETPLACE_URL}&ssr=false#review-details`),
+      Uri.parse(`${EXTENSION_MARKETPLACE_URL}&ssr=false#review-details`)
     );
   }
 }

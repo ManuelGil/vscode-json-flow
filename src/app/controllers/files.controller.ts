@@ -55,7 +55,9 @@ export class FilesController {
     let folders: string[] = [];
     let files: Uri[] = [];
 
-    if (!workspace.workspaceFolders) return;
+    if (!workspace.workspaceFolders) {
+      return;
+    }
 
     folders = workspace.workspaceFolders.map((folder) => folder.uri.fsPath);
 
@@ -68,7 +70,7 @@ export class FilesController {
       const result = await this.findFiles(
         folder,
         [includedFilePatterns],
-        excludedFilePatterns,
+        excludedFilePatterns
       );
 
       files.push(...result);
@@ -101,8 +103,8 @@ export class FilesController {
               arguments: [document.uri],
             },
             document.uri,
-            'file',
-          ),
+            'file'
+          )
         );
       }
 
@@ -162,7 +164,7 @@ export class FilesController {
         // Parse JSON content
         const jsonContent = parseJSONContent(
           document.getText(),
-          fileType as FileType,
+          fileType as FileType
         );
 
         // Check if the content is null
@@ -218,7 +220,7 @@ export class FilesController {
       selection.start.line,
       selection.start.character,
       selection.end.line,
-      selection.end.character,
+      selection.end.character
     );
 
     // Get the language ID and file name
@@ -322,7 +324,7 @@ export class FilesController {
         // Parse JSON content
         const jsonContent = parseJSONContent(
           document.getText(),
-          fileType as FileType,
+          fileType as FileType
         );
 
         // Check if the content is null
@@ -376,7 +378,7 @@ export class FilesController {
       selection.start.line,
       selection.start.character,
       selection.end.line,
-      selection.end.character,
+      selection.end.character
     );
 
     // Get the language ID and file name
@@ -446,7 +448,7 @@ export class FilesController {
         // Show the message
         const message = l10n.t(
           'File Name: {0}\nLanguage: {1}\nLines: {2}\nVersion: {3}',
-          [fileName, languageId, lineCount, version],
+          [fileName, languageId, lineCount, version]
         );
 
         await window.showInformationMessage(message, { modal: true });
@@ -470,7 +472,7 @@ export class FilesController {
     baseDir: string, // Base directory to start searching from
     include: string[], // Include pattern(s) as a single string or an array
     exclude: string[],
-    allowRecursion: boolean = true, // Exclude pattern(s) as a single string or an array
+    allowRecursion: boolean = true // Exclude pattern(s) as a single string or an array
   ): Promise<Uri[]> {
     const includePatterns = Array.isArray(include) ? include : [include];
     const excludePatterns = Array.isArray(exclude) ? exclude : [exclude];
@@ -493,10 +495,10 @@ export class FilesController {
           } else if (entry.isFile()) {
             // Check if the file matches include and exclude patterns
             const isIncluded = includePatterns.some((pattern) =>
-              minimatch(fullPath, pattern),
+              minimatch(fullPath, pattern)
             );
             const isExcluded = excludePatterns.some((pattern) =>
-              minimatch(fullPath, pattern),
+              minimatch(fullPath, pattern)
             );
 
             if (isIncluded && !isExcluded) {

@@ -75,7 +75,7 @@ export class JSONProvider {
    */
   private constructor(
     private readonly _panel: WebviewPanel,
-    private readonly _extensionUri: Uri,
+    private readonly _extensionUri: Uri
   ) {
     this._update();
 
@@ -88,7 +88,7 @@ export class JSONProvider {
         }
       },
       null,
-      this._disposables,
+      this._disposables
     );
   }
 
@@ -116,7 +116,7 @@ export class JSONProvider {
       JSONProvider.viewType,
       'JSON Flow',
       ViewColumn.One,
-      this.getWebviewOptions(extensionUri),
+      this.getWebviewOptions(extensionUri)
     );
 
     JSONProvider.currentProvider = new JSONProvider(panel, extensionUri);
@@ -219,12 +219,12 @@ export class JSONProvider {
   private _getHtmlForWebview(webview: Webview): string {
     // Get the local path to main script run in the webview, then convert it to a uri we can use in the webview.
     const scriptUri = webview.asWebviewUri(
-      Uri.joinPath(this._extensionUri, './out/webview', 'main.js'),
+      Uri.joinPath(this._extensionUri, './out/webview', 'main.js')
     );
 
     // Do the same for the stylesheet.
     const styleMainUri = webview.asWebviewUri(
-      Uri.joinPath(this._extensionUri, './out/webview', 'main.css'),
+      Uri.joinPath(this._extensionUri, './out/webview', 'main.css')
     );
 
     // Use a nonce to only allow a specific script to be run.
