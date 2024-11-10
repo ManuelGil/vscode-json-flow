@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+body {
+  padding: 0;
+}
+
+.react-flow {
+  --xy-controls-button-color-default: #545454;
+  --xy-minimap-background-color-default: rgba(255, 255, 255, 0.1);
+}
+
 .react-flow__minimap {
   display: block;
 }
