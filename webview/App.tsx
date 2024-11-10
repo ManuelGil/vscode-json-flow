@@ -28,7 +28,7 @@ const JsonFormater = (
   many: number,
   depth: number,
   array: JsonType[],
-  parent: string,
+  parent: string
 ): JsonType[] => {
   if (Array.isArray(json)) {
     json.forEach((items) => {
@@ -76,13 +76,28 @@ function App() {
   useEffect(() => {
     window.addEventListener('message', (event) => {
       const message = event.data;
-      setJson(message.data);
-      vscode.setState(message.data);
+
+      switch (message.type) {
+        case 'clearJson': {
+          setJson(null);
+          vscode.setState(null);
+          break;
+        }
+
+        case 'setJson': {
+          setJson(message.data);
+          vscode.setState(message.data);
+          break;
+        }
+
+        default: {
+          break;
+        }
+      }
     });
   }, []);
 
   if (!json) {
-    // loading
     return <Loading />;
   }
 

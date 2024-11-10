@@ -97,6 +97,7 @@ export class JsonController {
       // Post the message to the webview with a delay
       setTimeout(() => {
         panel.webview.postMessage({
+          type: 'setJson',
           data: { [displayName]: jsonContent },
         });
       }, this._processingDelay);
