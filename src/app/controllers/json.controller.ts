@@ -27,7 +27,7 @@ export class JsonController {
    * @example
    * private _processingDelay: number = 1000;
    */
-  private _processingDelay: number = 500; // Delay constant for preview initialization
+  private _processingDelay: number = 1000; // Delay constant for preview initialization
 
   // -----------------------------------------------------------------
   // Constructor

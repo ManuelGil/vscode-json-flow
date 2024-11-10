@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import './App.css';
+import Loading from './components/Loading.tsx';
 import UpdateNode from './components/UpdateNode.tsx';
 
 type JsonType = {
@@ -79,6 +80,11 @@ function App() {
       vscode.setState(message.data);
     });
   }, []);
+
+  if (!json) {
+    // loading
+    return <Loading />;
+  }
 
   const jsonData = JsonFormater(json, Math.random() * 100, 10, [], '');
 

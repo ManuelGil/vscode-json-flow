@@ -83,7 +83,7 @@ Transform your JSON files into interactive node-based graphs directly in Visual 
 
 #### INI Format
 
-- **`ini`, `cfg`**: Classic key-value format for app and system settings, widely used in software configurations.
+- **`ini` & `cfg`**: Classic key-value format for app and system settings, widely used in software configurations.
 
 #### Properties and Environment Files
 

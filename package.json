@@ -294,6 +294,7 @@
 		"@vscode/webview-ui-toolkit": "^1.4.0",
 		"@xyflow/react": "^12.3.4",
 		"dotenv": "^16.4.5",
+		"entitree-flex": "^0.4.1",
 		"fast-xml-parser": "^4.5.0",
 		"hcl-parser": "^0.1.1",
 		"ini": "^5.0.0",
