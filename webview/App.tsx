@@ -1,113 +1,83 @@
-import { useEffect, useState } from 'react';
-import './App.css';
-import Loading from './components/Loading.tsx';
-import UpdateNode from './components/UpdateNode.tsx';
-
-type JsonType = {
-  id: string;
-  data: { label: string };
-  position: { x: number; y: number };
-  parent: string;
-  style: object;
-};
-
-const style = {
-  width: 80,
-  display: 'flex',
-  padding: 0,
-  marging: 0,
-  borderColor: 'gray',
-  justifyContent: 'center',
-  fontSize: 8,
-  background: 'transparent',
-  color: 'rgb(182,182,182)',
-};
-
-const JsonFormater = (
-  json: unknown,
-  many: number,
-  depth: number,
-  array: JsonType[],
-  parent: string
-): JsonType[] => {
-  if (Array.isArray(json)) {
-    json.forEach((items) => {
-      const item: JsonType = {
-        id: String(items),
-        data: { label: String(items) },
-        position: { x: 100, y: depth * 10 },
-        parent,
-        style,
-      };
-      if (typeof items === 'object') {
-        JsonFormater(items, many, depth + 100, array, parent);
-      } else {
-        array.push(item);
-      }
-    });
-  } else if (typeof json === 'object' && json !== null) {
-    Object.entries(json).forEach(([key, value], index) => {
-      const items: JsonType = {
-        id: String(key),
-        data: {
-          label: key + (typeof value === 'object' ? '' : `: ${value}`),
-        },
-        position: { x: index * 100, y: depth * 10 },
-        parent,
-        style,
-      };
-
-      array.push(items);
-      JsonFormater(value, many + 1, depth * 1.5, array, String(key));
-    });
-  }
-  return array;
-};
-
 // @ts-ignore
-// biome-ignore lint/correctness/noUndeclaredVariables: vscode is a global variable
-const vscode = acquireVsCodeApi();
+import React, { useCallback } from 'react';
 
-function App() {
-  const oldJson = vscode.getState();
+import {
+  ReactFlow,
+  addEdge,
+  ConnectionLineType,
+  Panel,
+  useNodesState,
+  useEdgesState, Controls, MiniMap, // @ts-ignore
+} from '@xyflow/react';
 
-  const [json, setJson] = useState(oldJson);
+import CustomNode from './components/CustomNode';
+//TODO: Replace this line with the json structur
+import { initialTree, treeRootId } from './components/nodes-edges';
 
-  useEffect(() => {
-    window.addEventListener('message', (event) => {
-      const message = event.data;
 
-      switch (message.type) {
-        case 'clearJson': {
-          setJson(null);
-          vscode.setState(null);
-          break;
-        }
+import '@xyflow/react/dist/style.css';
+import { layoutElements } from './components/layout-elements.ts';
 
-        case 'setJson': {
-          setJson(message.data);
-          vscode.setState(message.data);
-          break;
-        }
+const nodeTypes = {
+  custom: CustomNode,
+};
 
-        default: {
-          break;
-        }
-      }
-    });
-  }, []);
+const { nodes: layoutedNodes, edges: layoutedEdges } = layoutElements(
+  initialTree ,
+  treeRootId,
+  'TB',
+);
 
-  if (!json) {
-    return <Loading />;
-  }
+const LayoutFlow = () => {
+  const [nodes, setNodes, onNodesChange] = useNodesState(layoutedNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(layoutedEdges);
 
-  const jsonData = JsonFormater(json, Math.random() * 100, 10, [], '');
+  const onConnect = useCallback(
+    (params: any) =>
+      setEdges((eds) =>
+        addEdge(
+          { ...params, type: ConnectionLineType.SmoothStep, animated: true },
+          eds,
+        ),
+      ),
+    [],
+  );
+  const onLayout = useCallback(
+    (direction: any) => {
+      const { nodes: layoutedNodes, edges: layoutedEdges } = layoutElements(
+        initialTree,
+        treeRootId,
+        direction,
+      );
+
+      setNodes([...layoutedNodes]);
+      setEdges([...layoutedEdges]);
+    },
+    [nodes, edges],
+  );
+
 
   return (
-    <div className={'bg-stone-900'}>
-      <UpdateNode nodesInitial={jsonData} />
+    <div className={"w-screen h-screen"}>
+    <ReactFlow
+      nodes={nodes}
+      edges={edges}
+      onNodesChange={onNodesChange}
+      onEdgesChange={onEdgesChange}
+      onReconnect={onConnect}
+      connectionLineType={ConnectionLineType.SmoothStep}
+      fitView
+      nodeTypes={nodeTypes}
+    >
+      <Controls/>
+      <MiniMap></MiniMap>
+      <Panel position="top-right">
+        <button onClick={() => onLayout('TB')}>vertical layout</button>
+        <button onClick={() => onLayout('LR')}>horizontal layout</button>
+      </Panel>
+    </ReactFlow>
     </div>
   );
-}
+};
 
-export default App;
+export default LayoutFlow;
