@@ -1,5 +1,11 @@
 import { ExtensionContext, Range, Uri, l10n, window, workspace } from 'vscode';
-import { FileType, generateTree, isFileTypeSupported, parseJSONContent } from '../helpers';
+import { ExtensionConfig } from '../configs';
+import {
+  FileType,
+  generateTree,
+  isFileTypeSupported,
+  parseJSONContent,
+} from '../helpers';
 import { JSONProvider } from '../providers';
 
 /**
@@ -41,7 +47,10 @@ export class JsonController {
    * @public
    * @memberof JsonController
    */
-  constructor(readonly context: ExtensionContext) {}
+  constructor(
+    readonly context: ExtensionContext,
+    readonly config: ExtensionConfig
+  ) {}
 
   // -----------------------------------------------------------------
   // Methods
@@ -94,11 +103,13 @@ export class JsonController {
 
       panel.title = displayName;
 
+      const data = generateTree(jsonContent, this.config.showValues);
+
       // Post the message to the webview with a delay
       setTimeout(() => {
         panel.webview.postMessage({
           type: 'setJson',
-          data: { ...generateTree(jsonContent) },
+          data,
         });
       }, this._processingDelay);
     });
@@ -190,11 +201,13 @@ export class JsonController {
 
     panel.title = displayName;
 
+    const data = generateTree(jsonContent, this.config.showValues);
+
     // Post the message to the webview with a delay
     setTimeout(() => {
       panel.webview.postMessage({
         type: 'setJson',
-        data: { ...generateTree(jsonContent) },
+        data,
       });
     }, this._processingDelay);
   }

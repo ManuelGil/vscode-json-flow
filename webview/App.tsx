@@ -1,4 +1,5 @@
 import {
+  Background,
   ConnectionLineType,
   Controls,
   MiniMap,
@@ -116,8 +117,9 @@ const LayoutFlow = () => {
         fitView
         nodeTypes={nodeTypes}
       >
-        <Controls />
+        <Background />
         <MiniMap />
+        <Controls />
         <Panel className="flex justify-between gap-2" position="top-right">
           <button onClick={() => onLayout('TB')}>vertical layout</button>
           <button onClick={() => onLayout('LR')}>horizontal layout</button>

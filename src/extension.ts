@@ -92,7 +92,7 @@ export function activate(context: vscode.ExtensionContext) {
   // -----------------------------------------------------------------
 
   // Create a new JsonController
-  const jsonController = new JsonController(context);
+  const jsonController = new JsonController(context, config);
 
   // Register the command to open the JSON Flow
   const disposableShowPreview = vscode.commands.registerCommand(

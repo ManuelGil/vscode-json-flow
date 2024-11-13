@@ -1,6 +1,6 @@
 import { WorkspaceConfiguration } from 'vscode';
 
-import { EXCLUDE, INCLUDE, SHOW_PATH } from './constants.config';
+import { EXCLUDE, INCLUDE, SHOW_PATH, SHOW_VALUES } from './constants.config';
 
 /**
  * The Config class.
@@ -54,6 +54,16 @@ export class ExtensionConfig {
    * console.log(config.showPath);
    */
   showPath: boolean;
+  /**
+   * Whether to show the values or not.
+   * @type {boolean}
+   * @public
+   * @memberof Config
+   * @example
+   * const config = new Config(workspace.getConfiguration());
+   * console.log(config.showValues);
+   */
+  showValues: boolean;
 
   // -----------------------------------------------------------------
   // Constructor
@@ -71,5 +81,6 @@ export class ExtensionConfig {
     this.include = config.get<string[]>('files.include') ?? INCLUDE;
     this.exclude = config.get<string[]>('files.exclude') ?? EXCLUDE;
     this.showPath = config.get<boolean>('files.showPath') ?? SHOW_PATH;
+    this.showValues = config.get<boolean>('graph.showValues') ?? SHOW_VALUES;
   }
 }

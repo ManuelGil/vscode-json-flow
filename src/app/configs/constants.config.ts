@@ -117,3 +117,15 @@ export const EXCLUDE: string[] = [
  * @returns {boolean} - Whether to show the path or not
  */
 export const SHOW_PATH: boolean = true;
+
+/**
+ * SHOW_VALUES: Whether to show the values or not.
+ * @type {boolean}
+ * @public
+ * @memberof Constants
+ * @example
+ * console.log(SHOW_VALUES);
+ *
+ * @returns {boolean} - Whether to show the values or not
+ */
+export const SHOW_VALUES: boolean = true;

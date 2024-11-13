@@ -18,7 +18,8 @@ body {
 button {
   border: none;
   padding: var(--input-padding-vertical) var(--input-padding-horizontal);
-  width: 150px;
+  height: 25px;
+  width: 125px;
   border-radius: 2px;
   text-align: center;
   outline: 1px solid transparent;

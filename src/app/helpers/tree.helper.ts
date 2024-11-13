@@ -1,12 +1,15 @@
 import { Tree } from '../interfaces';
 
-export const generateTree = (json: object): Tree => {
+export const generateTree = (
+  json: object,
+  showValues: boolean = true
+): Tree => {
   const tree: Tree = {};
   let currentId = 1;
 
-  // Initialize queue with the root node
-  const queue: Array<{ id: number; name: string; data: any }> = [
-    { id: currentId++, name: 'root', data: json },
+  // Initialize the queue with the root node
+  const queue: { id: number; name: string; data: any }[] = [
+    { id: currentId, name: 'root', data: json },
   ];
 
   // Process each item in the queue
@@ -15,29 +18,26 @@ export const generateTree = (json: object): Tree => {
 
     // Create the current node and add it to the tree
     tree[id] = { id: id.toString(), name };
+
+    // Determine if the node has children
     if (typeof data === 'object' && data !== null) {
-      tree[id].children = [];
+      const children: number[] = [];
 
-      // Add children to the queue
+      // Add each property or array item to the queue
       for (const [key, value] of Object.entries(data)) {
-        const childId = currentId++;
+        currentId += 1;
+        children.push(currentId);
 
-        queue.push({
-          id: childId,
-          name: `${key}`,
-          data: value,
-        });
-
-        tree[id].children.push(childId);
+        // Add to the queue with an incremented ID
+        queue.push({ id: currentId, name: key, data: value });
       }
-    } else {
-      // For non-object/array data, add as a child node directly
-      const childId = currentId++;
-      tree[childId] = {
-        id: childId.toString(),
-        name: `${data}`,
-      };
-      tree[id].children = (tree[id].children || []).concat(childId);
+
+      tree[id].children = children;
+    } else if (showValues) {
+      // If it's a primitive value and showValues is true, add it as a leaf node
+      currentId += 1;
+      tree[currentId] = { id: currentId.toString(), name: data.toString() };
+      tree[id].children = [currentId];
     }
   }
 

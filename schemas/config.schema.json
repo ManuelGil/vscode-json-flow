@@ -40,6 +40,12 @@
 			"default": true,
 			"scope": "resource",
 			"description": "Show the path of the file in the name of the list of generated files"
+		},
+		"jsonFlow.graph.showValues": {
+			"type": "boolean",
+			"default": true,
+			"scope": "resource",
+			"description": "Show the values of the nodes in the graph"
 		}
 	}
 }
