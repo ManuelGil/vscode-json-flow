@@ -1,5 +1,5 @@
-import React, { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
+import React, { memo } from 'react';
 
 // Tipos
 interface NodeData {
@@ -11,21 +11,20 @@ interface NodeData {
   children?: string[];
   siblings?: string[];
   spouses?: string[];
-  [key: string]: any;  // Para otras propiedades opcionales
+  [key: string]: unknown;
 }
 
 interface NodeProps {
   data: NodeData;
 }
 
-// Estilos
 const nodeStyle: React.CSSProperties = {
   height: 36,
   minWidth: 150,
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'center',
-  border: '1px solid black',
+  border: '1px solid white',
   borderRadius: '4px',
 };
 

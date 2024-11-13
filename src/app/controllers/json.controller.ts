@@ -1,5 +1,5 @@
-import { ExtensionContext, l10n, Range, Uri, window, workspace } from 'vscode';
-import { FileType, isFileTypeSupported, parseJSONContent } from '../helpers';
+import { ExtensionContext, Range, Uri, l10n, window, workspace } from 'vscode';
+import { FileType, generateTree, isFileTypeSupported, parseJSONContent } from '../helpers';
 import { JSONProvider } from '../providers';
 
 /**
@@ -98,7 +98,7 @@ export class JsonController {
       setTimeout(() => {
         panel.webview.postMessage({
           type: 'setJson',
-          data: { [displayName]: jsonContent },
+          data: { ...generateTree(jsonContent) },
         });
       }, this._processingDelay);
     });
@@ -193,7 +193,8 @@ export class JsonController {
     // Post the message to the webview with a delay
     setTimeout(() => {
       panel.webview.postMessage({
-        data: { [displayName]: jsonContent },
+        type: 'setJson',
+        data: { ...generateTree(jsonContent) },
       });
     }, this._processingDelay);
   }

@@ -2,7 +2,11 @@ import { Position } from '@xyflow/react';
 import { layoutFromMap } from 'entitree-flex';
 
 type Direction = 'TB' | 'LR';
-type OrientationType = 'vertical' | 'horizontal';
+
+enum Orientation {
+  Vertical = 'vertical',
+  Horizontal = 'horizontal',
+}
 
 interface Coordinates {
   x: number;
@@ -72,14 +76,8 @@ interface LayoutResult {
   edges: LayoutEdge[];
 }
 
-// Constantes
 const nodeWidth = 150;
 const nodeHeight = 36;
-
-const Orientation = {
-  Vertical: 'vertical' as OrientationType,
-  Horizontal: 'horizontal' as OrientationType,
-};
 
 const entitreeSettings = {
   clone: true,
@@ -103,22 +101,19 @@ const entitreeSettings = {
 const { Top, Bottom, Left, Right } = Position;
 
 export const layoutElements = (
-         tree: Record<string, Tree>,
-             rootId: number,
-             direction: Direction = 'TB'
+  tree: Record<string, Tree>,
+  rootId: number,
+  direction: Direction = 'TB'
 ): LayoutResult => {
   const isTreeHorizontal = direction === 'LR';
 
-  const { nodes: entitreeNodes, rels: entitreeEdges }: EntitreeResult = layoutFromMap(
-    rootId,
-    tree,
-    {
+  const { nodes: entitreeNodes, rels: entitreeEdges }: EntitreeResult =
+    layoutFromMap(rootId, tree, {
       ...entitreeSettings,
       orientation: isTreeHorizontal
-                   ? Orientation.Horizontal
-                   : Orientation.Vertical,
-    }
-  );
+        ? Orientation.Horizontal
+        : Orientation.Vertical,
+    });
 
   const nodes: LayoutNode[] = [];
   const edges: LayoutEdge[] = [];
@@ -169,7 +164,7 @@ export const layoutElements = (
       data: {
         label: node.name,
         direction,
-        isRoot: node.id === rootId+"",
+        isRoot: node.id === `${rootId}`,
         ...node,
       },
     };
