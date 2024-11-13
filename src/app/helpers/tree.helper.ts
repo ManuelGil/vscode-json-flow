@@ -1,51 +1,44 @@
-import { Tree, TreeNode } from '../../interfaces';
+import { Tree } from '../interfaces';
 
 export const generateTree = (json: object): Tree => {
   const tree: Tree = {};
   let currentId = 1;
 
-  // Initialize queue with root node
-  const queue: Array<{ id: number; name: string; data: unknown }> = [
-    { id: currentId, name: 'root', data: json },
+  // Initialize queue with the root node
+  const queue: Array<{ id: number; name: string; data: any }> = [
+    { id: currentId++, name: 'root', data: json },
   ];
 
+  // Process each item in the queue
   while (queue.length > 0) {
-    const current = queue.shift()!;
-    const { id, name, data } = current;
+    const { id, name, data } = queue.shift()!;
 
-    // Create current node
-    const node: TreeNode = {
-      id: id.toString(),
-      name: name,
-    };
+    // Create the current node and add it to the tree
+    tree[id] = { id: id.toString(), name };
+    if (typeof data === 'object' && data !== null) {
+      tree[id].children = [];
 
-    // Process child nodes if data is an object
-    if (data && typeof data === 'object') {
-      const children: number[] = [];
-
-      // Process each property in the object
+      // Add children to the queue
       for (const [key, value] of Object.entries(data)) {
-        currentId++;
+        const childId = currentId++;
 
-        // Add child to queue for processing
         queue.push({
-          id: currentId,
-          name: key,
+          id: childId,
+          name: `${key}`,
           data: value,
         });
 
-        // Add child ID to current node's children array
-        children.push(currentId);
+        tree[id].children.push(childId);
       }
-
-      // Only add children array if there are children
-      if (children.length > 0) {
-        node.children = children;
-      }
+    } else {
+      // For non-object/array data, add as a child node directly
+      const childId = currentId++;
+      tree[childId] = {
+        id: childId.toString(),
+        name: `${data}`,
+      };
+      tree[id].children = (tree[id].children || []).concat(childId);
     }
-
-    // Add node to tree
-    tree[id] = node;
   }
 
   return tree;
