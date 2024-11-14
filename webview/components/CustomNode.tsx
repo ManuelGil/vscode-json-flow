@@ -19,13 +19,9 @@ interface NodeProps {
 }
 
 const nodeStyle: React.CSSProperties = {
-  height: 50,
+  minHeight: 50,
   minWidth: 200,
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center',
-  border: '1px solid white',
-  borderRadius: '4px',
+  borderColor: 'white',
 };
 
 const { Top, Bottom, Left, Right } = Position;
@@ -86,7 +82,9 @@ const CustomNode: React.FC<NodeProps> = memo(({ data }) => {
           id={getTargetPosition()}
         />
       )}
-      <div style={nodeStyle}>{label}</div>
+      <div className="node__content" style={nodeStyle}>
+        {label}
+      </div>
     </div>
   );
 });

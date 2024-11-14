@@ -15,14 +15,29 @@ body {
   display: block;
 }
 
-.react-flow__node {
-  white-space: nowrap;
+.node__content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 5px;
+  padding: 10px;
+  line-height: 2em;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+  word-break: break-all;
 }
 
-.react-flow__node:hover {
+.node__content:hover {
+  height: max-content;
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--vscode-focusBorder) !important;
+  background-color: var(--vscode-editor-background);
   overflow: visible;
+  white-space: normal;
 }
 
 button {
