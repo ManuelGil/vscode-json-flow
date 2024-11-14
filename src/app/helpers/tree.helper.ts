@@ -8,7 +8,7 @@ export const generateTree = (
   let currentId = 1;
 
   // Initialize the queue with the root node
-  const queue: { id: number; name: string; data: any }[] = [
+  const queue: { id: number; name: string; data: unknown }[] = [
     { id: currentId, name: 'root', data: json },
   ];
 

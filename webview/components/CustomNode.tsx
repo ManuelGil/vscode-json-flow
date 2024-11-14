@@ -19,8 +19,8 @@ interface NodeProps {
 }
 
 const nodeStyle: React.CSSProperties = {
-  height: 36,
-  minWidth: 150,
+  height: 50,
+  minWidth: 200,
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'center',

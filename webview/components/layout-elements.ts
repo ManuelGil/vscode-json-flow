@@ -26,8 +26,8 @@ interface BaseNode {
   spouses?: string[];
 }
 
-interface Tree extends BaseNode {
-  [key: string]: any;
+export interface Tree extends BaseNode {
+  [key: string]: unknown;
 }
 
 interface EntitreeNode extends BaseNode {
@@ -52,7 +52,7 @@ interface LayoutNode {
     label: string;
     direction: Direction;
     isRoot: boolean;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 
@@ -76,8 +76,8 @@ interface LayoutResult {
   edges: LayoutEdge[];
 }
 
-const nodeWidth = 150;
-const nodeHeight = 36;
+const nodeWidth = 200;
+const nodeHeight = 50;
 
 const entitreeSettings = {
   clone: true,

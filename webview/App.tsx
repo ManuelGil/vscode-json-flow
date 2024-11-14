@@ -1,33 +1,38 @@
 import {
   Background,
+  Connection,
   ConnectionLineType,
   Controls,
+  Edge,
   MiniMap,
+  Node,
   Panel,
   ReactFlow,
   addEdge,
   useEdgesState,
   useNodesState,
-  Node,
-  Edge,
-  Connection,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useCallback, useEffect, useState } from 'react';
 import CustomNode from './components/CustomNode';
 import Loading from './components/Loading';
-import { layoutElements } from './components/layout-elements.ts';
+import { Tree, layoutElements } from './components/layout-elements.ts';
 
 // @ts-ignore
 // biome-ignore lint/correctness/noUndeclaredVariables: vscode is a global variable
 const vscode = acquireVsCodeApi();
+
+type StateType = { json: Record<string, Tree> | null; orientation: string };
 
 const nodeTypes = {
   custom: CustomNode,
 };
 
 const LayoutFlow = () => {
-  const [json, setJson] = useState(vscode.getState());
+  const jsonState: StateType = vscode.getState();
+  const [json, setJson] = useState(jsonState?.json ?? null);
+  // TODO: implement orientation change
+  // const [orientation, setOrientation] = useState(jsonState?.orientation ?? 'TB');
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
@@ -44,7 +49,7 @@ const LayoutFlow = () => {
 
         case 'setJson': {
           setJson(message.data);
-          vscode.setState(message.data);
+          vscode.setState({ ...vscode.getState(), json: message.data });
           break;
         }
 
@@ -121,8 +126,22 @@ const LayoutFlow = () => {
         <MiniMap />
         <Controls />
         <Panel className="flex justify-between gap-2" position="top-right">
-          <button onClick={() => onLayout('TB')}>vertical layout</button>
-          <button onClick={() => onLayout('LR')}>horizontal layout</button>
+          <button
+            onClick={() => {
+              vscode.setState({ ...jsonState, orientation: 'TB' });
+              onLayout('TB');
+            }}
+          >
+            vertical layout
+          </button>
+          <button
+            onClick={() => {
+              vscode.setState({ ...jsonState, orientation: 'LR' });
+              onLayout('LR');
+            }}
+          >
+            horizontal layout
+          </button>
         </Panel>
       </ReactFlow>
     </div>
