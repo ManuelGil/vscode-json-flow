@@ -1,7 +1,7 @@
 {
 	"name": "vscode-json-flow",
 	"displayName": "JSON Flow",
-	"description": "JSON Flow turns JSON and other formats into interactive node graphs, simplifying data exploration and management in VS Code. It supports JSON, JSONC, JSON5, CFG, CSV, ENV, HCL, INI, PROPERTIES, TOML, TSV, XML, YAML, and YML.",
+	"description": "Transform JSON into interactive graphs in VSCode - Free & Open Source",
 	"version": "1.4.0",
 	"preview": true,
 	"icon": "icon.png",
