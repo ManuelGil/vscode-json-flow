@@ -1,28 +1,6 @@
 import { Handle, Position } from '@xyflow/react';
 import React, { memo } from 'react';
-
-// Tipos
-interface NodeData {
-  isSpouse?: boolean;
-  isSibling?: boolean;
-  isRoot?: boolean;
-  label: string;
-  direction: 'TB' | 'LR';
-  children?: string[];
-  siblings?: string[];
-  spouses?: string[];
-  [key: string]: unknown;
-}
-
-interface NodeProps {
-  data: NodeData;
-}
-
-const nodeStyle: React.CSSProperties = {
-  minHeight: 50,
-  minWidth: 200,
-  borderColor: 'white',
-};
+import { NodeProps, nodeStyle } from '../common';
 
 const { Top, Bottom, Left, Right } = Position;
 

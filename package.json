@@ -128,6 +128,16 @@
 					"default": true,
 					"scope": "resource",
 					"description": "%jsonFlow.graph.showValues%"
+				},
+				"jsonFlow.graph.layoutDirection": {
+					"type": "string",
+					"default": "TB",
+					"enum": [
+						"TB",
+						"LR"
+					],
+					"scope": "resource",
+					"description": "%jsonFlow.graph.layoutDirection%"
 				}
 			}
 		},

@@ -105,10 +105,13 @@ export class JsonController {
 
       const data = generateTree(jsonContent, this.config.showValues);
 
+      const layoutDirection = this.config.layoutDirection;
+
       // Post the message to the webview with a delay
       setTimeout(() => {
         panel.webview.postMessage({
           type: 'setJson',
+          layoutDirection,
           data,
         });
       }, this._processingDelay);
@@ -203,10 +206,13 @@ export class JsonController {
 
     const data = generateTree(jsonContent, this.config.showValues);
 
+    const layoutDirection = this.config.layoutDirection;
+
     // Post the message to the webview with a delay
     setTimeout(() => {
       panel.webview.postMessage({
         type: 'setJson',
+        layoutDirection,
         data,
       });
     }, this._processingDelay);

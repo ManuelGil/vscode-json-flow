@@ -1,102 +1,18 @@
 import { Position } from '@xyflow/react';
 import { layoutFromMap } from 'entitree-flex';
-
-type Direction = 'TB' | 'LR';
-
-enum Orientation {
-  Vertical = 'vertical',
-  Horizontal = 'horizontal',
-}
-
-interface Coordinates {
-  x: number;
-  y: number;
-}
-
-interface BaseNode {
-  id: string;
-  name: string;
-  isSpouse?: boolean;
-  isSibling?: boolean;
-  x?: number;
-  y?: number;
-  children?: string[];
-  parents?: string[];
-  siblings?: string[];
-  spouses?: string[];
-}
-
-export interface Tree extends BaseNode {
-  [key: string]: unknown;
-}
-
-interface EntitreeNode extends BaseNode {
-  x: number;
-  y: number;
-}
-
-interface EntitreeEdge {
-  source: BaseNode;
-  target: BaseNode;
-}
-
-interface LayoutNode {
-  id: string;
-  type: string;
-  width: number;
-  height: number;
-  position: Coordinates;
-  sourcePosition: Position;
-  targetPosition: Position;
-  data: {
-    label: string;
-    direction: Direction;
-    isRoot: boolean;
-    [key: string]: unknown;
-  };
-}
-
-interface LayoutEdge {
-  id: string;
-  source: string;
-  target: string;
-  type: string;
-  animated: boolean;
-  sourceHandle: Position;
-  targetHandle: Position;
-}
-
-interface EntitreeResult {
-  nodes: EntitreeNode[];
-  rels: EntitreeEdge[];
-}
-
-interface LayoutResult {
-  nodes: LayoutNode[];
-  edges: LayoutEdge[];
-}
-
-const nodeWidth = 200;
-const nodeHeight = 50;
-
-const entitreeSettings = {
-  clone: true,
-  enableFlex: true,
-  firstDegreeSpacing: 100,
-  nextAfterAccessor: 'spouses',
-  nextAfterSpacing: 100,
-  nextBeforeAccessor: 'siblings',
-  nextBeforeSpacing: 100,
+import {
+  Direction,
+  EntitreeResult,
+  LayoutEdge,
+  LayoutNode,
+  LayoutResult,
+  Orientation,
+  Tree,
+  edgeStyle,
+  entitreeSettings,
   nodeHeight,
   nodeWidth,
-  orientation: Orientation.Vertical,
-  rootX: 0,
-  rootY: 0,
-  secondDegreeSpacing: 100,
-  sourcesAccessor: 'parents',
-  sourceTargetSpacing: 100,
-  targetsAccessor: 'children',
-};
+} from '../common';
 
 const { Top, Bottom, Left, Right } = Position;
 
@@ -130,6 +46,7 @@ export const layoutElements = (
       animated: true,
       sourceHandle: Position.Bottom,
       targetHandle: Position.Top,
+      style: edgeStyle,
     };
 
     const isTargetSpouse = !!edge.target.isSpouse;

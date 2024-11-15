@@ -129,3 +129,15 @@ export const SHOW_PATH: boolean = true;
  * @returns {boolean} - Whether to show the values or not
  */
 export const SHOW_VALUES: boolean = true;
+
+/**
+ * LAYOUT_DIRECTION: The layout direction.
+ * @type {string}
+ * @public
+ * @memberof Constants
+ * @example
+ * console.log(LAYOUT_DIRECTION);
+ *
+ * @returns {string} - The layout direction
+ */
+export const LAYOUT_DIRECTION: 'TB' | 'LR' = 'TB';

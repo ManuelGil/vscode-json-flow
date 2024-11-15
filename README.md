@@ -160,6 +160,7 @@ Configure your project by creating or updating a settings.json file at the proje
      ], // The files to exclude from watching. Example: "**/node_modules/**", "**/dist/**", "**/out/**", "**/build/**", "**/.*/**"
      "jsonFlow.files.showPath": true, // Show the path of the file in the file name. Example: "home.component.tsx (pages/home)"
      "jsonFlow.graph.showValues": true, // Show the values of the nodes in the graph. Example: "name: 'John Doe'"
+     "jsonFlow.graph.layoutDirection": "TB", // The layout direction of the graph. Example: "TB", "LR"
    }
    ```
 

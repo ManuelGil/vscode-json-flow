@@ -14,20 +14,14 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useCallback, useEffect, useState } from 'react';
+import { Direction, StateType } from './common';
 import CustomNode from './components/CustomNode';
 import Loading from './components/Loading';
-import { Tree, layoutElements } from './components/layout-elements.ts';
+import { layoutElements } from './components/layout-elements';
 
 // @ts-ignore
 // biome-ignore lint/correctness/noUndeclaredVariables: vscode is a global variable
 const vscode = acquireVsCodeApi();
-
-type Direction = 'TB' | 'LR';
-
-type StateType = {
-  json: Record<string, Tree> | null;
-  orientation: Direction;
-};
 
 const nodeTypes = {
   custom: CustomNode,
@@ -36,8 +30,8 @@ const nodeTypes = {
 const LayoutFlow = () => {
   const jsonState: StateType = vscode.getState();
   const [json, setJson] = useState(jsonState?.json ?? null);
-  const [orientation, setOrientation] = useState<Direction>(
-    jsonState?.orientation ?? 'TB'
+  const [layoutDirection, setLayoutDirection] = useState<Direction>(
+    jsonState?.layoutDirection ?? 'TB'
   );
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -55,7 +49,12 @@ const LayoutFlow = () => {
 
         case 'setJson': {
           setJson(message.data);
-          vscode.setState({ ...vscode.getState(), json: message.data });
+          setLayoutDirection(message.layoutDirection);
+          vscode.setState({
+            ...vscode.getState(),
+            json: message.data,
+            layoutDirection: message.layoutDirection,
+          });
           break;
         }
 
@@ -75,12 +74,12 @@ const LayoutFlow = () => {
       const { nodes: layoutedNodes, edges: layoutedEdges } = layoutElements(
         json,
         treeRootId,
-        orientation
+        layoutDirection
       );
       setNodes(layoutedNodes);
       setEdges(layoutedEdges);
     }
-  }, [json, orientation, setNodes, setEdges]);
+  }, [json, layoutDirection, setNodes, setEdges]);
 
   const onConnect = useCallback(
     (params: Connection) =>
@@ -99,10 +98,10 @@ const LayoutFlow = () => {
         return;
       }
 
-      setOrientation(direction);
+      setLayoutDirection(direction);
       vscode.setState({
         ...vscode.getState(),
-        orientation: direction,
+        layoutDirection: direction,
       });
 
       const treeRootId = 1;

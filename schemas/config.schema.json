@@ -46,6 +46,16 @@
 			"default": true,
 			"scope": "resource",
 			"description": "Show the values of the nodes in the graph"
+		},
+		"jsonFlow.graph.layoutDirection": {
+			"type": "string",
+			"default": "TB",
+			"enum": [
+				"TB",
+				"LR"
+			],
+			"scope": "resource",
+			"description": "The direction of the layout of the graph. TB is top to bottom, LR is left to right."
 		}
 	}
 }

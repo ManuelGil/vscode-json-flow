@@ -3,6 +3,7 @@
 	"jsonFlow.files.exclude": "Glob patterns to exclude from the package. The default is node_modules, dist, out, build, and any hidden files",
 	"jsonFlow.files.showPath": "Show the path of the file in the name of the list of generated files",
 	"jsonFlow.graph.showValues": "Show the values of the nodes in the graph",
+	"jsonFlow.graph.layoutDirection": "Graph layout direction. TB for top to bottom and LR for left to right",
 	"jsonFlow.files.refreshList": "Refresh List",
 	"jsonFlow.files.openFile": "Open File",
 	"jsonFlow.files.convertToJson": "Convert to JSON",
