@@ -1,16 +1,16 @@
 import {
-  Background,
-  Connection,
-  ConnectionLineType,
-  Controls,
-  Edge,
-  MiniMap,
-  Node,
-  Panel,
-  ReactFlow,
-  addEdge,
-  useEdgesState,
-  useNodesState,
+	Background,
+	Connection,
+	ConnectionLineType,
+	Controls,
+	Edge,
+	MiniMap,
+	Node,
+	Panel,
+	ReactFlow,
+	addEdge,
+	useEdgesState,
+	useNodesState,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useCallback, useEffect, useState } from 'react';
@@ -22,130 +22,127 @@ import { Tree, layoutElements } from './components/layout-elements.ts';
 // biome-ignore lint/correctness/noUndeclaredVariables: vscode is a global variable
 const vscode = acquireVsCodeApi();
 
-type StateType = { json: Record<string, Tree> | null; orientation: string };
+type Direction = 'TB' | 'LR';
+
+type StateType = {
+	json: Record<string, Tree> | null;
+	orientation: Direction;
+};
 
 const nodeTypes = {
-  custom: CustomNode,
+	custom: CustomNode,
 };
 
 const LayoutFlow = () => {
-  const jsonState: StateType = vscode.getState();
-  const [json, setJson] = useState(jsonState?.json ?? null);
-  // TODO: implement orientation change
-  // const [orientation, setOrientation] = useState(jsonState?.orientation ?? 'TB');
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+	const jsonState: StateType = vscode.getState();
+	const [json, setJson] = useState(jsonState?.json ?? null);
+	const [orientation, setOrientation] = useState<Direction>(
+		jsonState?.orientation ?? 'TB'
+	);
+	const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+	const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      const message = event.data;
+	useEffect(() => {
+		const handleMessage = (event: MessageEvent) => {
+			const message = event.data;
 
-      switch (message.type) {
-        case 'clearJson': {
-          setJson(null);
-          vscode.setState(null);
-          break;
-        }
+			switch (message.type) {
+				case 'clearJson': {
+					setJson(null);
+					vscode.setState(null);
+					break;
+				}
 
-        case 'setJson': {
-          setJson(message.data);
-          vscode.setState({ ...vscode.getState(), json: message.data });
-          break;
-        }
+				case 'setJson': {
+					setJson(message.data);
+					vscode.setState({ ...vscode.getState(), json: message.data });
+					break;
+				}
 
-        default: {
-          break;
-        }
-      }
-    };
+				default: {
+					break;
+				}
+			}
+		};
 
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, []);
+		window.addEventListener('message', handleMessage);
+		return () => window.removeEventListener('message', handleMessage);
+	}, []);
 
-  useEffect(() => {
-    if (json) {
-      const treeRootId = 1;
-      const { nodes: layoutedNodes, edges: layoutedEdges } = layoutElements(
-        json,
-        treeRootId,
-        'TB'
-      );
-      setNodes(layoutedNodes);
-      setEdges(layoutedEdges);
-    }
-  }, [json, setNodes, setEdges]);
+	useEffect(() => {
+		if (json) {
+			const treeRootId = 1;
+			const { nodes: layoutedNodes, edges: layoutedEdges } = layoutElements(
+				json,
+				treeRootId,
+				orientation
+			);
+			setNodes(layoutedNodes);
+			setEdges(layoutedEdges);
+		}
+	}, [json, orientation, setNodes, setEdges]);
 
-  const onConnect = useCallback(
-    (params: Connection) =>
-      setEdges((eds) =>
-        addEdge(
-          { ...params, type: ConnectionLineType.SmoothStep, animated: true },
-          eds
-        )
-      ),
-    [setEdges]
-  );
+	const onConnect = useCallback(
+		(params: Connection) =>
+			setEdges((eds) =>
+				addEdge(
+					{ ...params, type: ConnectionLineType.SmoothStep, animated: true },
+					eds
+				)
+			),
+		[setEdges]
+	);
 
-  const onLayout = useCallback(
-    (direction: 'TB' | 'LR') => {
-      if (!json) {
-        return;
-      }
+	const onLayout = useCallback(
+		(direction: Direction) => {
+			if (!json) {
+				return;
+			}
 
-      const treeRootId = 1;
-      const { nodes: layoutedNodes, edges: layoutedEdges } = layoutElements(
-        json,
-        treeRootId,
-        direction
-      );
+			setOrientation(direction);
+			vscode.setState({
+				...vscode.getState(),
+				orientation: direction,
+			});
 
-      setNodes([...layoutedNodes]);
-      setEdges([...layoutedEdges]);
-    },
-    [json, setNodes, setEdges]
-  );
+			const treeRootId = 1;
+			const { nodes: layoutedNodes, edges: layoutedEdges } = layoutElements(
+				json,
+				treeRootId,
+				direction
+			);
 
-  if (!json) {
-    return <Loading />;
-  }
+			setNodes([...layoutedNodes]);
+			setEdges([...layoutedEdges]);
+		},
+		[json, setNodes, setEdges]
+	);
 
-  return (
-    <div className="h-screen w-screen">
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        connectionLineType={ConnectionLineType.SmoothStep}
-        fitView
-        nodeTypes={nodeTypes}
-      >
-        <Background />
-        <MiniMap />
-        <Controls />
-        <Panel className="flex justify-between gap-2" position="top-right">
-          <button
-            onClick={() => {
-              vscode.setState({ ...jsonState, orientation: 'TB' });
-              onLayout('TB');
-            }}
-          >
-            vertical layout
-          </button>
-          <button
-            onClick={() => {
-              vscode.setState({ ...jsonState, orientation: 'LR' });
-              onLayout('LR');
-            }}
-          >
-            horizontal layout
-          </button>
-        </Panel>
-      </ReactFlow>
-    </div>
-  );
+	if (!json) {
+		return <Loading />;
+	}
+
+	return (
+		<div className="h-screen w-screen">
+			<ReactFlow
+				nodes={nodes}
+				edges={edges}
+				onNodesChange={onNodesChange}
+				onEdgesChange={onEdgesChange}
+				onConnect={onConnect}
+				connectionLineType={ConnectionLineType.SmoothStep}
+				fitView
+				nodeTypes={nodeTypes}>
+				<Background />
+				<MiniMap />
+				<Controls />
+				<Panel className="flex justify-between gap-2" position="top-right">
+					<button onClick={() => onLayout('TB')}>vertical layout</button>
+					<button onClick={() => onLayout('LR')}>horizontal layout</button>
+				</Panel>
+			</ReactFlow>
+		</div>
+	);
 };
 
 export default LayoutFlow;
