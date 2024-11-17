@@ -7,6 +7,10 @@
 [![GitHub Repo stars](https://img.shields.io/github/stars/ManuelGil/vscode-json-flow?style=for-the-badge&logo=github)](https://github.com/ManuelGil/vscode-json-flow)
 [![GitHub license](https://img.shields.io/github/license/ManuelGil/vscode-json-flow?style=for-the-badge&logo=github)](https://github.com/ManuelGil/vscode-json-flow/blob/main/LICENSE)
 
+<p align="center">
+<a href="https://www.producthunt.com/products/json-flow#json-flow" target="_blank"  rel="noopener noreferrer"><img src="https://api.producthunt.com/widgets/embed-image/v1/follow?product_id=725176&theme=light" alt="JSON&#0032;Flow - Transform&#0032;JSON&#0032;into&#0032;interactive&#0032;graphs&#0032;in&#0032;VSCode | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
+</p>
+
 Transform your JSON files into interactive node-based graphs directly in Visual Studio Code. JSON Flow makes working with structured data effortless and visually intuitive, turning raw data into dynamic, interactive visualizations. Perfect for developers, analysts, and data enthusiasts who want to understand and navigate complex JSON structures with ease.
 
 [![JSON Flow](https://raw.githubusercontent.com/ManuelGil/vscode-json-flow/main/images/json-flow.png)](https://marketplace.visualstudio.com/items?itemName=imgildev.vscode-json-flow)
@@ -130,7 +134,9 @@ Transform your JSON files into interactive node-based graphs directly in Visual 
    - **Zoom In**: Click on the `+` button to zoom in on the graph.
    - **Zoom Out**: Click on the `-` button to zoom out on the graph.
 
-![JSON Flow](https://raw.githubusercontent.com/ManuelGil/vscode-json-flow/main/images/json-flow.gif)
+![JSON Flow Preview](https://raw.githubusercontent.com/ManuelGil/vscode-json-flow/main/images/json-flow-1.gif)
+
+![JSON Flow Menu](https://raw.githubusercontent.com/ManuelGil/vscode-json-flow/main/images/json-flow-2.gif)
 
 ## Project Settings
 
