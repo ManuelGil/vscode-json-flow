@@ -30,7 +30,7 @@
 				"**/dist/**",
 				"**/out/**",
 				"**/build/**",
-				"**/.*/**"
+				"**/vendor/**"
 			],
 			"scope": "resource",
 			"description": "Glob patterns to exclude from the package. The default is node_modules, dist, out, build, and any hidden files."

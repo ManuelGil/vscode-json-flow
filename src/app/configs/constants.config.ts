@@ -103,7 +103,7 @@ export const EXCLUDE: string[] = [
   '**/dist/**',
   '**/out/**',
   '**/build/**',
-  '**/.*/**',
+  '**/vendor/**',
 ];
 
 /**

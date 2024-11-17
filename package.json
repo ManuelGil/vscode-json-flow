@@ -111,7 +111,7 @@
 						"**/dist/**",
 						"**/out/**",
 						"**/build/**",
-						"**/.*/**"
+						"**/vendor/**"
 					],
 					"scope": "resource",
 					"description": "%jsonFlow.files.exclude%"
