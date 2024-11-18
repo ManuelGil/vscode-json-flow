@@ -1,7 +1,5 @@
-import { readdirSync } from 'fs';
-import { minimatch } from 'minimatch';
-import { join } from 'path';
-import { env, l10n, Range, ThemeIcon, Uri, window, workspace } from 'vscode';
+import fg from 'fast-glob';
+import { Range, ThemeIcon, Uri, env, l10n, window, workspace } from 'vscode';
 
 import { EXTENSION_ID, ExtensionConfig } from '../configs';
 import { FileType, isFileTypeSupported, parseJSONContent } from '../helpers';
@@ -458,57 +456,45 @@ export class FilesController {
 
   // Private methods
   /**
-   * The getFilePropertiesPartial method.
+   * The findFiles method.
    *
-   * @function getFilePropertiesPartial
-   * @public
+   * @function findFiles
+   * @param {string} baseDir - The base directory
+   * @param {string[]} include - The include pattern
+   * @param {string[]} exclude - The exclude pattern
+   * @private
+   * @async
    * @memberof FilesController
    * @example
-   * controller.getFilePropertiesPartial();
+   * controller.findFiles('baseDir', ['include'], ['exclude']);
    *
-   * @returns {void} - The promise
+   * @returns {Promise<Uri[]>} - The promise with the files
    */
   private async findFiles(
-    baseDir: string, // Base directory to start searching from
-    include: string[], // Include pattern(s) as a single string or an array
-    exclude: string[],
-    allowRecursion: boolean = true // Exclude pattern(s) as a single string or an array
+    baseDir: string,
+    include: string[], // Include patterns
+    exclude: string[], // Exclude patterns
+    allowRecursion: boolean = true // Toggle recursive search
   ): Promise<Uri[]> {
-    const includePatterns = Array.isArray(include) ? include : [include];
-    const excludePatterns = Array.isArray(exclude) ? exclude : [exclude];
+    // Configure fast-glob options
+    const options = {
+      cwd: baseDir, // Set base directory for searching
+      absolute: true, // Ensure paths are absolute
+      onlyFiles: true, // Match only files, not directories
+      deep: allowRecursion ? undefined : 1, // Toggle recursion
+      ignore: exclude, // Exclude patterns
+    };
 
-    const result: Uri[] = [];
-    const stack: string[] = [baseDir]; // Stack for directories to explore
+    try {
+      // Use fast-glob to find matching files
+      const filePaths = await fg(include, options);
 
-    while (stack.length > 0) {
-      const currentDir = stack.pop(); // Get the next directory from the stack
-
-      if (currentDir) {
-        const entries = readdirSync(currentDir, { withFileTypes: true });
-
-        for (const entry of entries) {
-          const fullPath = join(currentDir, entry.name);
-
-          if (entry.isDirectory() && allowRecursion) {
-            // Push the directory onto the stack to explore it later
-            stack.push(fullPath);
-          } else if (entry.isFile()) {
-            // Check if the file matches include and exclude patterns
-            const isIncluded = includePatterns.some((pattern) =>
-              minimatch(fullPath, pattern)
-            );
-            const isExcluded = excludePatterns.some((pattern) =>
-              minimatch(fullPath, pattern)
-            );
-
-            if (isIncluded && !isExcluded) {
-              result.push(Uri.file(fullPath));
-            }
-          }
-        }
-      }
+      // Convert file paths to VS Code Uri objects
+      return filePaths.sort().map((filePath) => Uri.file(filePath));
+    } catch (error) {
+      const message = l10n.t('Error while finding files: {0}', [error]);
+      window.showErrorMessage(message);
+      return [];
     }
-
-    return result;
   }
 }

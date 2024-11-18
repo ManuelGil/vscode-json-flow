@@ -1,6 +1,9 @@
 {
+	"Welcome to {0}!": "¡Bienvenido a {0}!",
+	"Looks like {0} has been updated to version {1}!": "¡Parece que {0} se ha actualizado a la versión {1}!",
 	"No active editor!": "¡No hay editor activo!",
 	"No selection!": "¡No hay selección!",
+	"Error while finding files: {0}": "Error al buscar archivos: {0}",
 	"Invalid file type!": "¡Tipo de archivo no válido!",
 	"Error parsing {0}: {1}": "Error al parsear {0}: {1}",
 	"Content copied to clipboard": "Contenido copiado al portapapeles",
