@@ -49,7 +49,7 @@ export class JsonController {
    */
   constructor(
     readonly context: ExtensionContext,
-    readonly config: ExtensionConfig
+    readonly config: ExtensionConfig,
   ) {}
 
   // -----------------------------------------------------------------
@@ -87,7 +87,7 @@ export class JsonController {
       // Parse JSON content
       const jsonContent = parseJSONContent(
         document.getText(),
-        fileType as FileType
+        fileType as FileType,
       );
 
       // Check if the JSON content is null
@@ -154,7 +154,7 @@ export class JsonController {
       selection.start.line,
       selection.start.character,
       selection.end.line,
-      selection.end.character
+      selection.end.character,
     );
 
     // Get the language ID and file name

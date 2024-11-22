@@ -2,7 +2,7 @@
 	"name": "vscode-json-flow",
 	"displayName": "JSON Flow",
 	"description": "Transform JSON into interactive graphs in VSCode - Free & Open Source",
-	"version": "1.6.0",
+	"version": "1.7.0",
 	"icon": "icon.png",
 	"license": "MIT",
 	"publisher": "imgildev",
@@ -186,9 +186,18 @@
 				"command": "jsonFlow.json.showPartialPreview",
 				"title": "%jsonFlow.json.showPartialPreview%",
 				"category": "JSON Flow"
+			},
+			{
+				"command": "jsonFlow.json.showPreview",
+				"title": "%jsonFlow.json.showPreview%",
+				"category": "JSON Flow"
 			}
 		],
 		"submenus": [
+			{
+				"id": "jsonFlow.explorer.submenu",
+				"label": "JSON Flow"
+			},
 			{
 				"id": "jsonFlow.editor.submenu",
 				"label": "JSON Flow"
@@ -229,11 +238,35 @@
 					"group": "4_properties"
 				}
 			],
+			"explorer/context": [
+				{
+					"submenu": "jsonFlow.explorer.submenu",
+					"group": "2_workspace",
+					"when": "resourceExtname =~ /json|jsonc|json5|cfg|csv|env|hcl|ini|properties|toml|tsv|xml|yaml|yml/"
+				}
+			],
 			"editor/context": [
 				{
 					"submenu": "jsonFlow.editor.submenu",
 					"group": "1_modification",
 					"when": "editorHasSelection"
+				}
+			],
+			"jsonFlow.explorer.submenu": [
+				{
+					"command": "jsonFlow.json.showPreview",
+					"title": "%jsonFlow.json.showPreview%",
+					"group": "1_navigation"
+				},
+				{
+					"command": "jsonFlow.files.convertToJson",
+					"title": "%jsonFlow.files.convertToJson%",
+					"group": "2_modification"
+				},
+				{
+					"command": "jsonFlow.files.copyContentAsJson",
+					"title": "%jsonFlow.files.copyContentAsJson%",
+					"group": "3_cutcopypaste"
 				}
 			],
 			"jsonFlow.editor.submenu": [
@@ -298,9 +331,9 @@
 		"dev": "vite",
 		"build": "tsc --p ./tsconfig.web.json && vite build",
 		"preview": "vite preview",
-		"format": "biome format --write src",
-		"lint": "biome lint --write src",
-		"lint:check": "biome check --write src",
+		"format": "biome format --write",
+		"lint": "biome lint --write",
+		"lint:check": "biome check --write",
 		"test": "node ./out/test/runTest.js",
 		"compodoc": "npx compodoc -p tsconfig.doc.json -d compodoc --theme readthedocs -s",
 		"prepare": "husky"

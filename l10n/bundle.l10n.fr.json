@@ -1,0 +1,14 @@
+{
+	"Welcome to {0}!": "Bienvenue à {0}!",
+	"Looks like {0} has been updated to version {1}!": "Il semble que {0} a été mis à jour en version {1}!",
+	"No active editor!": "Aucun éditeur actif!",
+	"No selection!": "Aucune sélection!",
+	"Error while finding files: {0}": "Erreur lors de la recherche des fichiers : {0}",
+	"Invalid file type!": "Type de fichier non valide!",
+	"Error parsing {0}: {1}": "Erreur d'analyse de {0} : {1}",
+	"Content copied to clipboard": "Contenu copié dans le presse-papiers",
+	"Content copied as JSON to clipboard": "Contenu copié en tant que JSON dans le presse-papiers",
+	"File Name: {0}\nLanguage: {1}\nLines: {2}\nVersion: {3}": "Nom du fichier : {0}\nLangue : {1}\nLignes : {2}\nVersion : {3}",
+	"Report Issues": "Signaler des problèmes",
+	"Rate Us": "Évaluez-nous"
+}

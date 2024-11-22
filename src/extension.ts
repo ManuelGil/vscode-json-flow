@@ -32,7 +32,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Get the configuration for the extension
   const config = new ExtensionConfig(
-    vscode.workspace.getConfiguration(EXTENSION_ID, resource)
+    vscode.workspace.getConfiguration(EXTENSION_ID, resource),
   );
 
   // -----------------------------------------------------------------
@@ -57,7 +57,7 @@ export function activate(context: vscode.ExtensionContext) {
   if (previousVersion && previousVersion !== currentVersion) {
     const message = vscode.l10n.t(
       'Looks like {0} has been updated to version {1}!',
-      [EXTENSION_NAME, currentVersion]
+      [EXTENSION_NAME, currentVersion],
     );
     vscode.window.showInformationMessage(message);
 
@@ -74,37 +74,37 @@ export function activate(context: vscode.ExtensionContext) {
 
   const disposableOpenFile = vscode.commands.registerCommand(
     `${EXTENSION_ID}.files.openFile`,
-    (uri) => filesController.openFile(uri)
+    (uri) => filesController.openFile(uri),
   );
 
   const disposableConvertToJson = vscode.commands.registerCommand(
     `${EXTENSION_ID}.files.convertToJson`,
-    (uri) => filesController.convertToJson(uri)
+    (uri) => filesController.convertToJson(uri),
   );
 
   const disposableConvertPartialToJson = vscode.commands.registerCommand(
     `${EXTENSION_ID}.files.convertPartialToJson`,
-    () => filesController.convertPartialToJson()
+    () => filesController.convertPartialToJson(),
   );
 
   const disponsableCopyContent = vscode.commands.registerCommand(
     `${EXTENSION_ID}.files.copyContent`,
-    (uri) => filesController.copyContent(uri)
+    (uri) => filesController.copyContent(uri),
   );
 
   const disponsableCopyContentAsJson = vscode.commands.registerCommand(
     `${EXTENSION_ID}.files.copyContentAsJson`,
-    (uri) => filesController.copyContentAsJson(uri)
+    (uri) => filesController.copyContentAsJson(uri),
   );
 
   const disponsableCopyContentPartialAsJson = vscode.commands.registerCommand(
     `${EXTENSION_ID}.files.copyContentPartialAsJson`,
-    () => filesController.copyContentPartialAsJson()
+    () => filesController.copyContentPartialAsJson(),
   );
 
   const disposableGetFileProperties = vscode.commands.registerCommand(
     `${EXTENSION_ID}.files.getFileProperties`,
-    (uri) => filesController.getFileProperties(uri)
+    (uri) => filesController.getFileProperties(uri),
   );
 
   context.subscriptions.push(
@@ -114,7 +114,7 @@ export function activate(context: vscode.ExtensionContext) {
     disponsableCopyContent,
     disponsableCopyContentAsJson,
     disponsableCopyContentPartialAsJson,
-    disposableGetFileProperties
+    disposableGetFileProperties,
   );
 
   // -----------------------------------------------------------------
@@ -127,18 +127,18 @@ export function activate(context: vscode.ExtensionContext) {
   // Register the command to open the JSON Flow
   const disposableShowPreview = vscode.commands.registerCommand(
     `${EXTENSION_ID}.json.showPreview`,
-    (uri) => jsonController.showPreview(uri)
+    (uri) => jsonController.showPreview(uri),
   );
 
   // Register the command to show the JSON Flow for the selected part
   const disposableShowPartialPreview = vscode.commands.registerCommand(
     `${EXTENSION_ID}.json.showPartialPreview`,
-    () => jsonController.showPartialPreview()
+    () => jsonController.showPartialPreview(),
   );
 
   context.subscriptions.push(
     disposableShowPreview,
-    disposableShowPartialPreview
+    disposableShowPartialPreview,
   );
 
   // -----------------------------------------------------------------
@@ -153,23 +153,23 @@ export function activate(context: vscode.ExtensionContext) {
     `${EXTENSION_ID}.feedbackView`,
     {
       treeDataProvider: feedbackProvider,
-    }
+    },
   );
 
   // Register the commands
   const disposableReportIssues = vscode.commands.registerCommand(
     `${EXTENSION_ID}.feedback.reportIssues`,
-    () => feedbackProvider.controller.reportIssues()
+    () => feedbackProvider.controller.reportIssues(),
   );
   const disposableRateUs = vscode.commands.registerCommand(
     `${EXTENSION_ID}.feedback.rateUs`,
-    () => feedbackProvider.controller.rateUs()
+    () => feedbackProvider.controller.rateUs(),
   );
 
   context.subscriptions.push(
     feedbackTreeView,
     disposableReportIssues,
-    disposableRateUs
+    disposableRateUs,
   );
 
   // -----------------------------------------------------------------
@@ -185,12 +185,12 @@ export function activate(context: vscode.ExtensionContext) {
     {
       treeDataProvider: filesProvider,
       showCollapseAll: true,
-    }
+    },
   );
 
   const disposableRefreshList = vscode.commands.registerCommand(
     `${EXTENSION_ID}.files.refreshList`,
-    () => filesProvider.refresh()
+    () => filesProvider.refresh(),
   );
 
   context.subscriptions.push(filesTreeView, disposableRefreshList);
@@ -212,7 +212,7 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.window.registerWebviewPanelSerializer(JSONProvider.viewType, {
       async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel) {
         webviewPanel.webview.options = JSONProvider.getWebviewOptions(
-          context.extensionUri
+          context.extensionUri,
         );
         JSONProvider.revive(webviewPanel, context.extensionUri);
       },

@@ -65,7 +65,7 @@ export const isFileTypeSupported = (value: unknown): value is FileType => {
  */
 export const parseJSONContent = (
   content: string,
-  type: FileType
+  type: FileType,
 ): object | null => {
   try {
     switch (type) {

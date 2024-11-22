@@ -2,7 +2,7 @@ import { Tree } from '../interfaces';
 
 export const generateTree = (
   json: object,
-  showValues: boolean = true
+  showValues: boolean = true,
 ): Tree => {
   const tree: Tree = {};
   let currentId = 1;

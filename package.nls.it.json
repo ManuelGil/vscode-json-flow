@@ -1,0 +1,20 @@
+{
+	"jsonFlow.files.include": "Modelli di glob da includere nel pacchetto. L'impostazione predefinita è json e jsonc",
+	"jsonFlow.files.exclude": "Modelli di glob da escludere dal pacchetto. L'impostazione predefinita è node_modules, dist, out, build e qualsiasi file nascosto",
+	"jsonFlow.files.showPath": "Mostra il percorso del file nel nome dell'elenco dei file generati",
+	"jsonFlow.graph.showValues": "Mostra i valori dei nodi nel grafico",
+	"jsonFlow.graph.layoutDirection": "Direzione del layout del grafico. TB per dall'alto in basso e LR per da sinistra a destra",
+	"jsonFlow.files.refreshList": "Aggiorna Elenco",
+	"jsonFlow.files.openFile": "Apri File",
+	"jsonFlow.files.convertToJson": "Converti in JSON",
+	"jsonFlow.files.convertPartialToJson": "Converti Selezione in JSON",
+	"jsonFlow.files.copyContent": "Copia Contenuto negli Appunti",
+	"jsonFlow.files.copyContentAsJson": "Copia Contenuto come JSON",
+	"jsonFlow.files.copyContentPartialAsJson": "Copia Selezione come JSON",
+	"jsonFlow.files.getFileProperties": "Ottieni Proprietà del File",
+	"jsonFlow.json.showPreview": "Mostra Anteprima JSON",
+	"jsonFlow.json.showPartialPreview": "Mostra Selezione come JSON",
+	"jsonFlow.filesView": "Elenco dei File",
+	"jsonFlow.feedbackView": "Aiuto e Feedback",
+	"viewsWelcome.jsonFlow.filesView": "Per catturare efficacemente i file, assicurati di includere il tipo di file nelle impostazioni dello spazio di lavoro.\n[Apri Impostazioni dello Spazio di Lavoro](command:workbench.action.openWorkspaceSettingsFile)\nPer saperne di più su come utilizzare JSON Flow [leggi la nostra documentazione](https://github.com/ManuelGil/vscode-json-flow)."
+}

@@ -12,6 +12,7 @@
 	"jsonFlow.files.copyContentAsJson": "Copiar Contenido como JSON",
 	"jsonFlow.files.copyContentPartialAsJson": "Copiar Selección como JSON",
 	"jsonFlow.files.getFileProperties": "Obtener Propiedades del Archivo",
+	"jsonFlow.json.showPreview": "Mostrar Vista Previa de JSON",
 	"jsonFlow.json.showPartialPreview": "Mostrar Selección como JSON",
 	"jsonFlow.filesView": "Lista de Archivos",
 	"jsonFlow.feedbackView": "Ayuda y Comentarios",

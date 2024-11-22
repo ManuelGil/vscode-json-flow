@@ -68,7 +68,7 @@ export class FilesController {
       const result = await this.findFiles(
         folder,
         [includedFilePatterns],
-        excludedFilePatterns
+        excludedFilePatterns,
       );
 
       files.push(...result);
@@ -101,8 +101,8 @@ export class FilesController {
               arguments: [document.uri],
             },
             document.uri,
-            'file'
-          )
+            'file',
+          ),
         );
       }
 
@@ -136,7 +136,7 @@ export class FilesController {
    * The convertToJson method.
    *
    * @function convertToJson
-   * @param {NodeModel} node - The node model
+   * @param {NodeModel | Uri} node - The node model
    * @public
    * @memberof FilesController
    * @example
@@ -144,9 +144,18 @@ export class FilesController {
    *
    * @returns {void} - The promise
    */
-  convertToJson(node: NodeModel) {
-    if (node.resourceUri) {
-      workspace.openTextDocument(node.resourceUri).then(async (document) => {
+  convertToJson(node: NodeModel | Uri) {
+    if (node) {
+      // Get the resource URI
+      const resourceUri = node instanceof NodeModel ? node.resourceUri : node;
+
+      // Check if the resource URI is valid
+      if (!resourceUri) {
+        return;
+      }
+
+      // Open the text document
+      workspace.openTextDocument(resourceUri).then(async (document) => {
         // Get the language ID and file name
         const { languageId, fileName } = document;
 
@@ -162,7 +171,7 @@ export class FilesController {
         // Parse JSON content
         const jsonContent = parseJSONContent(
           document.getText(),
-          fileType as FileType
+          fileType as FileType,
         );
 
         // Check if the content is null
@@ -218,7 +227,7 @@ export class FilesController {
       selection.start.line,
       selection.start.character,
       selection.end.line,
-      selection.end.character
+      selection.end.character,
     );
 
     // Get the language ID and file name
@@ -296,7 +305,7 @@ export class FilesController {
    * The copyContentAsJson method.
    *
    * @function copyContentAsJson
-   * @param {NodeModel} node - The node model
+   * @param {NodeModel | Uri} node - The node model
    * @public
    * @memberof FilesController
    * @example
@@ -305,8 +314,17 @@ export class FilesController {
    * @returns {void} - The promise
    */
   copyContentAsJson(node: NodeModel) {
-    if (node.resourceUri) {
-      workspace.openTextDocument(node.resourceUri).then(async (document) => {
+    if (node) {
+      // Get the resource URI
+      const resourceUri = node instanceof NodeModel ? node.resourceUri : node;
+
+      // Check if the resource URI is valid
+      if (!resourceUri) {
+        return;
+      }
+
+      // Open the text document
+      workspace.openTextDocument(resourceUri).then(async (document) => {
         // Get the language ID and file name
         const { languageId, fileName } = document;
 
@@ -322,7 +340,7 @@ export class FilesController {
         // Parse JSON content
         const jsonContent = parseJSONContent(
           document.getText(),
-          fileType as FileType
+          fileType as FileType,
         );
 
         // Check if the content is null
@@ -376,7 +394,7 @@ export class FilesController {
       selection.start.line,
       selection.start.character,
       selection.end.line,
-      selection.end.character
+      selection.end.character,
     );
 
     // Get the language ID and file name
@@ -446,7 +464,7 @@ export class FilesController {
         // Show the message
         const message = l10n.t(
           'File Name: {0}\nLanguage: {1}\nLines: {2}\nVersion: {3}',
-          [fileName, languageId, lineCount, version]
+          [fileName, languageId, lineCount, version],
         );
 
         await window.showInformationMessage(message, { modal: true });
@@ -474,7 +492,7 @@ export class FilesController {
     baseDir: string,
     include: string[], // Include patterns
     exclude: string[], // Exclude patterns
-    allowRecursion: boolean = true // Toggle recursive search
+    allowRecursion: boolean = true, // Toggle recursive search
   ): Promise<Uri[]> {
     // Configure fast-glob options
     const options = {

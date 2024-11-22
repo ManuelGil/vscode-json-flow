@@ -165,7 +165,7 @@ export class FilesProvider implements TreeDataProvider<NodeModel> {
 
     for (const fileType of fileTypes) {
       const children = files.filter((file) =>
-        file.label.toString().includes(`.${fileType}`)
+        file.label.toString().includes(`.${fileType}`),
       );
 
       if (children.length !== 0) {
@@ -175,7 +175,7 @@ export class FilesProvider implements TreeDataProvider<NodeModel> {
           undefined,
           undefined,
           fileType,
-          children
+          children,
         );
 
         nodes.push(node);
