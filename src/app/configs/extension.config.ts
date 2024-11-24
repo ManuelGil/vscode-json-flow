@@ -2,6 +2,7 @@ import { WorkspaceConfiguration } from 'vscode';
 
 import {
   EXCLUDE,
+  IMAGE_FOLDER,
   INCLUDE,
   LAYOUT_DIRECTION,
   SHOW_PATH,
@@ -80,6 +81,16 @@ export class ExtensionConfig {
    * console.log(config.layoutDirection);
    */
   layoutDirection: 'TB' | 'LR';
+  /**
+   * The image folder.
+   * @type {string}
+   * @public
+   * @memberof Config
+   * @example
+   * const config = new Config(workspace.getConfiguration());
+   * console.log(config.imageFolder);
+   */
+  imageFolder: string;
 
   // -----------------------------------------------------------------
   // Constructor
@@ -100,5 +111,6 @@ export class ExtensionConfig {
     this.showValues = config.get<boolean>('graph.showValues') ?? SHOW_VALUES;
     this.layoutDirection =
       config.get<'TB' | 'LR'>('graph.layoutDirection') ?? LAYOUT_DIRECTION;
+    this.imageFolder = config.get<string>('image.folder') ?? IMAGE_FOLDER;
   }
 }

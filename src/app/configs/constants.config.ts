@@ -141,3 +141,15 @@ export const SHOW_VALUES: boolean = true;
  * @returns {string} - The layout direction
  */
 export const LAYOUT_DIRECTION: 'TB' | 'LR' = 'TB';
+
+/**
+ * IMAGE_FOLDER: The image folder.
+ * @type {string}
+ * @public
+ * @memberof Constants
+ * @example
+ * console.log(IMAGE_FOLDER);
+ *
+ * @returns {string} - The image folder
+ */
+export const IMAGE_FOLDER: string = 'json-flow/images';

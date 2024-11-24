@@ -4,6 +4,7 @@
 	"jsonFlow.files.showPath": "Mostrar la ruta del archivo en el nombre de la lista de archivos generados",
 	"jsonFlow.graph.showValues": "Mostrar los valores de los nodos en el gráfico",
 	"jsonFlow.graph.layoutDirection": "Dirección de diseño del gráfico. TB para arriba hacía abajo y LR para izquierda a derecha",
+	"jsonFlow.image.folder": "Carpeta donde se guardarán los gráficos. El valor predeterminado es json-flow/images",
 	"jsonFlow.files.refreshList": "Refrescar Lista",
 	"jsonFlow.files.openFile": "Abrir Archivo",
 	"jsonFlow.files.convertToJson": "Convertir a JSON",

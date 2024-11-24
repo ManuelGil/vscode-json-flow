@@ -1,3 +1,5 @@
+import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import { dirname, join } from 'path';
 import { ExtensionContext, Range, Uri, l10n, window, workspace } from 'vscode';
 import { ExtensionConfig } from '../configs';
 import {
@@ -23,6 +25,16 @@ export class JsonController {
   // -----------------------------------------------------------------
   // Properties
   // -----------------------------------------------------------------
+
+  // Public properties
+  /**
+   * The image folder.
+   *
+   * @public
+   * @memberof JsonController
+   * @type {string}
+   */
+  static imageFolder: string;
 
   // Private properties
   /**
@@ -50,7 +62,9 @@ export class JsonController {
   constructor(
     readonly context: ExtensionContext,
     readonly config: ExtensionConfig,
-  ) {}
+  ) {
+    JsonController.imageFolder = config.imageFolder;
+  }
 
   // -----------------------------------------------------------------
   // Methods
@@ -216,5 +230,70 @@ export class JsonController {
         data,
       });
     }, this._processingDelay);
+  }
+
+  /**
+   * The saveImage method.
+   *
+   * @function saveImage
+   * @param {string} dataUrl - The data URL
+   * @public
+   * @memberof JsonController
+   * @example
+   * controller.saveImage(dataUrl);
+   *
+   * @returns {Promise<void>}
+   */
+  static async saveImage(data: string): Promise<void> {
+    const base64Data = data.replace(/^data:image\/png;base64,/, ''); // Remove metadata
+    const buffer = Buffer.from(base64Data, 'base64'); // Convert base64 to binary
+
+    // Generate a random filename with the date and time as a prefix and the .png extension
+    // The filename won't be have a special characters or spaces to avoid issues
+    const fileName = `json-flow-${new Date().toISOString().replace(/[^0-9]/g, '')}.png`;
+
+    // Define the file path
+    let filePath: string;
+
+    // Get the workspace folders
+    const workspaceFolders = workspace.workspaceFolders;
+    if (!workspaceFolders || workspaceFolders.length === 0) {
+      window.showErrorMessage(
+        l10n.t('No workspace folder available to save the image!'),
+      );
+      return;
+    }
+
+    // Optionally, prompt the user to select a workspace folder if multiple are available
+    if (workspaceFolders.length === 1) {
+      filePath = join(
+        workspaceFolders[0].uri.fsPath,
+        this.imageFolder,
+        fileName,
+      );
+    } else {
+      // await window.showWorkspaceFolderPick({placeHolder});
+      const folder = await window.showWorkspaceFolderPick({
+        placeHolder: l10n.t('Select a workspace folder to save the image'),
+      });
+
+      if (!folder) {
+        return;
+      }
+
+      // Save the file in the selected workspace folder
+      filePath = join(folder.uri.fsPath, this.imageFolder, fileName);
+    }
+
+    // Create the directory if it doesn't exist
+    if (!existsSync(dirname(filePath))) {
+      await mkdirSync(dirname(filePath), { recursive: true });
+    }
+
+    // Write the file to the disk
+    writeFileSync(filePath, buffer);
+
+    // Show a message to the user
+    window.showInformationMessage(l10n.t('Image saved to: {0}', filePath));
   }
 }

@@ -13,7 +13,8 @@ import {
   useNodesState,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { useCallback, useEffect, useState } from 'react';
+import * as htmlToImage from 'html-to-image';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Direction, StateType } from './common';
 import CustomNode from './components/CustomNode';
 import Loading from './components/Loading';
@@ -35,6 +36,7 @@ const LayoutFlow = () => {
   );
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+  const flowContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -117,12 +119,38 @@ const LayoutFlow = () => {
     [json, setNodes, setEdges]
   );
 
+  const handleSaveImage = async () => {
+    if (flowContainerRef.current) {
+      try {
+        // Temporarily hide the controls
+        const controls = flowContainerRef.current.querySelectorAll(
+          '.react-flow__panel, .react-flow__controls, .react-flow__minimap, .react-flow__background'
+        );
+        controls.forEach((control) => {
+          (control as HTMLElement).style.display = 'none';
+        });
+
+        const dataUrl = await htmlToImage.toPng(flowContainerRef.current);
+
+        // Show the controls again
+        controls.forEach((control) => {
+          (control as HTMLElement).style.display = 'block';
+        });
+
+        // Send the generated image to the VS Code extension
+        vscode.postMessage({ type: 'onSaveImage', data: dataUrl });
+      } catch (error) {
+        console.error('Error generating image:', error);
+      }
+    }
+  };
+
   if (!json) {
     return <Loading />;
   }
 
   return (
-    <div className="h-screen w-screen">
+    <div ref={flowContainerRef} className="h-screen w-screen">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -132,11 +160,13 @@ const LayoutFlow = () => {
         connectionLineType={ConnectionLineType.SmoothStep}
         fitView
         nodeTypes={nodeTypes}
+        minZoom={-1}
       >
         <Background />
         <MiniMap />
         <Controls />
         <Panel className="flex justify-between gap-2" position="top-right">
+          <button onClick={handleSaveImage}>Save as image</button>
           <button onClick={() => onLayout('TB')}>vertical layout</button>
           <button onClick={() => onLayout('LR')}>horizontal layout</button>
         </Panel>

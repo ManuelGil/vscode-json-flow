@@ -10,5 +10,8 @@
 	"Content copied as JSON to clipboard": "Inhalt als JSON in die Zwischenablage kopiert",
 	"File Name: {0}\nLanguage: {1}\nLines: {2}\nVersion: {3}": "Dateiname: {0}\nSprache: {1}\nZeilen: {2}\nVersion: {3}",
 	"Report Issues": "Probleme melden",
-	"Rate Us": "Bewerten Sie uns"
+	"Rate Us": "Bewerten Sie uns",
+	"No workspace folder available to save the image!": "Kein Arbeitsbereichsordner verfügbar, um das Bild zu speichern!",
+	"Select a workspace folder to save the image": "Wählen Sie einen Arbeitsbereichsordner aus, um das Bild zu speichern",
+	"Image saved to: {0}": "Bild gespeichert unter: {0}"
 }

@@ -9,6 +9,7 @@ import {
 } from 'vscode';
 
 import { EXTENSION_ID } from '../configs';
+import { JsonController } from '../controllers';
 import { getNonce } from '../helpers';
 
 /**
@@ -80,6 +81,21 @@ export class JSONProvider {
     this._update();
 
     this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
+
+    this._panel.webview.onDidReceiveMessage(
+      (message) => {
+        switch (message.type) {
+          case 'onSaveImage':
+            JsonController.saveImage(message.data);
+            break;
+
+          default:
+            break;
+        }
+      },
+      null,
+      this._disposables,
+    );
 
     this._panel.onDidChangeViewState(
       () => {
@@ -253,7 +269,7 @@ export class JSONProvider {
     <meta
       http-equiv="Content-Security-Policy"
       content="default-src 'none'; font-src ${webview.cspSource}; style-src ${webview.cspSource};
-      script-src 'nonce-${nonce}';"
+      img-src data:; script-src 'nonce-${nonce}';"
     />
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />

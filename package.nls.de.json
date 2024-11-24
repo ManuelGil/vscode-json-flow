@@ -4,6 +4,7 @@
 	"jsonFlow.files.showPath": "Den Dateipfad im Namen der Liste der generierten Dateien anzeigen",
 	"jsonFlow.graph.showValues": "Die Werte der Knoten im Diagramm anzeigen",
 	"jsonFlow.graph.layoutDirection": "Layoutrichtung des Diagramms. TB für von oben nach unten und LR für von links nach rechts",
+	"jsonFlow.image.folder": "Ordner, in dem die Diagramme gespeichert werden. Der Standardwert ist json-flow/images",
 	"jsonFlow.files.refreshList": "Liste aktualisieren",
 	"jsonFlow.files.openFile": "Datei öffnen",
 	"jsonFlow.files.convertToJson": "In JSON konvertieren",
