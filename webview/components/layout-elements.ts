@@ -8,10 +8,9 @@ import {
   LayoutResult,
   Orientation,
   Tree,
+  config,
   edgeStyle,
   entitreeSettings,
-  nodeHeight,
-  nodeWidth,
 } from '../common';
 
 const { Top, Bottom, Left, Right } = Position;
@@ -19,7 +18,7 @@ const { Top, Bottom, Left, Right } = Position;
 export const layoutElements = (
   tree: Record<string, Tree>,
   rootId: number,
-  direction: Direction = 'TB'
+  direction: Direction = 'TB',
 ): LayoutResult => {
   const isTreeHorizontal = direction === 'LR';
 
@@ -70,8 +69,8 @@ export const layoutElements = (
     const newNode: LayoutNode = {
       id: node.id,
       type: 'custom',
-      width: nodeWidth,
-      height: nodeHeight,
+      width: config.nodeWidth,
+      height: config.nodeHeight,
       position: {
         x: node.x,
         y: node.y,

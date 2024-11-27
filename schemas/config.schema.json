@@ -47,6 +47,36 @@
 			"scope": "resource",
 			"description": "Show the values of the nodes in the graph"
 		},
+		"jsonFlow.graph.nodeWidth": {
+			"type": "number",
+			"default": 200,
+			"scope": "resource",
+			"description": "Width of the nodes in the graph"
+		},
+		"jsonFlow.graph.nodeHeight": {
+			"type": "number",
+			"default": 50,
+			"scope": "resource",
+			"description": "Height of the nodes in the graph"
+		},
+		"jsonFlow.graph.nodeBorderColor": {
+			"type": "string",
+			"default": "white",
+			"scope": "resource",
+			"description": "Color of the border of the nodes in the graph"
+		},
+		"jsonFlow.graph.nodeColor": {
+			"type": "string",
+			"default": "white",
+			"scope": "resource",
+			"description": "Color of the fill of the nodes in the graph"
+		},
+		"jsonFlow.graph.edgeColor": {
+			"type": "string",
+			"default": "white",
+			"scope": "resource",
+			"description": "Color of the edges in the graph"
+		},
 		"jsonFlow.graph.layoutDirection": {
 			"type": "string",
 			"default": "TB",

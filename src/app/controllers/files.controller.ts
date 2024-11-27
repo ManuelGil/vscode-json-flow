@@ -499,6 +499,7 @@ export class FilesController {
       cwd: baseDir, // Set base directory for searching
       absolute: true, // Ensure paths are absolute
       onlyFiles: true, // Match only files, not directories
+      dot: true, // Include files and directories starting with a dot
       deep: allowRecursion ? undefined : 1, // Toggle recursion
       ignore: exclude, // Exclude patterns
     };

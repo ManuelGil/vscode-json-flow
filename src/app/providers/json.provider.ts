@@ -279,6 +279,15 @@ export class JSONProvider {
     <title>JSON Flow</title>
   </head>
   <body>
+    <script nonce="${nonce}">
+      ${
+        JsonController.webviewConfiguration
+          ? `window.webviewConfiguration = ${JSON.stringify(
+              JsonController.webviewConfiguration,
+            )};`
+          : ''
+      }
+    </script>
     <div id="root"></div>
     <script nonce="${nonce}" src="${scriptUri}"></script>
   </body>

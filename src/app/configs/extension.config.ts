@@ -1,10 +1,15 @@
 import { WorkspaceConfiguration } from 'vscode';
 
 import {
+  EDGE_COLOR,
   EXCLUDE,
   IMAGE_FOLDER,
   INCLUDE,
   LAYOUT_DIRECTION,
+  NODE_BORDER_COLOR,
+  NODE_COLOR,
+  NODE_HEIGHT,
+  NODE_WIDTH,
   SHOW_PATH,
   SHOW_VALUES,
 } from './constants.config';
@@ -72,6 +77,56 @@ export class ExtensionConfig {
    */
   showValues: boolean;
   /**
+   * The node width.
+   * @type {number}
+   * @public
+   * @memberof Config
+   * @example
+   * const config = new Config(workspace.getConfiguration());
+   * console.log(config.nodeWidth);
+   */
+  nodeWidth: number;
+  /**
+   * The node height.
+   * @type {number}
+   * @public
+   * @memberof Config
+   * @example
+   * const config = new Config(workspace.getConfiguration());
+   * console.log(config.nodeHeight);
+   */
+  nodeHeight: number;
+  /**
+   * The node border color.
+   * @type {string}
+   * @public
+   * @memberof Config
+   * @example
+   * const config = new Config(workspace.getConfiguration());
+   * console.log(config.nodeBorderColor);
+   */
+  nodeBorderColor: string;
+  /**
+   * The node color.
+   * @type {string}
+   * @public
+   * @memberof Config
+   * @example
+   * const config = new Config(workspace.getConfiguration());
+   * console.log(config.nodeColor);
+   */
+  nodeColor: string;
+  /**
+   * The edge color.
+   * @type {string}
+   * @public
+   * @memberof Config
+   * @example
+   * const config = new Config(workspace.getConfiguration());
+   * console.log(config.edgeColor);
+   */
+  edgeColor: string;
+  /**
    * The layout direction.
    * @type {'TB' | 'LR'}
    * @public
@@ -109,6 +164,11 @@ export class ExtensionConfig {
     this.exclude = config.get<string[]>('files.exclude') ?? EXCLUDE;
     this.showPath = config.get<boolean>('files.showPath') ?? SHOW_PATH;
     this.showValues = config.get<boolean>('graph.showValues') ?? SHOW_VALUES;
+    this.nodeWidth = config.get<number>('graph.nodeWidth') ?? NODE_WIDTH;
+    this.nodeHeight = config.get<number>('graph.nodeHeight') ?? NODE_HEIGHT;
+    this.nodeBorderColor = config.get<string>('graph.nodeBorderColor') ?? NODE_BORDER_COLOR;
+    this.nodeColor = config.get<string>('graph.nodeColor') ?? NODE_COLOR;
+    this.edgeColor = config.get<string>('graph.edgeColor') ?? EDGE_COLOR;
     this.layoutDirection =
       config.get<'TB' | 'LR'>('graph.layoutDirection') ?? LAYOUT_DIRECTION;
     this.imageFolder = config.get<string>('image.folder') ?? IMAGE_FOLDER;

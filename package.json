@@ -2,7 +2,7 @@
 	"name": "vscode-json-flow",
 	"displayName": "JSON Flow",
 	"description": "Transform JSON into interactive graphs in VSCode - Free & Open Source",
-	"version": "1.8.0",
+	"version": "1.9.0",
 	"icon": "icon.png",
 	"license": "MIT",
 	"publisher": "imgildev",
@@ -127,6 +127,36 @@
 					"default": true,
 					"scope": "resource",
 					"description": "%jsonFlow.graph.showValues%"
+				},
+				"jsonFlow.graph.nodeWidth": {
+					"type": "number",
+					"default": 200,
+					"scope": "resource",
+					"description": "%jsonFlow.graph.nodeWidth%"
+				},
+				"jsonFlow.graph.nodeHeight": {
+					"type": "number",
+					"default": 50,
+					"scope": "resource",
+					"description": "%jsonFlow.graph.nodeHeight%"
+				},
+				"jsonFlow.graph.nodeBorderColor": {
+					"type": "string",
+					"default": "white",
+					"scope": "resource",
+					"description": "%jsonFlow.graph.nodeBorderColor%"
+				},
+				"jsonFlow.graph.nodeColor": {
+					"type": "string",
+					"default": "white",
+					"scope": "resource",
+					"description": "%jsonFlow.graph.nodeColor%"
+				},
+				"jsonFlow.graph.edgeColor": {
+					"type": "string",
+					"default": "white",
+					"scope": "resource",
+					"description": "%jsonFlow.graph.edgeColor%"
 				},
 				"jsonFlow.graph.layoutDirection": {
 					"type": "string",

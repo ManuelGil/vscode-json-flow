@@ -20,6 +20,12 @@
 		"jsx": "react-jsx",
 		/* Linting */
 		"strict": true /* enable all strict type-checking options */,
+		"baseUrl": "./webview",
+		"paths": {
+			"*": [
+				"types/*"
+			]
+		}
 	},
 	"include": [
 		"webview/**/*"

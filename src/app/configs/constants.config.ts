@@ -131,6 +131,66 @@ export const SHOW_PATH: boolean = true;
 export const SHOW_VALUES: boolean = true;
 
 /**
+ * NODE_WIDTH: The node width.
+ * @type {number}
+ * @public
+ * @memberof Constants
+ * @example
+ * console.log(NODE_WIDTH);
+ *
+ * @returns {number} - The node width
+ */
+export const NODE_WIDTH: number = 200;
+
+/**
+ * NODE_HEIGHT: The node height.
+ * @type {number}
+ * @public
+ * @memberof Constants
+ * @example
+ * console.log(NODE_HEIGHT);
+ *
+ * @returns {number} - The node height
+ */
+export const NODE_HEIGHT: number = 50;
+
+/**
+ * NODE_BORDER_COLOR: The node border color.
+ * @type {string}
+ * @public
+ * @memberof Constants
+ * @example
+ * console.log(NODE_BORDER_COLOR);
+ *
+ * @returns {string} - The node border color
+ */
+export const NODE_BORDER_COLOR = 'white';
+
+/**
+ * NODE_COLOR: The node color.
+ * @type {string}
+ * @public
+ * @memberof Constants
+ * @example
+ * console.log(NODE_COLOR);
+ *
+ * @returns {string} - The node color
+ */
+export const NODE_COLOR = 'white';
+
+/**
+ * EDGE_COLOR: The edge color.
+ * @type {string}
+ * @public
+ * @memberof Constants
+ * @example
+ * console.log(EDGE_COLOR);
+ *
+ * @returns {string} - The edge color
+ */
+export const EDGE_COLOR = 'white';
+
+/**
  * LAYOUT_DIRECTION: The layout direction.
  * @type {string}
  * @public
