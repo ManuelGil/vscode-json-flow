@@ -1,4 +1,5 @@
 {
+	"jsonFlow.enable": "Activer JSON Flow",
 	"jsonFlow.files.include": "Modèles globaux à inclure dans le paquet. La valeur par défaut est json et jsonc",
 	"jsonFlow.files.exclude": "Modèles globaux à exclure du paquet. La valeur par défaut est node_modules, dist, out, build et tout fichier caché",
 	"jsonFlow.files.showPath": "Afficher le chemin du fichier dans le nom de la liste des fichiers générés",

@@ -1,4 +1,5 @@
 {
+	"jsonFlow.enable": "JSON Flow aktivieren",
 	"jsonFlow.files.include": "Glob-Muster, die im Paket enthalten sein sollen. Der Standardwert ist json und jsonc",
 	"jsonFlow.files.exclude": "Glob-Muster, die aus dem Paket ausgeschlossen werden sollen. Der Standardwert ist node_modules, dist, out, build und alle versteckten Dateien",
 	"jsonFlow.files.showPath": "Den Dateipfad im Namen der Liste der generierten Dateien anzeigen",

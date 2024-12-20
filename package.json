@@ -2,7 +2,7 @@
 	"name": "vscode-json-flow",
 	"displayName": "JSON Flow",
 	"description": "Transform JSON into interactive graphs in VSCode - Free & Open Source",
-	"version": "1.9.0",
+	"version": "1.10.0",
 	"icon": "icon.png",
 	"license": "MIT",
 	"publisher": "imgildev",
@@ -83,6 +83,12 @@
 		"configuration": {
 			"title": "JSON Flow",
 			"properties": {
+				"jsonFlow.enable": {
+					"type": "boolean",
+					"default": true,
+					"scope": "resource",
+					"description": "%jsonFlow.enable%"
+				},
 				"jsonFlow.files.include": {
 					"type": "array",
 					"default": [

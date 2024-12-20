@@ -7,10 +7,6 @@
 [![GitHub Repo stars](https://img.shields.io/github/stars/ManuelGil/vscode-json-flow?style=for-the-badge&logo=github)](https://github.com/ManuelGil/vscode-json-flow)
 [![GitHub license](https://img.shields.io/github/license/ManuelGil/vscode-json-flow?style=for-the-badge&logo=github)](https://github.com/ManuelGil/vscode-json-flow/blob/main/LICENSE)
 
-<p align="center">
-<a href="https://www.producthunt.com/products/json-flow#json-flow" target="_blank"  rel="noopener noreferrer"><img src="https://api.producthunt.com/widgets/embed-image/v1/follow?product_id=725176&theme=light" alt="JSON&#0032;Flow - Transform&#0032;JSON&#0032;into&#0032;interactive&#0032;graphs&#0032;in&#0032;VSCode | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
-</p>
-
 Transform your JSON files into interactive node-based graphs directly in Visual Studio Code. JSON Flow makes working with structured data effortless and visually intuitive, turning raw data into dynamic, interactive visualizations. Perfect for developers, analysts, and data enthusiasts who want to understand and navigate complex JSON structures with ease.
 
 [![JSON Flow](https://raw.githubusercontent.com/ManuelGil/vscode-json-flow/main/images/json-flow.png)](https://marketplace.visualstudio.com/items?itemName=imgildev.vscode-json-flow)
@@ -153,6 +149,7 @@ Configure your project by creating or updating a settings.json file at the proje
 
    ```jsonc
    {
+     "jsonFlow.enable": true, // Enable or disable the extension. Example: true, false
      "jsonFlow.files.include": [
          "json",
          "jsonc"
@@ -167,10 +164,10 @@ Configure your project by creating or updating a settings.json file at the proje
      "jsonFlow.files.showPath": true, // Show the path of the file in the file name. Example: "home.component.tsx (pages/home)"
      "jsonFlow.graph.showValues": true, // Show the values of the nodes in the graph. Example: "name: 'John Doe'"
      "jsonFlow.graph.nodeWidth": 200, // The width of the nodes in the graph. Example: 200
-      "jsonFlow.graph.nodeHeight": 50, // The height of the nodes in the graph. Example: 50
-      "jsonFlow.graph.nodeBorderColor": "white", // The border color of the nodes in the graph. Example: "white"
-      "jsonFlow.graph.nodeColor": "white", // The color of the nodes in the graph. Example: "white"
-      "jsonFlow.graph.edgeColor": "white", // The color of the edges in the graph. Example: "white"
+     "jsonFlow.graph.nodeHeight": 50, // The height of the nodes in the graph. Example: 50
+     "jsonFlow.graph.nodeBorderColor": "white", // The border color of the nodes in the graph. Example: "white"
+     "jsonFlow.graph.nodeColor": "white", // The color of the nodes in the graph. Example: "white"
+     "jsonFlow.graph.edgeColor": "white", // The color of the edges in the graph. Example: "white"
      "jsonFlow.graph.layoutDirection": "TB", // The layout direction of the graph. Example: "TB", "LR"
      "jsonFlow.image.folder": "images", // The folder where the images will be saved. Example: "images"
    }

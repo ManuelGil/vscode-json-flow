@@ -3,7 +3,12 @@
 import * as vscode from 'vscode';
 
 // Import the Configs, Controllers, and Providers
-import { EXTENSION_ID, EXTENSION_NAME, ExtensionConfig } from './app/configs';
+import {
+  EXTENSION_ID,
+  EXTENSION_MARKETPLACE_URL,
+  EXTENSION_NAME,
+  ExtensionConfig,
+} from './app/configs';
 import {
   FeedbackController,
   FilesController,
@@ -13,17 +18,34 @@ import { FeedbackProvider, FilesProvider, JSONProvider } from './app/providers';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
   // The code you place here will be executed every time your command is executed
-  let resource:
-    | vscode.Uri
-    | vscode.TextDocument
-    | vscode.WorkspaceFolder
-    | undefined;
+  let resource: vscode.WorkspaceFolder | undefined;
 
-  // Get the resource for the workspace
-  if (vscode.workspace.workspaceFolders) {
+  // Check if there are workspace folders
+  if (
+    !vscode.workspace.workspaceFolders ||
+    vscode.workspace.workspaceFolders.length === 0
+  ) {
+    const message = vscode.l10n.t(
+      'No workspace folders are open. Please open a workspace folder to use this extension',
+    );
+    vscode.window.showErrorMessage(message);
+    return;
+  }
+
+  // Optionally, prompt the user to select a workspace folder if multiple are available
+  if (vscode.workspace.workspaceFolders.length === 1) {
     resource = vscode.workspace.workspaceFolders[0];
+  } else {
+    const placeHolder = vscode.l10n.t(
+      'Select a workspace folder to use. This folder will be used to load workspace-specific configuration for the extension',
+    );
+    const selectedFolder = await vscode.window.showWorkspaceFolderPick({
+      placeHolder,
+    });
+
+    resource = selectedFolder;
   }
 
   // -----------------------------------------------------------------
@@ -32,8 +54,36 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Get the configuration for the extension
   const config = new ExtensionConfig(
-    vscode.workspace.getConfiguration(EXTENSION_ID, resource),
+    vscode.workspace.getConfiguration(EXTENSION_ID, resource?.uri),
   );
+
+  // Watch for changes in the configuration
+  vscode.workspace.onDidChangeConfiguration((event) => {
+    const workspaceConfig = vscode.workspace.getConfiguration(
+      EXTENSION_ID,
+      resource?.uri,
+    );
+
+    if (event.affectsConfiguration(`${EXTENSION_ID}.enable`, resource?.uri)) {
+      const isEnabled = workspaceConfig.get<boolean>('enable');
+
+      config.update(workspaceConfig);
+
+      if (isEnabled) {
+        const message = vscode.l10n.t('{0} is now enabled and ready to use', [
+          EXTENSION_NAME,
+        ]);
+        vscode.window.showInformationMessage(message);
+      } else {
+        const message = vscode.l10n.t('{0} is now disabled', [EXTENSION_NAME]);
+        vscode.window.showInformationMessage(message);
+      }
+    }
+
+    if (event.affectsConfiguration(EXTENSION_ID, resource?.uri)) {
+      config.update(workspaceConfig);
+    }
+  });
 
   // -----------------------------------------------------------------
   // Get version of the extension
@@ -46,7 +96,10 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Check if the extension is running for the first time
   if (!previousVersion) {
-    const message = vscode.l10n.t('Welcome to {0}!', [EXTENSION_NAME]);
+    const message = vscode.l10n.t(
+      'Welcome to {0} version {1}! The extension is now active',
+      [EXTENSION_NAME, currentVersion],
+    );
     vscode.window.showInformationMessage(message);
 
     // Update the version in the global state
@@ -55,11 +108,34 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Check if the extension has been updated
   if (previousVersion && previousVersion !== currentVersion) {
+    const actions: vscode.MessageItem[] = [
+      {
+        title: vscode.l10n.t('Release Notes'),
+      },
+      {
+        title: vscode.l10n.t('Close'),
+      },
+    ];
+
     const message = vscode.l10n.t(
-      'Looks like {0} has been updated to version {1}!',
+      'New version of {0} is available. Check out the release notes for version {1}',
       [EXTENSION_NAME, currentVersion],
     );
-    vscode.window.showInformationMessage(message);
+    const option = await vscode.window.showInformationMessage(
+      message,
+      ...actions,
+    );
+
+    // Handle the actions
+    switch (option?.title) {
+      case actions[0].title:
+        vscode.env.openExternal(
+          vscode.Uri.parse(
+            `${EXTENSION_MARKETPLACE_URL}&ssr=false#version-history`,
+          ),
+        );
+        break;
+    }
 
     // Update the version in the global state
     context.globalState.update('version', currentVersion);
@@ -74,37 +150,121 @@ export function activate(context: vscode.ExtensionContext) {
 
   const disposableOpenFile = vscode.commands.registerCommand(
     `${EXTENSION_ID}.files.openFile`,
-    (uri) => filesController.openFile(uri),
+    (uri) => {
+      // Check if the extension is enabled
+      if (!config.enable) {
+        const message = vscode.l10n.t(
+          '{0} is disabled in settings. Enable it to use its features',
+          [EXTENSION_NAME],
+        );
+        vscode.window.showErrorMessage(message);
+        return;
+      }
+
+      filesController.openFile(uri);
+    },
   );
 
   const disposableConvertToJson = vscode.commands.registerCommand(
     `${EXTENSION_ID}.files.convertToJson`,
-    (uri) => filesController.convertToJson(uri),
+    (uri) => {
+      // Check if the extension is enabled
+      if (!config.enable) {
+        const message = vscode.l10n.t(
+          '{0} is disabled in settings. Enable it to use its features',
+          [EXTENSION_NAME],
+        );
+        vscode.window.showErrorMessage(message);
+        return;
+      }
+
+      filesController.convertToJson(uri);
+    },
   );
 
   const disposableConvertPartialToJson = vscode.commands.registerCommand(
     `${EXTENSION_ID}.files.convertPartialToJson`,
-    () => filesController.convertPartialToJson(),
+    () => {
+      // Check if the extension is enabled
+      if (!config.enable) {
+        const message = vscode.l10n.t(
+          '{0} is disabled in settings. Enable it to use its features',
+          [EXTENSION_NAME],
+        );
+        vscode.window.showErrorMessage(message);
+        return;
+      }
+
+      filesController.convertPartialToJson();
+    },
   );
 
   const disponsableCopyContent = vscode.commands.registerCommand(
     `${EXTENSION_ID}.files.copyContent`,
-    (uri) => filesController.copyContent(uri),
+    (uri) => {
+      // Check if the extension is enabled
+      if (!config.enable) {
+        const message = vscode.l10n.t(
+          '{0} is disabled in settings. Enable it to use its features',
+          [EXTENSION_NAME],
+        );
+        vscode.window.showErrorMessage(message);
+        return;
+      }
+
+      filesController.copyContent(uri);
+    },
   );
 
   const disponsableCopyContentAsJson = vscode.commands.registerCommand(
     `${EXTENSION_ID}.files.copyContentAsJson`,
-    (uri) => filesController.copyContentAsJson(uri),
+    (uri) => {
+      // Check if the extension is enabled
+      if (!config.enable) {
+        const message = vscode.l10n.t(
+          '{0} is disabled in settings. Enable it to use its features',
+          [EXTENSION_NAME],
+        );
+        vscode.window.showErrorMessage(message);
+        return;
+      }
+
+      filesController.copyContentAsJson(uri);
+    },
   );
 
   const disponsableCopyContentPartialAsJson = vscode.commands.registerCommand(
     `${EXTENSION_ID}.files.copyContentPartialAsJson`,
-    () => filesController.copyContentPartialAsJson(),
+    () => {
+      // Check if the extension is enabled
+      if (!config.enable) {
+        const message = vscode.l10n.t(
+          '{0} is disabled in settings. Enable it to use its features',
+          [EXTENSION_NAME],
+        );
+        vscode.window.showErrorMessage(message);
+        return;
+      }
+
+      filesController.copyContentPartialAsJson();
+    },
   );
 
   const disposableGetFileProperties = vscode.commands.registerCommand(
     `${EXTENSION_ID}.files.getFileProperties`,
-    (uri) => filesController.getFileProperties(uri),
+    (uri) => {
+      // Check if the extension is enabled
+      if (!config.enable) {
+        const message = vscode.l10n.t(
+          '{0} is disabled in settings. Enable it to use its features',
+          [EXTENSION_NAME],
+        );
+        vscode.window.showErrorMessage(message);
+        return;
+      }
+
+      filesController.getFileProperties(uri);
+    },
   );
 
   context.subscriptions.push(
@@ -127,13 +287,37 @@ export function activate(context: vscode.ExtensionContext) {
   // Register the command to open the JSON Flow
   const disposableShowPreview = vscode.commands.registerCommand(
     `${EXTENSION_ID}.json.showPreview`,
-    (uri) => jsonController.showPreview(uri),
+    (uri) => {
+      // Check if the extension is enabled
+      if (!config.enable) {
+        const message = vscode.l10n.t(
+          '{0} is disabled in settings. Enable it to use its features',
+          [EXTENSION_NAME],
+        );
+        vscode.window.showErrorMessage(message);
+        return;
+      }
+
+      jsonController.showPreview(uri);
+    },
   );
 
   // Register the command to show the JSON Flow for the selected part
   const disposableShowPartialPreview = vscode.commands.registerCommand(
     `${EXTENSION_ID}.json.showPartialPreview`,
-    () => jsonController.showPartialPreview(),
+    () => {
+      // Check if the extension is enabled
+      if (!config.enable) {
+        const message = vscode.l10n.t(
+          '{0} is disabled in settings. Enable it to use its features',
+          [EXTENSION_NAME],
+        );
+        vscode.window.showErrorMessage(message);
+        return;
+      }
+
+      jsonController.showPartialPreview();
+    },
   );
 
   context.subscriptions.push(
@@ -159,11 +343,35 @@ export function activate(context: vscode.ExtensionContext) {
   // Register the commands
   const disposableReportIssues = vscode.commands.registerCommand(
     `${EXTENSION_ID}.feedback.reportIssues`,
-    () => feedbackProvider.controller.reportIssues(),
+    () => {
+      // Check if the extension is enabled
+      if (!config.enable) {
+        const message = vscode.l10n.t(
+          '{0} is disabled in settings. Enable it to use its features',
+          [EXTENSION_NAME],
+        );
+        vscode.window.showErrorMessage(message);
+        return;
+      }
+
+      feedbackProvider.controller.reportIssues();
+    },
   );
   const disposableRateUs = vscode.commands.registerCommand(
     `${EXTENSION_ID}.feedback.rateUs`,
-    () => feedbackProvider.controller.rateUs(),
+    () => {
+      // Check if the extension is enabled
+      if (!config.enable) {
+        const message = vscode.l10n.t(
+          '{0} is disabled in settings. Enable it to use its features',
+          [EXTENSION_NAME],
+        );
+        vscode.window.showErrorMessage(message);
+        return;
+      }
+
+      feedbackProvider.controller.rateUs();
+    },
   );
 
   context.subscriptions.push(
@@ -190,7 +398,19 @@ export function activate(context: vscode.ExtensionContext) {
 
   const disposableRefreshList = vscode.commands.registerCommand(
     `${EXTENSION_ID}.files.refreshList`,
-    () => filesProvider.refresh(),
+    () => {
+      // Check if the extension is enabled
+      if (!config.enable) {
+        const message = vscode.l10n.t(
+          '{0} is disabled in settings. Enable it to use its features',
+          [EXTENSION_NAME],
+        );
+        vscode.window.showErrorMessage(message);
+        return;
+      }
+
+      filesProvider.refresh();
+    },
   );
 
   context.subscriptions.push(filesTreeView, disposableRefreshList);

@@ -1,4 +1,5 @@
 {
+	"jsonFlow.enable": "Ativar JSON Flow",
 	"jsonFlow.files.include": "Padrões Glob para incluir no pacote. O padrão é json e jsonc",
 	"jsonFlow.files.exclude": "Padrões Glob para excluir do pacote. O padrão é node_modules, dist, out, build e quaisquer arquivos ocultos",
 	"jsonFlow.files.showPath": "Mostrar o caminho do arquivo no nome da lista de arquivos gerados",
