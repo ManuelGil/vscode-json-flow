@@ -2,7 +2,7 @@
 	"name": "vscode-json-flow",
 	"displayName": "JSON Flow",
 	"description": "Transform JSON into interactive graphs in VSCode - Free & Open Source",
-	"version": "1.10.0",
+	"version": "1.11.0",
 	"icon": "icon.png",
 	"license": "MIT",
 	"publisher": "imgildev",
@@ -15,7 +15,7 @@
 		"url": "https://github.com/sponsors/manuelgil"
 	},
 	"engines": {
-		"vscode": "^1.76.0"
+		"vscode": "^1.88.0"
 	},
 	"categories": [
 		"Other"
@@ -376,7 +376,7 @@
 		"format": "biome format --write",
 		"lint": "biome lint --write",
 		"lint:check": "biome check --write",
-		"test": "node ./out/test/runTest.js",
+		"test": "vscode-test",
 		"compodoc": "npx compodoc -p tsconfig.doc.json -d compodoc --theme readthedocs -s",
 		"prepare": "husky"
 	},
@@ -401,25 +401,26 @@
 		"@commitlint/cli": "^19.5.0",
 		"@commitlint/config-conventional": "^19.5.0",
 		"@compodoc/compodoc": "^1.1.26",
-		"@types/minimatch": "^5.1.2",
-		"@types/mocha": "^10.0.9",
-		"@types/node": "^22.9.0",
+		"@types/mocha": "^10.0.10",
+		"@types/node": "^22.10.5",
 		"@types/react": "^18.3.12",
 		"@types/react-dom": "^18.3.1",
-		"@types/vscode": "^1.76.0",
+		"@types/vscode": "^1.88.0",
+		"@typescript-eslint/eslint-plugin": "^8.17.0",
+		"@typescript-eslint/parser": "^8.17.0",
 		"@vitejs/plugin-react": "^4.3.3",
 		"@vscode/l10n-dev": "^0.0.35",
+		"@vscode/test-cli": "^0.0.10",
+		"@vscode/test-electron": "^2.4.1",
 		"autoprefixer": "^10.4.20",
-		"biome": "^0.2.2",
 		"cpy-cli": "^5.0.0",
-		"glob": "^11.0.0",
+		"eslint": "^9.16.0",
 		"husky": "^9.1.6",
 		"lint-staged": "^15.2.10",
-		"mocha": "^10.8.2",
 		"postcss": "^8.4.47",
 		"rimraf": "^6.0.1",
 		"tailwindcss": "^3.4.14",
-		"typescript": "^5.6.3",
+		"typescript": "^5.7.2",
 		"vite": "^5.4.10",
 		"vscode-test": "^1.6.1"
 	}

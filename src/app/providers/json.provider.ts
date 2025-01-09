@@ -279,7 +279,13 @@ export class JSONProvider {
     <title>JSON Flow</title>
   </head>
   <body>
+    <div id="root"></div>
+    <script nonce="${nonce}" src="${scriptUri}" defer></script>
     <script nonce="${nonce}">
+      window.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+      }, { capture: true });
+
       ${
         JsonController.webviewConfiguration
           ? `window.webviewConfiguration = ${JSON.stringify(
@@ -288,8 +294,6 @@ export class JSONProvider {
           : ''
       }
     </script>
-    <div id="root"></div>
-    <script nonce="${nonce}" src="${scriptUri}"></script>
   </body>
 </html>
 `;

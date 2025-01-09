@@ -121,21 +121,25 @@ export async function activate(context: vscode.ExtensionContext) {
       'New version of {0} is available. Check out the release notes for version {1}',
       [EXTENSION_NAME, currentVersion],
     );
-    const option = await vscode.window.showInformationMessage(
-      message,
-      ...actions,
-    );
+    vscode.window.showInformationMessage(message, ...actions).then((option) => {
+      if (!option) {
+        return;
+      }
 
-    // Handle the actions
-    switch (option?.title) {
-      case actions[0].title:
-        vscode.env.openExternal(
-          vscode.Uri.parse(
-            `${EXTENSION_MARKETPLACE_URL}&ssr=false#version-history`,
-          ),
-        );
-        break;
-    }
+      // Handle the actions
+      switch (option?.title) {
+        case actions[0].title:
+          vscode.env.openExternal(
+            vscode.Uri.parse(
+              `${EXTENSION_MARKETPLACE_URL}&ssr=false#version-history`,
+            ),
+          );
+          break;
+
+        default:
+          break;
+      }
+    });
 
     // Update the version in the global state
     context.globalState.update('version', currentVersion);

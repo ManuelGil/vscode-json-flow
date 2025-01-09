@@ -16,7 +16,7 @@ import {
  * @public
  * @extends {TreeItem}
  * @property {string | TreeItemLabel} label - The label
- * @property {string | Uri | { light: string | Uri; dark: string | Uri } | ThemeIcon} [iconPath] - The icon path
+ * @property {string | Uri | { light: Uri; dark: Uri } | ThemeIcon} [iconPath] - The icon path
  * @property {Command} [command] - The command
  * @property {Uri} [resourceUri] - The resource URI
  * @property {string} [contextValue] - The context value
@@ -54,7 +54,7 @@ export class NodeModel extends TreeItem {
    *
    * @constructor
    * @param {string | TreeItemLabel} label - The label
-   * @param {string | Uri | { light: string | Uri; dark: string | Uri } | ThemeIcon} [iconPath] - The icon path
+   * @param {string | Uri | { light: Uri; dark: Uri } | ThemeIcon} [iconPath] - The icon path
    * @param {Command} [command] - The command
    * @param {Uri} [resourceUri] - The resource URI
    * @param {string} [contextValue] - The context value
@@ -67,11 +67,7 @@ export class NodeModel extends TreeItem {
    */
   constructor(
     readonly label: string | TreeItemLabel,
-    readonly iconPath?:
-      | string
-      | Uri
-      | { light: string | Uri; dark: string | Uri }
-      | ThemeIcon,
+    readonly iconPath?: string | Uri | { light: Uri; dark: Uri } | ThemeIcon,
     readonly command?: Command,
     readonly resourceUri?: Uri,
     readonly contextValue?: string,

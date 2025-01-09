@@ -47,7 +47,7 @@ Transform your JSON files into interactive node-based graphs directly in Visual 
 
 ## Requirements
 
-- VSCode 1.76.0 or later
+- VSCode 1.88.0 or later
 
 ## Features
 
