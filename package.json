@@ -1,427 +1,429 @@
 {
-	"name": "vscode-json-flow",
-	"displayName": "JSON Flow",
-	"description": "Transform JSON into interactive graphs in VSCode - Free & Open Source",
-	"version": "1.11.0",
-	"icon": "icon.png",
-	"license": "MIT",
-	"publisher": "imgildev",
-	"author": {
-		"name": "Manuel Gil",
-		"email": "support@imgil.dev",
-		"url": "https://imgil.dev/"
-	},
-	"sponsor": {
-		"url": "https://github.com/sponsors/manuelgil"
-	},
-	"engines": {
-		"vscode": "^1.88.0"
-	},
-	"categories": [
-		"Other"
-	],
-	"keywords": [
-		"cfg",
-		"csv",
-		"data",
-		"dotenv",
-		"env",
-		"explorer",
-		"fileview",
-		"flow view",
-		"flow",
-		"flowview",
-		"graph view",
-		"graph",
-		"graphview",
-		"hcl",
-		"ini",
-		"json flow",
-		"json schema",
-		"json view",
-		"json-flow",
-		"json-schema",
-		"json-xml",
-		"json",
-		"json5",
-		"jsonc",
-		"jsonflow",
-		"jsonschema",
-		"jsonview",
-		"live preview",
-		"manager",
-		"node",
-		"nodes",
-		"preview",
-		"properties",
-		"schema",
-		"toml",
-		"tree",
-		"treeview",
-		"tsv",
-		"view",
-		"visualizer",
-		"vscode-extension",
-		"vscode-json-flow",
-		"vscode",
-		"xml",
-		"yaml",
-		"yml"
-	],
-	"homepage": "https://github.com/ManuelGil/vscode-json-flow",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/ManuelGil/vscode-json-flow"
-	},
-	"bugs": {
-		"url": "https://github.com/ManuelGil/vscode-json-flow/issues"
-	},
-	"activationEvents": [],
-	"main": "./out/extension.js",
-	"l10n": "./l10n",
-	"contributes": {
-		"configuration": {
-			"title": "JSON Flow",
-			"properties": {
-				"jsonFlow.enable": {
-					"type": "boolean",
-					"default": true,
-					"scope": "resource",
-					"description": "%jsonFlow.enable%"
-				},
-				"jsonFlow.files.include": {
-					"type": "array",
-					"default": [
-						"json",
-						"jsonc",
-						"json5",
-						"cfg",
-						"csv",
-						"env",
-						"hcl",
-						"ini",
-						"properties",
-						"toml",
-						"tsv",
-						"xml",
-						"yaml",
-						"yml"
-					],
-					"scope": "resource",
-					"description": "%jsonFlow.files.include%"
-				},
-				"jsonFlow.files.exclude": {
-					"type": "array",
-					"default": [
-						"**/node_modules/**",
-						"**/dist/**",
-						"**/out/**",
-						"**/build/**",
-						"**/vendor/**"
-					],
-					"scope": "resource",
-					"description": "%jsonFlow.files.exclude%"
-				},
-				"jsonFlow.files.showPath": {
-					"type": "boolean",
-					"default": true,
-					"scope": "resource",
-					"description": "%jsonFlow.files.showPath%"
-				},
-				"jsonFlow.graph.showValues": {
-					"type": "boolean",
-					"default": true,
-					"scope": "resource",
-					"description": "%jsonFlow.graph.showValues%"
-				},
-				"jsonFlow.graph.nodeWidth": {
-					"type": "number",
-					"default": 200,
-					"scope": "resource",
-					"description": "%jsonFlow.graph.nodeWidth%"
-				},
-				"jsonFlow.graph.nodeHeight": {
-					"type": "number",
-					"default": 50,
-					"scope": "resource",
-					"description": "%jsonFlow.graph.nodeHeight%"
-				},
-				"jsonFlow.graph.nodeBorderColor": {
-					"type": "string",
-					"default": "white",
-					"scope": "resource",
-					"description": "%jsonFlow.graph.nodeBorderColor%"
-				},
-				"jsonFlow.graph.nodeColor": {
-					"type": "string",
-					"default": "white",
-					"scope": "resource",
-					"description": "%jsonFlow.graph.nodeColor%"
-				},
-				"jsonFlow.graph.edgeColor": {
-					"type": "string",
-					"default": "white",
-					"scope": "resource",
-					"description": "%jsonFlow.graph.edgeColor%"
-				},
-				"jsonFlow.graph.layoutDirection": {
-					"type": "string",
-					"default": "TB",
-					"enum": [
-						"TB",
-						"LR"
-					],
-					"scope": "resource",
-					"description": "%jsonFlow.graph.layoutDirection%"
-				},
-				"jsonFlow.image.folder": {
-					"type": "string",
-					"default": "json-flow/images",
-					"scope": "resource",
-					"description": "%jsonFlow.image.folder%"
-				}
-			}
-		},
-		"commands": [
-			{
-				"command": "jsonFlow.files.refreshList",
-				"title": "%jsonFlow.files.refreshList%",
-				"category": "JSON Flow",
-				"icon": "$(refresh)"
-			},
-			{
-				"command": "jsonFlow.files.openFile",
-				"title": "%jsonFlow.files.openFile%",
-				"category": "JSON Flow"
-			},
-			{
-				"command": "jsonFlow.files.convertToJson",
-				"title": "%jsonFlow.files.convertToJson%",
-				"category": "JSON Flow"
-			},
-			{
-				"command": "jsonFlow.files.convertPartialToJson",
-				"title": "%jsonFlow.files.convertPartialToJson%",
-				"category": "JSON Flow"
-			},
-			{
-				"command": "jsonFlow.files.copyContent",
-				"title": "%jsonFlow.files.copyContent%",
-				"category": "JSON Flow"
-			},
-			{
-				"command": "jsonFlow.files.copyContentAsJson",
-				"title": "%jsonFlow.files.copyContentAsJson%",
-				"category": "JSON Flow"
-			},
-			{
-				"command": "jsonFlow.files.copyContentPartialAsJson",
-				"title": "%jsonFlow.files.copyContentPartialAsJson%",
-				"category": "JSON Flow"
-			},
-			{
-				"command": "jsonFlow.files.getFileProperties",
-				"title": "%jsonFlow.files.getFileProperties%",
-				"category": "JSON Flow"
-			},
-			{
-				"command": "jsonFlow.json.showPartialPreview",
-				"title": "%jsonFlow.json.showPartialPreview%",
-				"category": "JSON Flow"
-			},
-			{
-				"command": "jsonFlow.json.showPreview",
-				"title": "%jsonFlow.json.showPreview%",
-				"category": "JSON Flow"
-			}
-		],
-		"submenus": [
-			{
-				"id": "jsonFlow.explorer.submenu",
-				"label": "JSON Flow"
-			},
-			{
-				"id": "jsonFlow.editor.submenu",
-				"label": "JSON Flow"
-			}
-		],
-		"menus": {
-			"view/title": [
-				{
-					"command": "jsonFlow.files.refreshList",
-					"when": "view == jsonFlow.filesView",
-					"group": "navigation"
-				}
-			],
-			"view/item/context": [
-				{
-					"command": "jsonFlow.files.openFile",
-					"when": "view == jsonFlow.filesView && viewItem == file",
-					"group": "1_navigation"
-				},
-				{
-					"command": "jsonFlow.files.convertToJson",
-					"when": "view == jsonFlow.filesView && viewItem == file",
-					"group": "2_modification"
-				},
-				{
-					"command": "jsonFlow.files.copyContent",
-					"when": "view == jsonFlow.filesView && viewItem == file",
-					"group": "3_cutcopypaste@1"
-				},
-				{
-					"command": "jsonFlow.files.copyContentAsJson",
-					"when": "view == jsonFlow.filesView && viewItem == file",
-					"group": "3_cutcopypaste@2"
-				},
-				{
-					"command": "jsonFlow.files.getFileProperties",
-					"when": "view == jsonFlow.filesView && viewItem == file",
-					"group": "4_properties"
-				}
-			],
-			"explorer/context": [
-				{
-					"submenu": "jsonFlow.explorer.submenu",
-					"group": "2_workspace",
-					"when": "resourceExtname =~ /json|jsonc|json5|cfg|csv|env|hcl|ini|properties|toml|tsv|xml|yaml|yml/"
-				}
-			],
-			"editor/context": [
-				{
-					"submenu": "jsonFlow.editor.submenu",
-					"group": "1_modification",
-					"when": "editorHasSelection"
-				}
-			],
-			"jsonFlow.explorer.submenu": [
-				{
-					"command": "jsonFlow.json.showPreview",
-					"title": "%jsonFlow.json.showPreview%",
-					"group": "1_navigation"
-				},
-				{
-					"command": "jsonFlow.files.convertToJson",
-					"title": "%jsonFlow.files.convertToJson%",
-					"group": "2_modification"
-				},
-				{
-					"command": "jsonFlow.files.copyContentAsJson",
-					"title": "%jsonFlow.files.copyContentAsJson%",
-					"group": "3_cutcopypaste"
-				}
-			],
-			"jsonFlow.editor.submenu": [
-				{
-					"command": "jsonFlow.json.showPartialPreview",
-					"title": "%jsonFlow.json.showPartialPreview%",
-					"group": "1_view"
-				},
-				{
-					"command": "jsonFlow.files.convertPartialToJson",
-					"title": "%jsonFlow.files.convertPartialToJson%",
-					"group": "2_modification"
-				},
-				{
-					"command": "jsonFlow.files.copyContentPartialAsJson",
-					"title": "%jsonFlow.files.copyContentPartialAsJson%",
-					"group": "3_cutcopypaste"
-				}
-			]
-		},
-		"viewsWelcome": [
-			{
-				"view": "jsonFlow.filesView",
-				"contents": "%viewsWelcome.jsonFlow.filesView%"
-			}
-		],
-		"viewsContainers": {
-			"activitybar": [
-				{
-					"id": "json-explorer",
-					"title": "JSON Flow",
-					"icon": "./assets/logo.svg"
-				}
-			]
-		},
-		"views": {
-			"json-explorer": [
-				{
-					"id": "jsonFlow.filesView",
-					"name": "%jsonFlow.filesView%",
-					"visibility": "visible"
-				},
-				{
-					"id": "jsonFlow.feedbackView",
-					"name": "%jsonFlow.feedbackView%",
-					"visibility": "visible"
-				}
-			]
-		},
-		"jsonValidation": [
-			{
-				"fileMatch": ".vscode/settings.json",
-				"url": "./schemas/config.schema.json"
-			}
-		]
-	},
-	"scripts": {
-		"vscode:prepublish": "npm run build && npm run compile",
-		"compile": "rimraf out && tsc -p ./ && cpy dist/* out/webview",
-		"watch": "tsc -watch -p ./",
-		"pretest": "npm run compile && npm run lint",
-		"dev": "vite",
-		"build": "tsc --p ./tsconfig.web.json && vite build",
-		"preview": "vite preview",
-		"format": "biome format --write",
-		"lint": "biome lint --write",
-		"lint:check": "biome check --write",
-		"test": "vscode-test",
-		"compodoc": "npx compodoc -p tsconfig.doc.json -d compodoc --theme readthedocs -s",
-		"prepare": "husky"
-	},
-	"dependencies": {
-		"@vscode/webview-ui-toolkit": "^1.4.0",
-		"@xyflow/react": "^12.3.4",
-		"dotenv": "^16.4.5",
-		"entitree-flex": "^0.4.1",
-		"fast-glob": "^3.3.2",
-		"fast-xml-parser": "^4.5.0",
-		"hcl-parser": "^0.1.1",
-		"html-to-image": "^1.11.11",
-		"ini": "^5.0.0",
-		"json5": "^2.2.3",
-		"react": "^18.3.1",
-		"react-dom": "^18.3.1",
-		"toml": "^3.0.0",
-		"yaml": "^2.6.0"
-	},
-	"devDependencies": {
-		"@biomejs/biome": "1.9.4",
-		"@commitlint/cli": "^19.5.0",
-		"@commitlint/config-conventional": "^19.5.0",
-		"@compodoc/compodoc": "^1.1.26",
-		"@types/mocha": "^10.0.10",
-		"@types/node": "^22.10.5",
-		"@types/react": "^18.3.12",
-		"@types/react-dom": "^18.3.1",
-		"@types/vscode": "^1.88.0",
-		"@typescript-eslint/eslint-plugin": "^8.17.0",
-		"@typescript-eslint/parser": "^8.17.0",
-		"@vitejs/plugin-react": "^4.3.3",
-		"@vscode/l10n-dev": "^0.0.35",
-		"@vscode/test-cli": "^0.0.10",
-		"@vscode/test-electron": "^2.4.1",
-		"autoprefixer": "^10.4.20",
-		"cpy-cli": "^5.0.0",
-		"eslint": "^9.16.0",
-		"husky": "^9.1.6",
-		"lint-staged": "^15.2.10",
-		"postcss": "^8.4.47",
-		"rimraf": "^6.0.1",
-		"tailwindcss": "^3.4.14",
-		"typescript": "^5.7.2",
-		"vite": "^5.4.10",
-		"vscode-test": "^1.6.1"
-	}
+  "name": "vscode-json-flow",
+  "displayName": "JSON Flow",
+  "description": "Transform JSON into interactive graphs in VSCode - Free & Open Source",
+  "version": "1.11.0",
+  "icon": "icon.png",
+  "license": "MIT",
+  "publisher": "imgildev",
+  "author": {
+    "name": "Manuel Gil",
+    "email": "support@imgil.dev",
+    "url": "https://imgil.dev/"
+  },
+  "sponsor": {
+    "url": "https://github.com/sponsors/manuelgil"
+  },
+  "engines": {
+    "vscode": "^1.88.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "cfg",
+    "csv",
+    "data",
+    "dotenv",
+    "env",
+    "explorer",
+    "fileview",
+    "flow view",
+    "flow",
+    "flowview",
+    "graph view",
+    "graph",
+    "graphview",
+    "hcl",
+    "ini",
+    "json flow",
+    "json schema",
+    "json view",
+    "json-flow",
+    "json-schema",
+    "json-xml",
+    "json",
+    "json5",
+    "jsonc",
+    "jsonflow",
+    "jsonschema",
+    "jsonview",
+    "live preview",
+    "manager",
+    "node",
+    "nodes",
+    "preview",
+    "properties",
+    "schema",
+    "toml",
+    "tree",
+    "treeview",
+    "tsv",
+    "view",
+    "visualizer",
+    "vscode-extension",
+    "vscode-json-flow",
+    "vscode",
+    "xml",
+    "yaml",
+    "yml"
+  ],
+  "homepage": "https://github.com/ManuelGil/vscode-json-flow",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ManuelGil/vscode-json-flow"
+  },
+  "bugs": {
+    "url": "https://github.com/ManuelGil/vscode-json-flow/issues"
+  },
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "l10n": "./l10n",
+  "contributes": {
+    "configuration": {
+      "title": "JSON Flow",
+      "properties": {
+        "jsonFlow.enable": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "%jsonFlow.enable%"
+        },
+        "jsonFlow.files.include": {
+          "type": "array",
+          "default": [
+            "json",
+            "jsonc",
+            "json5",
+            "cfg",
+            "csv",
+            "env",
+            "hcl",
+            "ini",
+            "properties",
+            "toml",
+            "tsv",
+            "xml",
+            "yaml",
+            "yml"
+          ],
+          "scope": "resource",
+          "description": "%jsonFlow.files.include%"
+        },
+        "jsonFlow.files.exclude": {
+          "type": "array",
+          "default": [
+            "**/node_modules/**",
+            "**/dist/**",
+            "**/out/**",
+            "**/build/**",
+            "**/vendor/**"
+          ],
+          "scope": "resource",
+          "description": "%jsonFlow.files.exclude%"
+        },
+        "jsonFlow.files.showPath": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "%jsonFlow.files.showPath%"
+        },
+        "jsonFlow.graph.showValues": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "%jsonFlow.graph.showValues%"
+        },
+        "jsonFlow.graph.nodeWidth": {
+          "type": "number",
+          "default": 200,
+          "scope": "resource",
+          "description": "%jsonFlow.graph.nodeWidth%"
+        },
+        "jsonFlow.graph.nodeHeight": {
+          "type": "number",
+          "default": 50,
+          "scope": "resource",
+          "description": "%jsonFlow.graph.nodeHeight%"
+        },
+        "jsonFlow.graph.nodeBorderColor": {
+          "type": "string",
+          "default": "white",
+          "scope": "resource",
+          "description": "%jsonFlow.graph.nodeBorderColor%"
+        },
+        "jsonFlow.graph.nodeColor": {
+          "type": "string",
+          "default": "white",
+          "scope": "resource",
+          "description": "%jsonFlow.graph.nodeColor%"
+        },
+        "jsonFlow.graph.edgeColor": {
+          "type": "string",
+          "default": "white",
+          "scope": "resource",
+          "description": "%jsonFlow.graph.edgeColor%"
+        },
+        "jsonFlow.graph.layoutDirection": {
+          "type": "string",
+          "default": "TB",
+          "enum": [
+            "TB",
+            "LR"
+          ],
+          "scope": "resource",
+          "description": "%jsonFlow.graph.layoutDirection%"
+        },
+        "jsonFlow.image.folder": {
+          "type": "string",
+          "default": "json-flow/images",
+          "scope": "resource",
+          "description": "%jsonFlow.image.folder%"
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "jsonFlow.files.refreshList",
+        "title": "%jsonFlow.files.refreshList%",
+        "category": "JSON Flow",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "jsonFlow.files.openFile",
+        "title": "%jsonFlow.files.openFile%",
+        "category": "JSON Flow"
+      },
+      {
+        "command": "jsonFlow.files.convertToJson",
+        "title": "%jsonFlow.files.convertToJson%",
+        "category": "JSON Flow"
+      },
+      {
+        "command": "jsonFlow.files.convertPartialToJson",
+        "title": "%jsonFlow.files.convertPartialToJson%",
+        "category": "JSON Flow"
+      },
+      {
+        "command": "jsonFlow.files.copyContent",
+        "title": "%jsonFlow.files.copyContent%",
+        "category": "JSON Flow"
+      },
+      {
+        "command": "jsonFlow.files.copyContentAsJson",
+        "title": "%jsonFlow.files.copyContentAsJson%",
+        "category": "JSON Flow"
+      },
+      {
+        "command": "jsonFlow.files.copyContentPartialAsJson",
+        "title": "%jsonFlow.files.copyContentPartialAsJson%",
+        "category": "JSON Flow"
+      },
+      {
+        "command": "jsonFlow.files.getFileProperties",
+        "title": "%jsonFlow.files.getFileProperties%",
+        "category": "JSON Flow"
+      },
+      {
+        "command": "jsonFlow.json.showPartialPreview",
+        "title": "%jsonFlow.json.showPartialPreview%",
+        "category": "JSON Flow"
+      },
+      {
+        "command": "jsonFlow.json.showPreview",
+        "title": "%jsonFlow.json.showPreview%",
+        "category": "JSON Flow"
+      }
+    ],
+    "submenus": [
+      {
+        "id": "jsonFlow.explorer.submenu",
+        "label": "JSON Flow"
+      },
+      {
+        "id": "jsonFlow.editor.submenu",
+        "label": "JSON Flow"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "jsonFlow.files.refreshList",
+          "when": "view == jsonFlow.filesView",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "jsonFlow.files.openFile",
+          "when": "view == jsonFlow.filesView && viewItem == file",
+          "group": "1_navigation"
+        },
+        {
+          "command": "jsonFlow.files.convertToJson",
+          "when": "view == jsonFlow.filesView && viewItem == file",
+          "group": "2_modification"
+        },
+        {
+          "command": "jsonFlow.files.copyContent",
+          "when": "view == jsonFlow.filesView && viewItem == file",
+          "group": "3_cutcopypaste@1"
+        },
+        {
+          "command": "jsonFlow.files.copyContentAsJson",
+          "when": "view == jsonFlow.filesView && viewItem == file",
+          "group": "3_cutcopypaste@2"
+        },
+        {
+          "command": "jsonFlow.files.getFileProperties",
+          "when": "view == jsonFlow.filesView && viewItem == file",
+          "group": "4_properties"
+        }
+      ],
+      "explorer/context": [
+        {
+          "submenu": "jsonFlow.explorer.submenu",
+          "group": "2_workspace",
+          "when": "resourceExtname =~ /json|jsonc|json5|cfg|csv|env|hcl|ini|properties|toml|tsv|xml|yaml|yml/"
+        }
+      ],
+      "editor/context": [
+        {
+          "submenu": "jsonFlow.editor.submenu",
+          "group": "1_modification",
+          "when": "editorHasSelection"
+        }
+      ],
+      "jsonFlow.explorer.submenu": [
+        {
+          "command": "jsonFlow.json.showPreview",
+          "title": "%jsonFlow.json.showPreview%",
+          "group": "1_navigation"
+        },
+        {
+          "command": "jsonFlow.files.convertToJson",
+          "title": "%jsonFlow.files.convertToJson%",
+          "group": "2_modification"
+        },
+        {
+          "command": "jsonFlow.files.copyContentAsJson",
+          "title": "%jsonFlow.files.copyContentAsJson%",
+          "group": "3_cutcopypaste"
+        }
+      ],
+      "jsonFlow.editor.submenu": [
+        {
+          "command": "jsonFlow.json.showPartialPreview",
+          "title": "%jsonFlow.json.showPartialPreview%",
+          "group": "1_view"
+        },
+        {
+          "command": "jsonFlow.files.convertPartialToJson",
+          "title": "%jsonFlow.files.convertPartialToJson%",
+          "group": "2_modification"
+        },
+        {
+          "command": "jsonFlow.files.copyContentPartialAsJson",
+          "title": "%jsonFlow.files.copyContentPartialAsJson%",
+          "group": "3_cutcopypaste"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "jsonFlow.filesView",
+        "contents": "%viewsWelcome.jsonFlow.filesView%"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "json-explorer",
+          "title": "JSON Flow",
+          "icon": "./assets/logo.svg"
+        }
+      ]
+    },
+    "views": {
+      "json-explorer": [
+        {
+          "id": "jsonFlow.filesView",
+          "name": "%jsonFlow.filesView%",
+          "visibility": "visible"
+        },
+        {
+          "id": "jsonFlow.feedbackView",
+          "name": "%jsonFlow.feedbackView%",
+          "visibility": "visible"
+        }
+      ]
+    },
+    "jsonValidation": [
+      {
+        "fileMatch": ".vscode/settings.json",
+        "url": "./schemas/config.schema.json"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build && npm run compile",
+    "compile": "rimraf out && tsc -p ./ && cpy dist/* out/webview",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "dev": "vite",
+    "build": "tsc --p ./tsconfig.web.json && vite build",
+    "preview": "vite preview",
+    "format": "biome format --write",
+    "lint": "biome lint --write",
+    "lint:check": "biome check --write",
+    "test": "vscode-test",
+    "compodoc": "npx compodoc -p tsconfig.doc.json -d compodoc --theme readthedocs -s",
+    "prepare": "husky",
+    "release": "release-it"
+  },
+  "dependencies": {
+    "@vscode/webview-ui-toolkit": "^1.4.0",
+    "@xyflow/react": "^12.3.4",
+    "dotenv": "^16.4.5",
+    "entitree-flex": "^0.4.1",
+    "fast-glob": "^3.3.2",
+    "fast-xml-parser": "^4.5.0",
+    "hcl-parser": "^0.1.1",
+    "html-to-image": "^1.11.11",
+    "ini": "^5.0.0",
+    "json5": "^2.2.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "toml": "^3.0.0",
+    "yaml": "^2.6.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "@commitlint/cli": "^19.5.0",
+    "@commitlint/config-conventional": "^19.5.0",
+    "@compodoc/compodoc": "^1.1.26",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^22.10.5",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@types/vscode": "^1.88.0",
+    "@typescript-eslint/eslint-plugin": "^8.17.0",
+    "@typescript-eslint/parser": "^8.17.0",
+    "@vitejs/plugin-react": "^4.3.3",
+    "@vscode/l10n-dev": "^0.0.35",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.1",
+    "autoprefixer": "^10.4.20",
+    "cpy-cli": "^5.0.0",
+    "eslint": "^9.16.0",
+    "husky": "^9.1.6",
+    "lint-staged": "^15.2.10",
+    "postcss": "^8.4.47",
+    "release-it": "^18.1.1",
+    "rimraf": "^6.0.1",
+    "tailwindcss": "^3.4.14",
+    "typescript": "^5.7.2",
+    "vite": "^5.4.10",
+    "vscode-test": "^1.6.1"
+  }
 }
