@@ -20,5 +20,8 @@
 	"Rate Us": "Avalie-nos",
 	"No workspace folder available to save the image!": "Nenhuma pasta de espaço de trabalho disponível para salvar a imagem!",
 	"Select a workspace folder to save the image": "Selecione uma pasta de espaço de trabalho para salvar a imagem",
-	"Image saved to: {0}": "Imagem salva em: {0}"
+	"Image saved to: {0}": "Imagem salva em: {0}",
+	"Enter the name of the type or structure generated": "Digite o nome do tipo ou estrutura gerada",
+	"Enter the name of the type or structure, e.g., User, Post, etc.": "Digite o nome do tipo ou estrutura, por exemplo, Usuário, Postagem, etc.",
+	"The name of the type or structure is required!": "O nome do tipo ou estrutura é obrigatório!"
 }

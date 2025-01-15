@@ -418,7 +418,7 @@ export class TransformController {
       case 'javascript':
         return 'javascript';
       case 'flow':
-        return 'javascript'; // Flow es un tipo de JavaScript
+        return 'javascript';
       case 'rust':
         return 'rust';
       case 'kotlin':
@@ -446,17 +446,17 @@ export class TransformController {
       case 'elm':
         return 'elm';
       case 'json-schema':
-        return 'json'; // JSON Schema se representa como JSON
+        return 'json';
       case 'pike':
         return 'pike';
       case 'prop-types':
-        return 'javascript'; // Prop-Types se utiliza con JavaScript
+        return 'javascript';
       case 'haskell':
         return 'haskell';
       case 'php':
         return 'php';
       default:
-        return 'plaintext'; // Lenguaje por defecto
+        return 'plaintext';
     }
   }
 }
