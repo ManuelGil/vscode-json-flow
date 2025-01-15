@@ -13,6 +13,7 @@ import {
   FeedbackController,
   FilesController,
   JsonController,
+  TransformController,
 } from './app/controllers';
 import { FeedbackProvider, FilesProvider, JSONProvider } from './app/providers';
 
@@ -169,40 +170,6 @@ export async function activate(context: vscode.ExtensionContext) {
     },
   );
 
-  const disposableConvertToJson = vscode.commands.registerCommand(
-    `${EXTENSION_ID}.files.convertToJson`,
-    (uri) => {
-      // Check if the extension is enabled
-      if (!config.enable) {
-        const message = vscode.l10n.t(
-          '{0} is disabled in settings. Enable it to use its features',
-          [EXTENSION_NAME],
-        );
-        vscode.window.showErrorMessage(message);
-        return;
-      }
-
-      filesController.convertToJson(uri);
-    },
-  );
-
-  const disposableConvertPartialToJson = vscode.commands.registerCommand(
-    `${EXTENSION_ID}.files.convertPartialToJson`,
-    () => {
-      // Check if the extension is enabled
-      if (!config.enable) {
-        const message = vscode.l10n.t(
-          '{0} is disabled in settings. Enable it to use its features',
-          [EXTENSION_NAME],
-        );
-        vscode.window.showErrorMessage(message);
-        return;
-      }
-
-      filesController.convertPartialToJson();
-    },
-  );
-
   const disponsableCopyContent = vscode.commands.registerCommand(
     `${EXTENSION_ID}.files.copyContent`,
     (uri) => {
@@ -273,8 +240,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     disposableOpenFile,
-    disposableConvertToJson,
-    disposableConvertPartialToJson,
     disponsableCopyContent,
     disponsableCopyContentAsJson,
     disponsableCopyContentPartialAsJson,
@@ -327,6 +292,150 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     disposableShowPreview,
     disposableShowPartialPreview,
+  );
+
+  // -----------------------------------------------------------------
+  // Register TransformController
+  // -----------------------------------------------------------------
+
+  // Create a new TransformController
+  const transformController = new TransformController();
+
+  const disposableConvertToJson = vscode.commands.registerCommand(
+    `${EXTENSION_ID}.files.convertToJson`,
+    (uri) => {
+      // Check if the extension is enabled
+      if (!config.enable) {
+        const message = vscode.l10n.t(
+          '{0} is disabled in settings. Enable it to use its features',
+          [EXTENSION_NAME],
+        );
+        vscode.window.showErrorMessage(message);
+        return;
+      }
+
+      transformController.convertToJson(uri);
+    },
+  );
+
+  const disposableConvertPartialToJson = vscode.commands.registerCommand(
+    `${EXTENSION_ID}.files.convertPartialToJson`,
+    () => {
+      // Check if the extension is enabled
+      if (!config.enable) {
+        const message = vscode.l10n.t(
+          '{0} is disabled in settings. Enable it to use its features',
+          [EXTENSION_NAME],
+        );
+        vscode.window.showErrorMessage(message);
+        return;
+      }
+
+      transformController.convertPartialToJson();
+    },
+  );
+
+  const disposableConvertToType = vscode.commands.registerCommand(
+    `${EXTENSION_ID}.files.convertToType`,
+    async (uri) => {
+      // Check if the extension is enabled
+      if (!config.enable) {
+        const message = vscode.l10n.t(
+          '{0} is disabled in settings. Enable it to use its features',
+          [EXTENSION_NAME],
+        );
+        vscode.window.showErrorMessage(message);
+        return;
+      }
+
+      const targetLanguage = await vscode.window.showQuickPick(
+        [
+          'cpp',
+          'csharp',
+          'dart',
+          'elm',
+          'flow',
+          'go',
+          'haskell',
+          'java',
+          'javascript',
+          'json-schema',
+          'kotlin',
+          'objective-c',
+          'php',
+          'pike',
+          'prop-types',
+          'python',
+          'ruby',
+          'rust',
+          'scala',
+          'swift',
+          'typescript',
+        ],
+        { placeHolder: vscode.l10n.t('Select the target language') },
+      );
+
+      if (!targetLanguage) {
+        return;
+      }
+
+      transformController.convertToType(uri, targetLanguage);
+    },
+  );
+
+  const disposableConvertPartialToType = vscode.commands.registerCommand(
+    `${EXTENSION_ID}.files.convertPartialToType`,
+    async () => {
+      // Check if the extension is enabled
+      if (!config.enable) {
+        const message = vscode.l10n.t(
+          '{0} is disabled in settings. Enable it to use its features',
+          [EXTENSION_NAME],
+        );
+        vscode.window.showErrorMessage(message);
+        return;
+      }
+
+      const targetLanguage = await vscode.window.showQuickPick(
+        [
+          'cpp',
+          'csharp',
+          'dart',
+          'elm',
+          'flow',
+          'go',
+          'haskell',
+          'java',
+          'javascript',
+          'json-schema',
+          'kotlin',
+          'objective-c',
+          'php',
+          'pike',
+          'prop-types',
+          'python',
+          'ruby',
+          'rust',
+          'scala',
+          'swift',
+          'typescript',
+        ],
+        { placeHolder: vscode.l10n.t('Select the target language') },
+      );
+
+      if (!targetLanguage) {
+        return;
+      }
+
+      transformController.convertPartialToType(targetLanguage);
+    },
+  );
+
+  context.subscriptions.push(
+    disposableConvertToJson,
+    disposableConvertPartialToJson,
+    disposableConvertToType,
+    disposableConvertPartialToType,
   );
 
   // -----------------------------------------------------------------

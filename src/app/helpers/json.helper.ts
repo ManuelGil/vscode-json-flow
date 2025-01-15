@@ -70,8 +70,6 @@ export const parseJSONContent = (
   try {
     switch (type) {
       case 'json':
-        return JSON.parse(content);
-
       case 'jsonc':
       case 'json5':
         return json5.parse(content);

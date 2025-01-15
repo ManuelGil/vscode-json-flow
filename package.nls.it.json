@@ -15,6 +15,8 @@
 	"jsonFlow.files.openFile": "Apri File",
 	"jsonFlow.files.convertToJson": "Converti in JSON",
 	"jsonFlow.files.convertPartialToJson": "Converti Selezione in JSON",
+	"jsonFlow.files.convertToType": "Converti in Tipo o Struttura",
+	"jsonFlow.files.convertPartialToType": "Converti Selezione in Tipo o Struttura",
 	"jsonFlow.files.copyContent": "Copia Contenuto negli Appunti",
 	"jsonFlow.files.copyContentAsJson": "Copia Contenuto come JSON",
 	"jsonFlow.files.copyContentPartialAsJson": "Copia Selezione come JSON",
