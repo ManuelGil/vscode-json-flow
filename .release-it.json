@@ -1,6 +1,24 @@
 {
-  "$schema": "https://unpkg.com/release-it/schema/release-it.json",
-  "github": {
-    "release": true
-  }
+	"$schema": "https://unpkg.com/release-it/schema/release-it.json",
+	"git": {
+		"commitMessage": "chore: release ${version}"
+	},
+	"github": {
+		"release": true
+	},
+	"npm": {
+		"publish": false
+	},
+	"plugins": {
+		"@release-it/conventional-changelog": {
+			"infile": "CHANGELOG.md",
+			"preset": {
+				"name": "conventionalcommits",
+				"type": [
+					{ "type": "feat", "section": "Features" },
+					{ "type": "fix", "section": "Bug Fixes" }
+				]
+			}
+		}
+	}
 }

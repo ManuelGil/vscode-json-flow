@@ -440,6 +440,7 @@
 		"@commitlint/cli": "^19.5.0",
 		"@commitlint/config-conventional": "^19.5.0",
 		"@compodoc/compodoc": "^1.1.26",
+		"@release-it/conventional-changelog": "^10.0.0",
 		"@types/mocha": "^10.0.10",
 		"@types/node": "^22.10.5",
 		"@types/react": "^18.3.12",
