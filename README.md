@@ -32,6 +32,10 @@ Transform your JSON files into interactive node-based graphs directly in Visual 
     - [File Explorer](#file-explorer)
   - [Usage](#usage)
   - [Project Settings](#project-settings)
+  - [Code Generation from JSON](#code-generation-from-json)
+    - [Supported Languages](#supported-languages)
+    - [How to Use](#how-to-use)
+    - [Example](#example)
   - [Development](#development)
     - [Getting Started](#getting-started)
     - [React Webview](#react-webview)
@@ -112,6 +116,7 @@ Transform your JSON files into interactive node-based graphs directly in Visual 
 | --- | --- |
 | Open File | Open the selected file |
 | Convert to JSON | Convert the selected file to JSON |
+| Convert to Type or Structure | Convert the selected file to a specific type or structure. See [Code Generation from JSON](#code-generation-from-json) for more details |
 | Copy Content to Clipboard | Copy the content of the selected file to the clipboard |
 | Copy Content as JSON | Copy the content of the selected file as JSON |
 | Get File Properties | Get the properties of the selected file |
@@ -176,6 +181,72 @@ Configure your project by creating or updating a settings.json file at the proje
 4. **Restart VS Code**
 
 Your project is now set up to automatically format code upon saving.
+
+## Code Generation from JSON
+
+Enhance your development workflow by generating code from JSON structures in various programming languages using the [quicktype](https://www.npmjs.com/package/quicktype) library.
+
+### Supported Languages
+
+- TypeScript
+- Go
+- Rust
+- Python
+- Java
+- C#
+- Swift
+- Kotlin
+- Dart
+- C++
+- Objective-C
+- PHP
+- Ruby
+- Scala
+- Elm
+- JSON Schema
+- Haskell
+- JavaScript
+- Flow
+- Prop-Types
+- Pike
+
+### How to Use
+
+1. **Open a JSON File**: Open the JSON file you wish to convert in Visual Studio Code.
+
+2. **Execute the Conversion Command**:
+   - Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on macOS) to open the command palette.
+   - Type `JSON Flow: Generate Code from JSON` and select the command when it appears.
+
+3. **Select the Target Language**: Choose your desired programming language from the provided list.
+
+4. **Provide a Type or Structure Name**: Enter a name for the class, structure, or interface that will represent the JSON data in the selected language.
+
+5. **Review the Generated Code**: The extension will generate the corresponding code and display it in a new editor tab. You can review, copy, or save the code as needed.
+
+### Example
+
+Given the following JSON:
+
+```json
+{
+  "name": "John Doe",
+  "age": 30,
+  "email": "john.doe@example.com"
+}
+```
+
+If you select TypeScript as the target language and name the type Person, the generated code will be:
+
+```typescript
+export interface Person {
+    name: string;
+    age: number;
+    email: string;
+}
+```
+
+This interface can be directly utilized in your TypeScript project to ensure proper type checking and IntelliSense support.
 
 ## Development
 
