@@ -5,23 +5,22 @@ All notable changes to the "JSON Flow" extension will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [Unreleased]
 
 * docs: update changelog format and add notable changes for recent features ([848f3f2](https://github.com/ManuelGil/vscode-json-flow/commit/848f3f2))
 * chore: :bookmark: update release-it configuration and change changelog plugin ([18e2171](https://github.com/ManuelGil/vscode-json-flow/commit/18e2171))
 * chore: 🔧 configure automated github releases with release-it ([a17b8f6](https://github.com/ManuelGil/vscode-json-flow/commit/a17b8f6))
-* chore: release 1.12.0 ([b79dc1b](https://github.com/ManuelGil/vscode-json-flow/commit/b79dc1b))
 * feat: ✨ add transform controller and enhance localization for conversion features ([7b01a65](https://github.com/ManuelGil/vscode-json-flow/commit/7b01a65))
 * feat: ✨ update VSCode version requirement, add test configuration, and enhance project structure ([ba8dfc7](https://github.com/ManuelGil/vscode-json-flow/commit/ba8dfc7))
 * feat: add release it changelog generation ([68b59d0](https://github.com/ManuelGil/vscode-json-flow/commit/68b59d0))
 
-## 1.10.0 (2024-12-20)
+## [1.10.0] (2024-12-20)
 
 * feat: ✨ add jsonFlow.enable configuration and enhance localization support ([fed5921](https://github.com/ManuelGil/vscode-json-flow/commit/fed5921))
 * feat: ✨ add webview configuration and enhance layout element properties ([7b30d3c](https://github.com/ManuelGil/vscode-json-flow/commit/7b30d3c))
 * feat: ✨ implement image saving functionality and enhance JSON controller ([3764e59](https://github.com/ManuelGil/vscode-json-flow/commit/3764e59))
 
-## 1.7.0 (2024-11-22)
+## [1.7.0] (2024-11-22)
 
 * feat: :sparkles: add configuration option to show values in JSON graph ([8167e84](https://github.com/ManuelGil/vscode-json-flow/commit/8167e84))
 * feat: :sparkles: add loading component and improve preview initialization delay ([d2d24e5](https://github.com/ManuelGil/vscode-json-flow/commit/d2d24e5))
@@ -51,7 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * refactor: ♻️ restructure tree generation logic and reintroduce type definitions ([52c67c2](https://github.com/ManuelGil/vscode-json-flow/commit/52c67c2))
 * add new layout ([80d8d4c](https://github.com/ManuelGil/vscode-json-flow/commit/80d8d4c))
 
-## 1.0.0-beta (2024-11-06)
+## [1.0.0-beta] (2024-11-06)
 
 * chore: :tada: initial commit ([945138b](https://github.com/ManuelGil/vscode-json-flow/commit/945138b))
 * chore: update contributors list in README.md ([0193af9](https://github.com/ManuelGil/vscode-json-flow/commit/0193af9))
@@ -80,3 +79,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * build: :arrow_up: update dependencies and remove unused code ([9d25354](https://github.com/ManuelGil/vscode-json-flow/commit/9d25354))
 * build: add webview path ([960fb18](https://github.com/ManuelGil/vscode-json-flow/commit/960fb18))
 * fix: :rotating_light: fix compilation settings ([1ccbfa5](https://github.com/ManuelGil/vscode-json-flow/commit/1ccbfa5))
+
+[unreleased]: https://github.com/ManuelGil/vscode-json-flow/compare/v1.10.0...HEAD
+[1.10.0]: https://github.com/ManuelGil/vscode-json-flow/compare/v1.7.0...v1.10.0
+[1.7.0]: https://github.com/ManuelGil/vscode-json-flow/compare/v1.0.0-beta...v1.7.0
+[1.0.0-beta]: https://github.com/ManuelGil/vscode-json-flow/releases/tag/v1.0.0-beta
