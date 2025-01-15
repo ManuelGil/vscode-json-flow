@@ -5,7 +5,7 @@ All notable changes to the "JSON Flow" extension will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.12.0] - 2025-01-15
 
 * docs: update changelog format and add notable changes for recent features ([848f3f2](https://github.com/ManuelGil/vscode-json-flow/commit/848f3f2))
 * chore: :bookmark: update release-it configuration and change changelog plugin ([18e2171](https://github.com/ManuelGil/vscode-json-flow/commit/18e2171))
