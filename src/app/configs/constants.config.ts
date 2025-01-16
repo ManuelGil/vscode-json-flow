@@ -23,6 +23,18 @@ export const EXTENSION_ID: string = 'jsonFlow';
 export const EXTENSION_NAME: string = 'JSON Flow';
 
 /**
+ * USER_PUBLISHER: The publisher of the extension.
+ * @type {string}
+ * @public
+ * @memberof Constants
+ * @example
+ * console.log(USER_PUBLISHER);
+ *
+ * @returns {string} - The publisher of the extension
+ */
+export const USER_PUBLISHER: string = 'imgildev';
+
+/**
  * EXTENSION_REPOSITORY_URL: The repository URL of the extension.
  * @type {string}
  * @public

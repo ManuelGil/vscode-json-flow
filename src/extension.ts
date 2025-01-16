@@ -5,9 +5,9 @@ import * as vscode from 'vscode';
 // Import the Configs, Controllers, and Providers
 import {
   EXTENSION_ID,
-  EXTENSION_MARKETPLACE_URL,
   EXTENSION_NAME,
   ExtensionConfig,
+  USER_PUBLISHER,
 } from './app/configs';
 import {
   FeedbackController,
@@ -132,7 +132,7 @@ export async function activate(context: vscode.ExtensionContext) {
         case actions[0].title:
           vscode.env.openExternal(
             vscode.Uri.parse(
-              `${EXTENSION_MARKETPLACE_URL}&ssr=false#version-history`,
+              `https://marketplace.visualstudio.com/items/${USER_PUBLISHER}.${EXTENSION_NAME}/changelog`,
             ),
           );
           break;

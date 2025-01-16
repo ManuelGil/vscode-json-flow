@@ -10,6 +10,7 @@
 	"Close": "Chiudi",
 	"No active editor!": "Nessun editor attivo!",
 	"No selection!": "Nessuna sele",
+	"Operation cancelled!": "Operazione annullata!",
 	"Error while finding files: {0}": "Errore durante la ricerca dei file: {0}",
 	"Invalid file type!": "Tipo di file non valido!",
 	"Error parsing {0}: {1}": "Errore durante l'analisi di {0}: {1}",

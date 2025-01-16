@@ -43,6 +43,8 @@ export class TransformController {
 
       // Check if the resource URI is valid
       if (!resourceUri) {
+        const message = l10n.t('Operation cancelled!');
+        window.showErrorMessage(message);
         return;
       }
 
@@ -191,6 +193,8 @@ export class TransformController {
 
       // Check if the resource URI is valid
       if (!resourceUri) {
+        const message = l10n.t('Operation cancelled!');
+        window.showErrorMessage(message);
         return;
       }
 
@@ -236,6 +240,8 @@ export class TransformController {
         });
 
         if (!typeName) {
+          const message = l10n.t('Operation cancelled!');
+          window.showErrorMessage(message);
           return;
         }
 
@@ -366,6 +372,8 @@ export class TransformController {
     });
 
     if (!typeName) {
+      const message = l10n.t('Operation cancelled!');
+      window.showErrorMessage(message);
       return;
     }
 

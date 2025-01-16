@@ -214,9 +214,9 @@ Enhance your development workflow by generating code from JSON structures in var
 
 1. **Open a JSON File**: Open the JSON file you wish to convert in Visual Studio Code.
 
-2. **Execute the Conversion Command**:
-   - Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on macOS) to open the command palette.
-   - Type `JSON Flow: Generate Code from JSON` and select the command when it appears.
+2. **Right-Click on the Editor**:
+   - Right-click on the editor to open the context menu.
+   - Select the `Convert to Type or Structure` option.
 
 3. **Select the Target Language**: Choose your desired programming language from the provided list.
 

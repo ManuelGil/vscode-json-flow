@@ -297,6 +297,8 @@ export class JsonController {
       });
 
       if (!folder) {
+        const message = l10n.t('Operation cancelled!');
+        window.showErrorMessage(message);
         return;
       }
 

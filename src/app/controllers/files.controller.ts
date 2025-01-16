@@ -54,6 +54,8 @@ export class FilesController {
     let files: Uri[] = [];
 
     if (!workspace.workspaceFolders) {
+      const message = l10n.t('Operation cancelled!');
+      window.showErrorMessage(message);
       return;
     }
 
@@ -173,6 +175,8 @@ export class FilesController {
 
       // Check if the resource URI is valid
       if (!resourceUri) {
+        const message = l10n.t('Operation cancelled!');
+        window.showErrorMessage(message);
         return;
       }
 
