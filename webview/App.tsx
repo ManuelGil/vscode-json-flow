@@ -1,5 +1,6 @@
 import {
   Background,
+  BackgroundVariant,
   Connection,
   ConnectionLineType,
   Controls,
@@ -32,7 +33,7 @@ const LayoutFlow = () => {
   const jsonState: StateType = vscode.getState();
   const [json, setJson] = useState(jsonState?.json ?? null);
   const [layoutDirection, setLayoutDirection] = useState<Direction>(
-    jsonState?.layoutDirection ?? 'TB'
+    jsonState?.layoutDirection ?? 'TB',
   );
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -76,7 +77,7 @@ const LayoutFlow = () => {
       const { nodes: layoutedNodes, edges: layoutedEdges } = layoutElements(
         json,
         treeRootId,
-        layoutDirection
+        layoutDirection,
       );
       setNodes(layoutedNodes);
       setEdges(layoutedEdges);
@@ -88,10 +89,10 @@ const LayoutFlow = () => {
       setEdges((eds) =>
         addEdge(
           { ...params, type: ConnectionLineType.SmoothStep, animated: true },
-          eds
-        )
+          eds,
+        ),
       ),
-    [setEdges]
+    [setEdges],
   );
 
   const onLayout = useCallback(
@@ -110,13 +111,13 @@ const LayoutFlow = () => {
       const { nodes: layoutedNodes, edges: layoutedEdges } = layoutElements(
         json,
         treeRootId,
-        direction
+        direction,
       );
 
       setNodes([...layoutedNodes]);
       setEdges([...layoutedEdges]);
     },
-    [json, setNodes, setEdges]
+    [json, setNodes, setEdges],
   );
 
   const handleSaveImage = async () => {
@@ -124,7 +125,7 @@ const LayoutFlow = () => {
       try {
         // Temporarily hide the controls
         const controls = flowContainerRef.current.querySelectorAll(
-          '.react-flow__panel, .react-flow__controls, .react-flow__minimap, .react-flow__background'
+          '.react-flow__panel, .react-flow__controls, .react-flow__minimap, .react-flow__background',
         );
         controls.forEach((control) => {
           (control as HTMLElement).style.display = 'none';
@@ -162,7 +163,7 @@ const LayoutFlow = () => {
         nodeTypes={nodeTypes}
         minZoom={-1}
       >
-        <Background />
+        <Background gap={50} variant={BackgroundVariant.Dots} />
         <MiniMap />
         <Controls />
         <Panel className="flex justify-between gap-2" position="top-right">
