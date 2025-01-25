@@ -7,7 +7,7 @@
 	"Welcome to {0} version {1}! The extension is now active": "Benvenuto alla versione {0} {1}! L'estensione è ora attiva",
 	"New version of {0} is available. Check out the release notes for version {1}": "È disponibile una nuova versione di {0}. Consulta le note sulla versione {1}",
 	"Release Notes": "Note sulla versione",
-	"Close": "Chiudi",
+	"Dismiss": "Ignora",
 	"No active editor!": "Nessun editor attivo!",
 	"No selection!": "Nessuna sele",
 	"Operation cancelled!": "Operazione annullata!",
