@@ -8,9 +8,10 @@ import {
   LayoutResult,
   Orientation,
   Tree,
-  config,
   edgeStyle,
   entitreeSettings,
+  nodeHeight,
+  nodeWidth,
 } from '../common';
 
 const { Top, Bottom, Left, Right } = Position;
@@ -69,8 +70,8 @@ export const layoutElements = (
     const newNode: LayoutNode = {
       id: node.id,
       type: 'custom',
-      width: config.nodeWidth,
-      height: config.nodeHeight,
+      width: nodeWidth,
+      height: nodeHeight,
       position: {
         x: node.x,
         y: node.y,

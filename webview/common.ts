@@ -6,38 +6,22 @@ export enum Orientation {
   Horizontal = 'horizontal',
 }
 
-let webviewConfiguration;
-
-if (!window.webviewConfiguration) {
-  webviewConfiguration = {
-    nodeWidth: 200,
-    nodeHeight: 50,
-    nodeBorderColor: 'white',
-    nodeColor: 'white',
-    edgeColor: 'white',
-    orientation: Orientation.Vertical,
-  };
-} else {
-  webviewConfiguration = {
-    ...window.webviewConfiguration,
-    orientation:
-      window.webviewConfiguration.layoutDirection === 'LR'
-        ? Orientation.Horizontal
-        : Orientation.Vertical,
-  };
-}
-
-export const config = webviewConfiguration;
+export const nodeWidth = 200;
+export const nodeHeight = 50;
+export const nodeBorderColor = 'black';
+export const nodeColor = 'black';
+export const edgeColor = 'black';
+export const orientation = Orientation.Vertical;
 
 export const nodeStyle: React.CSSProperties = {
-  minHeight: config.nodeHeight,
-  minWidth: config.nodeWidth,
-  borderColor: config.nodeBorderColor,
-  color: config.nodeColor,
+  minHeight: nodeHeight,
+  minWidth: nodeWidth,
+  borderColor: nodeBorderColor,
+  color: nodeColor,
 };
 
 export const edgeStyle: React.CSSProperties = {
-  stroke: config.edgeColor,
+  stroke: edgeColor,
 };
 
 export const entitreeSettings = {
@@ -48,9 +32,9 @@ export const entitreeSettings = {
   nextAfterSpacing: 100,
   nextBeforeAccessor: 'siblings',
   nextBeforeSpacing: 100,
-  nodeHeight: config.nodeHeight,
-  nodeWidth: config.nodeWidth,
-  orientation: config.orientation,
+  nodeHeight: nodeHeight,
+  nodeWidth: nodeWidth,
+  orientation: orientation,
   rootX: 0,
   rootY: 0,
   secondDegreeSpacing: 100,
