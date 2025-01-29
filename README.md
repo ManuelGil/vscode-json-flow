@@ -11,10 +11,10 @@ Transform your JSON files into interactive node-based graphs directly in Visual 
 
 [![JSON Flow](https://raw.githubusercontent.com/ManuelGil/vscode-json-flow/main/images/json-flow.png)](https://marketplace.visualstudio.com/items?itemName=imgildev.vscode-json-flow)
 
-## Table of Contents
+## Index
 
 - [JSON Flow](#json-flow)
-  - [Table of Contents](#table-of-contents)
+  - [Index](#index)
   - [Requirements](#requirements)
   - [Features](#features)
     - [Interactive Data Visualization](#interactive-data-visualization)
@@ -297,14 +297,7 @@ Make your changes in the `webview` directory.
    npm run build
    ```
 
-2. Run the compile command:
-
-   ```bash
-   npm run compile
-   ```
-
-3. The compiled files will be in the `out` directory.
-4. Press `F5` to open a new window with the extension loaded.
+2. Press `F5` to open a new window with the extension loaded.
 
 ## VSXpert Template
 

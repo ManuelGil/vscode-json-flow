@@ -163,7 +163,11 @@ const LayoutFlow = () => {
         nodeTypes={nodeTypes}
         minZoom={-1}
       >
-        <Background gap={50} variant={BackgroundVariant.Dots} />
+        <Background
+          gap={50}
+          variant={BackgroundVariant.Dots}
+          className="bg-neutral-900"
+        />
         <MiniMap />
         <Controls />
         <Panel className="flex justify-between gap-2" position="top-right">
