@@ -1,3 +1,4 @@
+import path from "path"
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -11,6 +12,12 @@ export default defineConfig({
         entryFileNames: 'main.js',
         assetFileNames: 'main.css',
       },
+    },
+  },
+  resolve: {
+    alias: {
+      "@src": path.resolve(__dirname, "./src"),
+      "@webview": path.resolve(__dirname, "./webview"),
     },
   },
 });

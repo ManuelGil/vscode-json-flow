@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "default",
+  "rsc": false,
+  "tsx": true,
+  "tailwind": {
+    "config": "tailwind.config.js",
+    "css": "webview/index.css",
+    "baseColor": "neutral",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "aliases": {
+    "components": "@webview/components",
+    "utils": "@webview/lib/utils",
+    "ui": "@webview/components/ui",
+    "lib": "@webview/lib",
+    "hooks": "@webview/hooks"
+  },
+  "iconLibrary": "lucide"
+}
