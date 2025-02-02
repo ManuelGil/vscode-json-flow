@@ -1,17 +1,11 @@
 import { WorkspaceConfiguration } from 'vscode';
 
 import {
-  EDGE_COLOR,
   EXCLUDE,
   IMAGE_FOLDER,
   INCLUDE,
   LAYOUT_DIRECTION,
-  NODE_BORDER_COLOR,
-  NODE_COLOR,
-  NODE_HEIGHT,
-  NODE_WIDTH,
   SHOW_PATH,
-  SHOW_VALUES,
 } from './constants.config';
 
 /**
@@ -21,19 +15,12 @@ import {
  * @classdesc The class that represents the configuration of the extension.
  * @export
  * @public
- * @property {WorkspaceConfiguration} config - The workspace configuration
  * @property {boolean} enable - Whether the extension is enabled or not
- * @property {string[]} include - The files to include
- * @property {string[]} exclude - The files to exclude
- * @property {boolean} showPath - Whether to show the path or not
- * @property {boolean} showValues - Whether to show the values or not
- * @property {number} nodeWidth - The node width
- * @property {number} nodeHeight - The node height
- * @property {string} nodeBorderColor - The node border color
- * @property {string} nodeColor - The node color
- * @property {string} edgeColor - The edge color
- * @property {'TB' | 'LR'} layoutDirection - The layout direction
- * @property {string} imageFolder - The image folder
+ * @property {string[]} includedFilePatterns - The extension files to include in the search
+ * @property {string[]} excludedFilePatterns - The pattern to exclude files or folders from the search
+ * @property {boolean} includeFilePath - Whether to show the path or not in the search results
+ * @property {'TB' | 'LR' | 'BT' | 'RL'} graphLayoutOrientation - The layout direction of the graph
+ * @property {string} storagePathForImages - The image folder
  * @example
  * const config = new Config(workspace.getConfiguration());
  * console.log(config.include);
@@ -57,105 +44,45 @@ export class ExtensionConfig {
   enable: boolean;
 
   /**
-   * The files to include.
+   * The extension files to include in the search.
    * @type {string[]}
    * @public
    * @memberof Config
    * @example
    * const config = new Config(workspace.getConfiguration());
-   * console.log(config.include);
+   * console.log(config.includedFilePatterns);
    */
-  include: string[];
+  includedFilePatterns: string[];
   /**
-   * The files to exclude.
+   * The pattern to exclude files or folders from the search.
    * @type {string[]}
    * @public
    * @memberof Config
    * @example
    * const config = new Config(workspace.getConfiguration());
-   * console.log(config.exclude);
+   * console.log(config.excludedFilePatterns);
    */
-  exclude: string[];
+  excludedFilePatterns: string[];
   /**
-   * Whether to show the path or not.
+   * Whether to show the path or not in the search results.
    * @type {boolean}
    * @public
    * @memberof Config
    * @example
    * const config = new Config(workspace.getConfiguration());
-   * console.log(config.showPath);
+   * console.log(config.includeFilePath);
    */
-  showPath: boolean;
+  includeFilePath: boolean;
   /**
-   * Whether to show the values or not.
-   * @type {boolean}
+   * The layout direction of the graph.
+   * @type {'TB' | 'LR' | 'BT' | 'RL'}
    * @public
    * @memberof Config
    * @example
    * const config = new Config(workspace.getConfiguration());
-   * console.log(config.showValues);
+   * console.log(config.graphLayoutOrientation);
    */
-  showValues: boolean;
-  /**
-   * The node width.
-   * @type {number}
-   * @public
-   * @memberof Config
-   * @example
-   * const config = new Config(workspace.getConfiguration());
-   * console.log(config.nodeWidth);
-   */
-  nodeWidth: number;
-  /**
-   * The node height.
-   * @type {number}
-   * @public
-   * @memberof Config
-   * @example
-   * const config = new Config(workspace.getConfiguration());
-   * console.log(config.nodeHeight);
-   */
-  nodeHeight: number;
-  /**
-   * The node border color.
-   * @type {string}
-   * @public
-   * @memberof Config
-   * @example
-   * const config = new Config(workspace.getConfiguration());
-   * console.log(config.nodeBorderColor);
-   */
-  nodeBorderColor: string;
-  /**
-   * The node color.
-   * @type {string}
-   * @public
-   * @memberof Config
-   * @example
-   * const config = new Config(workspace.getConfiguration());
-   * console.log(config.nodeColor);
-   */
-  nodeColor: string;
-  /**
-   * The edge color.
-   * @type {string}
-   * @public
-   * @memberof Config
-   * @example
-   * const config = new Config(workspace.getConfiguration());
-   * console.log(config.edgeColor);
-   */
-  edgeColor: string;
-  /**
-   * The layout direction.
-   * @type {'TB' | 'LR'}
-   * @public
-   * @memberof Config
-   * @example
-   * const config = new Config(workspace.getConfiguration());
-   * console.log(config.layoutDirection);
-   */
-  layoutDirection: 'TB' | 'LR';
+  graphLayoutOrientation: 'TB' | 'LR' | 'BT' | 'RL';
   /**
    * The image folder.
    * @type {string}
@@ -163,9 +90,9 @@ export class ExtensionConfig {
    * @memberof Config
    * @example
    * const config = new Config(workspace.getConfiguration());
-   * console.log(config.imageFolder);
+   * console.log(config.storagePathForImages);
    */
-  imageFolder: string;
+  storagePathForImages: string;
 
   // -----------------------------------------------------------------
   // Constructor
@@ -181,23 +108,26 @@ export class ExtensionConfig {
    */
   constructor(readonly config: WorkspaceConfiguration) {
     this.enable = config.get<boolean>('enable', true);
-    this.include = config.get<string[]>('files.include', INCLUDE);
-    this.exclude = config.get<string[]>('files.exclude', EXCLUDE);
-    this.showPath = config.get<boolean>('files.showPath', SHOW_PATH);
-    this.showValues = config.get<boolean>('graph.showValues', SHOW_VALUES);
-    this.nodeWidth = config.get<number>('graph.nodeWidth', NODE_WIDTH);
-    this.nodeHeight = config.get<number>('graph.nodeHeight', NODE_HEIGHT);
-    this.nodeBorderColor = config.get<string>(
-      'graph.nodeBorderColor',
-      NODE_BORDER_COLOR,
+    this.includedFilePatterns = config.get<string[]>(
+      'files.includedFilePatterns',
+      INCLUDE,
     );
-    this.nodeColor = config.get<string>('graph.nodeColor', NODE_COLOR);
-    this.edgeColor = config.get<string>('graph.edgeColor', EDGE_COLOR);
-    this.layoutDirection = config.get<'TB' | 'LR'>(
-      'graph.layoutDirection',
+    this.excludedFilePatterns = config.get<string[]>(
+      'files.excludedFilePatterns',
+      EXCLUDE,
+    );
+    this.includeFilePath = config.get<boolean>(
+      'files.includeFilePath',
+      SHOW_PATH,
+    );
+    this.graphLayoutOrientation = config.get<'TB' | 'LR' | 'BT' | 'RL'>(
+      'graph.layoutOrientation',
       LAYOUT_DIRECTION,
     );
-    this.imageFolder = config.get<string>('image.folder', IMAGE_FOLDER);
+    this.storagePathForImages = config.get<string>(
+      'storage.pathForImages',
+      IMAGE_FOLDER,
+    );
   }
 
   // -----------------------------------------------------------------
@@ -218,22 +148,26 @@ export class ExtensionConfig {
    */
   update(config: WorkspaceConfiguration): void {
     this.enable = config.get<boolean>('enable', this.enable);
-    this.include = config.get<string[]>('files.include', this.include);
-    this.exclude = config.get<string[]>('files.exclude', this.exclude);
-    this.showPath = config.get<boolean>('files.showPath', this.showPath);
-    this.showValues = config.get<boolean>('graph.showValues', this.showValues);
-    this.nodeWidth = config.get<number>('graph.nodeWidth', this.nodeWidth);
-    this.nodeHeight = config.get<number>('graph.nodeHeight', this.nodeHeight);
-    this.nodeBorderColor = config.get<string>(
-      'graph.nodeBorderColor',
-      this.nodeBorderColor,
+    this.includedFilePatterns = config.get<string[]>(
+      'files.includedFilePatterns',
+      this.includedFilePatterns,
     );
-    this.nodeColor = config.get<string>('graph.nodeColor', this.nodeColor);
-    this.edgeColor = config.get<string>('graph.edgeColor', this.edgeColor);
-    this.layoutDirection = config.get<'TB' | 'LR'>(
-      'graph.layoutDirection',
-      this.layoutDirection,
+    this.excludedFilePatterns = config.get<string[]>(
+      'files.excludedFilePatterns',
+      this.excludedFilePatterns,
     );
-    this.imageFolder = config.get<string>('image.folder', this.imageFolder);
+    this.includeFilePath = config.get<boolean>(
+      'files.includeFilePath',
+      this.includeFilePath,
+    );
+    this.graphLayoutOrientation = config.get<'TB' | 'LR' | 'BT' | 'RL'>(
+      'graph.layoutOrientation',
+      this.graphLayoutOrientation,
+    );
+    // Set the folder to store the images
+    this.storagePathForImages = config.get<string>(
+      'storage.pathForImages',
+      this.storagePathForImages,
+    );
   }
 }

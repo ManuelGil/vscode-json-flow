@@ -155,25 +155,19 @@ Configure your project by creating or updating a settings.json file at the proje
    ```jsonc
    {
      "jsonFlow.enable": true, // Enable or disable the extension. Example: true, false
-     "jsonFlow.files.include": [
+     "jsonFlow.files.includedFilePatterns": [
          "json",
          "jsonc"
      ], // The file extensions to watch for changes. Example: "json", "jsonc"
-     "jsonFlow.files.exclude": [
+     "jsonFlow.files.excludedFilePatterns": [
          "**/node_modules/**",
          "**/dist/**",
          "**/out/**",
          "**/build/**",
          "**/vendor/**"
      ], // The files to exclude from watching. Example: "**/node_modules/**", "**/dist/**", "**/out/**", "**/build/**", "**/vendor/**"
-     "jsonFlow.files.showPath": true, // Show the path of the file in the file name. Example: "home.component.tsx (pages/home)"
-     "jsonFlow.graph.showValues": true, // Show the values of the nodes in the graph. Example: "name: 'John Doe'"
-     "jsonFlow.graph.nodeWidth": 200, // The width of the nodes in the graph. Example: 200
-     "jsonFlow.graph.nodeHeight": 50, // The height of the nodes in the graph. Example: 50
-     "jsonFlow.graph.nodeBorderColor": "white", // The border color of the nodes in the graph. Example: "white"
-     "jsonFlow.graph.nodeColor": "white", // The color of the nodes in the graph. Example: "white"
-     "jsonFlow.graph.edgeColor": "white", // The color of the edges in the graph. Example: "white"
-     "jsonFlow.graph.layoutDirection": "TB", // The layout direction of the graph. Example: "TB", "LR"
+     "jsonFlow.files.includeFilePath": true, // Show the path of the file in the file name. Example: "home.component.tsx (pages/home)"
+     "jsonFlow.graph.layoutOrientation": "TB", // The layout direction of the graph. Example: "TB", "LR", "BT", "RL"
      "jsonFlow.image.folder": "images", // The folder where the images will be saved. Example: "images"
    }
    ```

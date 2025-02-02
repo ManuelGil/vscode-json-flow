@@ -7,7 +7,7 @@
 			"default": "Enable JSON Flow",
 			"description": "Enable JSON Flow"
 		},
-		"jsonFlow.files.include": {
+		"jsonFlow.files.includedFilePatterns": {
 			"type": "array",
 			"default": [
 				"json",
@@ -28,7 +28,7 @@
 			"scope": "resource",
 			"description": "Glob patterns to include in the package."
 		},
-		"jsonFlow.files.exclude": {
+		"jsonFlow.files.excludedFilePatterns": {
 			"type": "array",
 			"default": [
 				"**/node_modules/**",
@@ -40,52 +40,16 @@
 			"scope": "resource",
 			"description": "Glob patterns to exclude from the package. The default is node_modules, dist, out, build, and any hidden files."
 		},
-		"jsonFlow.files.showPath": {
+		"jsonFlow.files.includeFilePath": {
 			"type": "boolean",
 			"default": true,
 			"scope": "resource",
 			"description": "Show the path of the file in the name of the list of generated files"
 		},
-		"jsonFlow.graph.showValues": {
-			"type": "boolean",
-			"default": true,
-			"scope": "resource",
-			"description": "Show the values of the nodes in the graph"
-		},
-		"jsonFlow.graph.nodeWidth": {
-			"type": "number",
-			"default": 200,
-			"scope": "resource",
-			"description": "Width of the nodes in the graph"
-		},
-		"jsonFlow.graph.nodeHeight": {
-			"type": "number",
-			"default": 50,
-			"scope": "resource",
-			"description": "Height of the nodes in the graph"
-		},
-		"jsonFlow.graph.nodeBorderColor": {
-			"type": "string",
-			"default": "white",
-			"scope": "resource",
-			"description": "Color of the border of the nodes in the graph"
-		},
-		"jsonFlow.graph.nodeColor": {
-			"type": "string",
-			"default": "white",
-			"scope": "resource",
-			"description": "Color of the fill of the nodes in the graph"
-		},
-		"jsonFlow.graph.edgeColor": {
-			"type": "string",
-			"default": "white",
-			"scope": "resource",
-			"description": "Color of the edges in the graph"
-		},
-		"jsonFlow.graph.layoutDirection": {
+		"jsonFlow.graph.layoutOrientation": {
 			"type": "string",
 			"default": "TB",
-			"enum": ["TB", "LR"],
+			"enum": ["TB", "LR", "BT", "RL"],
 			"scope": "resource",
 			"description": "The direction of the layout of the graph. TB is top to bottom, LR is left to right."
 		},

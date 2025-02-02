@@ -33,7 +33,7 @@ const LayoutFlow = () => {
   const jsonState: StateType = vscode.getState();
   const [json, setJson] = useState(jsonState?.json ?? null);
   const [layoutDirection, setLayoutDirection] = useState<Direction>(
-    jsonState?.layoutDirection ?? 'TB',
+    jsonState?.layoutOrientation ?? 'TB',
   );
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -52,11 +52,11 @@ const LayoutFlow = () => {
 
         case 'setJson': {
           setJson(message.data);
-          setLayoutDirection(message.layoutDirection);
+          setLayoutDirection(message.layoutOrientation);
           vscode.setState({
             ...vscode.getState(),
             json: message.data,
-            layoutDirection: message.layoutDirection,
+            layoutDirection: message.layoutOrientation,
           });
           break;
         }

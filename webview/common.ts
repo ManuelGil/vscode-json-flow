@@ -47,7 +47,7 @@ export type Direction = 'TB' | 'LR';
 
 export type StateType = {
   json: Record<string, Tree> | null;
-  layoutDirection: Direction;
+  layoutOrientation: Direction;
 };
 
 export interface Coordinates {

@@ -2,12 +2,7 @@ import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { ExtensionContext, Range, Uri, l10n, window, workspace } from 'vscode';
 import { ExtensionConfig } from '../configs';
-import {
-  FileType,
-  generateTree,
-  isFileTypeSupported,
-  parseJSONContent,
-} from '../helpers';
+import { FileType, isFileTypeSupported, parseJSONContent } from '../helpers';
 import { JSONProvider } from '../providers';
 
 /**
@@ -64,7 +59,7 @@ export class JsonController {
     readonly config: ExtensionConfig,
   ) {
     // Set the image folder
-    JsonController.imageFolder = config.imageFolder;
+    JsonController.imageFolder = config.storagePathForImages;
   }
 
   // -----------------------------------------------------------------
@@ -87,6 +82,7 @@ export class JsonController {
   showPreview(uri: Uri): void {
     // Open the text document
     workspace.openTextDocument(uri.fsPath).then((document) => {
+      const { graphLayoutOrientation } = this.config;
       // Get the language ID and file name
       const { languageId, fileName } = document;
 
@@ -100,13 +96,13 @@ export class JsonController {
       }
 
       // Parse JSON content
-      const jsonContent = parseJSONContent(
+      const parsedJsonData = parseJSONContent(
         document.getText(),
         fileType as FileType,
       );
 
       // Check if the JSON content is null
-      if (jsonContent === null) {
+      if (parsedJsonData === null) {
         return;
       }
 
@@ -118,16 +114,12 @@ export class JsonController {
 
       panel.title = displayName;
 
-      const data = generateTree(jsonContent, this.config.showValues);
-
-      const layoutDirection = this.config.layoutDirection;
-
       // Post the message to the webview with a delay
       setTimeout(() => {
         panel.webview.postMessage({
           type: 'setJson',
-          layoutDirection,
-          data,
+          data: parsedJsonData,
+          layoutDirection: graphLayoutOrientation,
         });
       }, this._processingDelay);
     });
@@ -145,6 +137,7 @@ export class JsonController {
    * @returns {void}
    */
   showPartialPreview(): void {
+    const { graphLayoutOrientation } = this.config;
     // Get the active text editor
     const editor = window.activeTextEditor;
 
@@ -204,10 +197,10 @@ export class JsonController {
     }
 
     // Parse JSON content
-    const jsonContent = parseJSONContent(text, fileType as FileType);
+    const parsedJsonData = parseJSONContent(text, fileType as FileType);
 
     // Check if the JSON content is null
-    if (jsonContent === null) {
+    if (parsedJsonData === null) {
       return;
     }
 
@@ -219,16 +212,12 @@ export class JsonController {
 
     panel.title = displayName;
 
-    const data = generateTree(jsonContent, this.config.showValues);
-
-    const layoutDirection = this.config.layoutDirection;
-
     // Post the message to the webview with a delay
     setTimeout(() => {
       panel.webview.postMessage({
         type: 'setJson',
-        layoutDirection,
-        data,
+        data: parsedJsonData,
+        layoutDirection: graphLayoutOrientation,
       });
     }, this._processingDelay);
   }

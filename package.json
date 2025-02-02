@@ -99,7 +99,7 @@
 					"scope": "resource",
 					"description": "%jsonFlow.enable%"
 				},
-				"jsonFlow.files.include": {
+				"jsonFlow.files.includedFilePatterns": {
 					"type": "array",
 					"default": [
 						"json",
@@ -118,9 +118,9 @@
 						"yml"
 					],
 					"scope": "resource",
-					"description": "%jsonFlow.files.include%"
+					"description": "%jsonFlow.files.includedFilePatterns%"
 				},
-				"jsonFlow.files.exclude": {
+				"jsonFlow.files.excludedFilePatterns": {
 					"type": "array",
 					"default": [
 						"**/node_modules/**",
@@ -130,59 +130,25 @@
 						"**/vendor/**"
 					],
 					"scope": "resource",
-					"description": "%jsonFlow.files.exclude%"
+					"description": "%jsonFlow.files.excludedFilePatterns%"
 				},
-				"jsonFlow.files.showPath": {
+				"jsonFlow.files.includeFilePath": {
 					"type": "boolean",
 					"default": true,
 					"scope": "resource",
-					"description": "%jsonFlow.files.showPath%"
+					"description": "%jsonFlow.files.includeFilePath%"
 				},
-				"jsonFlow.graph.showValues": {
-					"type": "boolean",
-					"default": true,
-					"scope": "resource",
-					"description": "%jsonFlow.graph.showValues%"
-				},
-				"jsonFlow.graph.nodeWidth": {
-					"type": "number",
-					"default": 200,
-					"scope": "resource",
-					"description": "%jsonFlow.graph.nodeWidth%"
-				},
-				"jsonFlow.graph.nodeHeight": {
-					"type": "number",
-					"default": 50,
-					"scope": "resource",
-					"description": "%jsonFlow.graph.nodeHeight%"
-				},
-				"jsonFlow.graph.nodeBorderColor": {
-					"type": "string",
-					"default": "white",
-					"scope": "resource",
-					"description": "%jsonFlow.graph.nodeBorderColor%"
-				},
-				"jsonFlow.graph.nodeColor": {
-					"type": "string",
-					"default": "white",
-					"scope": "resource",
-					"description": "%jsonFlow.graph.nodeColor%"
-				},
-				"jsonFlow.graph.edgeColor": {
-					"type": "string",
-					"default": "white",
-					"scope": "resource",
-					"description": "%jsonFlow.graph.edgeColor%"
-				},
-				"jsonFlow.graph.layoutDirection": {
+				"jsonFlow.graph.layoutOrientation": {
 					"type": "string",
 					"default": "TB",
 					"enum": [
 						"TB",
-						"LR"
+						"LR",
+						"BT",
+						"RL"
 					],
 					"scope": "resource",
-					"description": "%jsonFlow.graph.layoutDirection%"
+					"description": "%jsonFlow.graph.layoutOrientation%"
 				},
 				"jsonFlow.image.folder": {
 					"type": "string",

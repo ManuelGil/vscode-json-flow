@@ -61,16 +61,19 @@ export class FilesController {
 
     folders = workspace.workspaceFolders.map((folder) => folder.uri.fsPath);
 
-    const { include, exclude } = this.config;
+    const { includedFilePatterns, excludedFilePatterns, includeFilePath } =
+      this.config;
 
-    const includedFilePatterns = `**/*.{${include.join(',')}}`;
-    const excludedFilePatterns = Array.isArray(exclude) ? exclude : [exclude];
+    const fileExtensionPattern = `**/*.{${includedFilePatterns.join(',')}}`;
+    const fileExclusionPatterns = Array.isArray(excludedFilePatterns)
+      ? excludedFilePatterns
+      : [excludedFilePatterns];
 
     for (const folder of folders) {
       const result = await this.findFiles(
         folder,
-        [includedFilePatterns],
-        excludedFilePatterns,
+        [fileExtensionPattern],
+        fileExclusionPatterns,
       );
 
       files.push(...result);
@@ -87,7 +90,7 @@ export class FilesController {
         const path = workspace.asRelativePath(document.fileName);
         let filename = path.split('/').pop();
 
-        if (filename && this.config.showPath) {
+        if (filename && includeFilePath) {
           const folder = path.split('/').slice(0, -1).join('/');
 
           filename += folder ? ` (${folder})` : ' (root)';

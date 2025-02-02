@@ -4,10 +4,11 @@ import * as vscode from 'vscode';
 
 // Import the Configs, Controllers, and Providers
 import {
+  EXTENSION_DISPLAY_NAME,
   EXTENSION_ID,
   EXTENSION_NAME,
+  EXTENSION_USER_PUBLISHER,
   ExtensionConfig,
-  USER_PUBLISHER,
 } from './app/configs';
 import {
   FeedbackController,
@@ -72,11 +73,13 @@ export async function activate(context: vscode.ExtensionContext) {
 
       if (isEnabled) {
         const message = vscode.l10n.t('{0} is now enabled and ready to use', [
-          EXTENSION_NAME,
+          EXTENSION_DISPLAY_NAME,
         ]);
         vscode.window.showInformationMessage(message);
       } else {
-        const message = vscode.l10n.t('{0} is now disabled', [EXTENSION_NAME]);
+        const message = vscode.l10n.t('{0} is now disabled', [
+          EXTENSION_DISPLAY_NAME,
+        ]);
         vscode.window.showInformationMessage(message);
       }
     }
@@ -99,7 +102,7 @@ export async function activate(context: vscode.ExtensionContext) {
   if (!previousVersion) {
     const message = vscode.l10n.t(
       'Welcome to {0} version {1}! The extension is now active',
-      [EXTENSION_NAME, currentVersion],
+      [EXTENSION_DISPLAY_NAME, currentVersion],
     );
     vscode.window.showInformationMessage(message);
 
@@ -120,7 +123,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
     const message = vscode.l10n.t(
       'New version of {0} is available. Check out the release notes for version {1}',
-      [EXTENSION_NAME, currentVersion],
+      [EXTENSION_DISPLAY_NAME, currentVersion],
     );
     vscode.window.showInformationMessage(message, ...actions).then((option) => {
       if (!option) {
@@ -132,7 +135,7 @@ export async function activate(context: vscode.ExtensionContext) {
         case actions[0].title:
           vscode.env.openExternal(
             vscode.Uri.parse(
-              `https://marketplace.visualstudio.com/items/${USER_PUBLISHER}.${EXTENSION_NAME}/changelog`,
+              `https://marketplace.visualstudio.com/items/${EXTENSION_USER_PUBLISHER}.${EXTENSION_NAME}/changelog`,
             ),
           );
           break;
