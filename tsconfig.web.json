@@ -22,9 +22,7 @@
 		"strict": true /* enable all strict type-checking options */,
 		"baseUrl": "./webview",
 		"paths": {
-			"*": [
-				"types/*"
-			]
+			"webview/*": ["*"]
 		}
 	},
 	"include": [

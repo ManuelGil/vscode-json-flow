@@ -18,8 +18,8 @@
 		"vscode": "^1.88.0"
 	},
 	"categories": [
-		"Data Science",
 		"Visualization",
+		"Data Science",
 		"Other"
 	],
 	"keywords": [

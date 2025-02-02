@@ -28,15 +28,6 @@ export class JsonController {
 
   // Public properties
   /**
-   * The webview configuration.
-   *
-   * @public
-   * @memberof JsonController
-   * @type {any}
-   */
-  static webviewConfiguration: { [key: string]: string | number };
-
-  /**
    * The image folder.
    *
    * @public
@@ -72,15 +63,6 @@ export class JsonController {
     readonly context: ExtensionContext,
     readonly config: ExtensionConfig,
   ) {
-    // Set the webview configuration
-    JsonController.webviewConfiguration = {
-      nodeWidth: config.nodeWidth,
-      nodeHeight: config.nodeHeight,
-      nodeBorderColor: config.nodeBorderColor,
-      nodeColor: config.nodeColor,
-      edgeColor: config.edgeColor,
-      layoutDirection: config.layoutDirection,
-    };
     // Set the image folder
     JsonController.imageFolder = config.imageFolder;
   }

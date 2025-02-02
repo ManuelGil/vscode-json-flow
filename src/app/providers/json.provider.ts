@@ -285,14 +285,6 @@ export class JSONProvider {
       window.addEventListener('contextmenu', (e) => {
         e.preventDefault();
       }, { capture: true });
-
-      ${
-        JsonController.webviewConfiguration
-          ? `window.webviewConfiguration = ${JSON.stringify(
-              JsonController.webviewConfiguration,
-            )};`
-          : ''
-      }
     </script>
   </body>
 </html>

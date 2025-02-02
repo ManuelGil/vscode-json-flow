@@ -165,8 +165,9 @@ const LayoutFlow = () => {
       >
         <Background
           gap={50}
-          variant={BackgroundVariant.Dots}
+          variant={BackgroundVariant.Lines}
           className="bg-neutral-900"
+          style={{ strokeOpacity: 0.2 }}
         />
         <MiniMap />
         <Controls />
