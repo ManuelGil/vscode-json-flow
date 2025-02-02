@@ -27,13 +27,13 @@ export function generateTree(json: JsonValue, parentId = "root"): TreeMap {
 				tree = { ...tree, ...generateTree(value, objectId) };
 				tree[parentId].children?.push(objectId);
 			} else {
-				const valueId = `${parentId}-${index}-value`;
-				tree[parentId].children?.push(valueId);
+				const valueId = createNodeId(parentId, `${index}`);
 				tree[valueId] = {
 					id: valueId,
-					name: String(value),
+					name: `${index}: ${String(value)}`,
 					data: { type: typeof value },
 				};
+				tree[parentId].children?.push(valueId);
 			}
 		}
 	} else if (typeof json === "object" && json !== null) {
@@ -45,25 +45,23 @@ export function generateTree(json: JsonValue, parentId = "root"): TreeMap {
 		};
 
 		for (const [key, value] of Object.entries(json)) {
-			const keyId = createNodeId(parentId, key);
-			tree[parentId].children?.push(keyId);
-
-			tree[keyId] = {
-				id: keyId,
-				name: key,
-				children: [],
-			};
-
 			if (typeof value === "object" && value !== null) {
+				const keyId = createNodeId(parentId, key);
+				tree[keyId] = {
+					id: keyId,
+					name: key,
+					children: [],
+				};
+				tree[parentId].children?.push(keyId);
 				tree = { ...tree, ...generateTree(value, keyId) };
 			} else {
-				const valueId = `${keyId}-value`;
-				tree[keyId].children?.push(valueId);
-				tree[valueId] = {
-					id: valueId,
-					name: String(value),
+				const keyId = createNodeId(parentId, key);
+				tree[keyId] = {
+					id: keyId,
+					name: `${key}: ${String(value)}`,
 					data: { type: typeof value },
 				};
+				tree[parentId].children?.push(keyId);
 			}
 		}
 	} else {
