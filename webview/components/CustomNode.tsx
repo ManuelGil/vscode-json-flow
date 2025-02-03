@@ -71,6 +71,7 @@ export const CustomNode = memo<CustomNodeProps>(({ data, selected }) => {
 
 	return (
 		<div
+			tabIndex={0}
 			className={cn(
 				"selectable relative inline-flex h-9",
 				"bg-neutral-50 dark:bg-neutral-900 text-sm rounded-lg border",

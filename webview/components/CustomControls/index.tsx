@@ -5,6 +5,7 @@ import { RotateLayout } from "./RotateLayout";
 import { ZoomControl } from "./ZoomControl";
 import { FullscreenToggle } from "./FullscreenToggle";
 import { InteractivityToggle } from "./InteractivityToggle";
+import { GoToLine } from "./GoToLine";
 
 interface CustomControlsProps {
 	isInteractive: boolean;
@@ -30,6 +31,7 @@ export function CustomControls({
 			<FullscreenToggle />
 			<ImageDownload />
 			<ModeToggle />
+			<GoToLine />
 		</Panel>
 	);
 }

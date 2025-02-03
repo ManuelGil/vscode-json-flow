@@ -19,6 +19,7 @@ export interface CustomNodeData {
 	selected?: boolean;
 	onToggleChildren?: (id: string) => void;
 	isCollapsed?: boolean;
+	line?: number;
 }
 
 export interface TreeNode {
@@ -37,6 +38,7 @@ export interface TreeNode {
 		formed?: number;
 		secretBase?: string;
 		active?: boolean;
+		line?: number;
 	};
 }
 

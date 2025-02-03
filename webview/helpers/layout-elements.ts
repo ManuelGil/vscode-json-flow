@@ -156,6 +156,7 @@ export const layoutElements = (
 				label: node.name,
 				direction,
 				isRoot,
+				line: tree[node.id]?.data?.line,
 				...node,
 			},
 			width: nodeWidth,
