@@ -215,7 +215,7 @@ export function ImageDownload() {
 	return (
 		<Dialog>
 			<DialogTrigger asChild>
-				<Button variant="outline" size="icon" tooltip="Download as PNG">
+				<Button variant="outline" size="icon" tooltip="Download as Image">
 					<Download />
 				</Button>
 			</DialogTrigger>
