@@ -1,11 +1,10 @@
 import { WorkspaceConfiguration } from 'vscode';
 
 import {
-  EXCLUDE,
-  IMAGE_FOLDER,
-  INCLUDE,
+  DEFAULT_EXCLUDE_PATTERNS,
+  DEFAULT_INCLUDE_PATTERNS,
   LAYOUT_DIRECTION,
-  SHOW_PATH,
+  IS_INCLUDE_FILE_PATH_DEFAULT,
 } from './constants.config';
 
 /**
@@ -20,7 +19,6 @@ import {
  * @property {string[]} excludedFilePatterns - The pattern to exclude files or folders from the search
  * @property {boolean} includeFilePath - Whether to show the path or not in the search results
  * @property {'TB' | 'LR' | 'BT' | 'RL'} graphLayoutOrientation - The layout direction of the graph
- * @property {string} storagePathForImages - The image folder
  * @example
  * const config = new Config(workspace.getConfiguration());
  * console.log(config.include);
@@ -83,16 +81,6 @@ export class ExtensionConfig {
    * console.log(config.graphLayoutOrientation);
    */
   graphLayoutOrientation: 'TB' | 'LR' | 'BT' | 'RL';
-  /**
-   * The image folder.
-   * @type {string}
-   * @public
-   * @memberof Config
-   * @example
-   * const config = new Config(workspace.getConfiguration());
-   * console.log(config.storagePathForImages);
-   */
-  storagePathForImages: string;
 
   // -----------------------------------------------------------------
   // Constructor
@@ -110,23 +98,19 @@ export class ExtensionConfig {
     this.enable = config.get<boolean>('enable', true);
     this.includedFilePatterns = config.get<string[]>(
       'files.includedFilePatterns',
-      INCLUDE,
+      DEFAULT_INCLUDE_PATTERNS,
     );
     this.excludedFilePatterns = config.get<string[]>(
       'files.excludedFilePatterns',
-      EXCLUDE,
+      DEFAULT_EXCLUDE_PATTERNS,
     );
     this.includeFilePath = config.get<boolean>(
       'files.includeFilePath',
-      SHOW_PATH,
+      IS_INCLUDE_FILE_PATH_DEFAULT,
     );
     this.graphLayoutOrientation = config.get<'TB' | 'LR' | 'BT' | 'RL'>(
       'graph.layoutOrientation',
       LAYOUT_DIRECTION,
-    );
-    this.storagePathForImages = config.get<string>(
-      'storage.pathForImages',
-      IMAGE_FOLDER,
     );
   }
 
@@ -163,11 +147,6 @@ export class ExtensionConfig {
     this.graphLayoutOrientation = config.get<'TB' | 'LR' | 'BT' | 'RL'>(
       'graph.layoutOrientation',
       this.graphLayoutOrientation,
-    );
-    // Set the folder to store the images
-    this.storagePathForImages = config.get<string>(
-      'storage.pathForImages',
-      this.storagePathForImages,
     );
   }
 }

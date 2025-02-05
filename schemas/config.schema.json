@@ -52,12 +52,6 @@
 			"enum": ["TB", "LR", "BT", "RL"],
 			"scope": "resource",
 			"description": "The direction of the layout of the graph. TB is top to bottom, LR is left to right."
-		},
-		"jsonFlow.image.folder": {
-			"type": "string",
-			"default": "json-flow/images",
-			"scope": "resource",
-			"description": "The folder where the graphs will be saved."
 		}
 	}
 }

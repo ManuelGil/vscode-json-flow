@@ -4,7 +4,6 @@
 	"jsonFlow.files.excludedFilePatterns": "Modelli di glob da escludere dal pacchetto. L'impostazione predefinita è node_modules, dist, out, build e qualsiasi file nascosto",
 	"jsonFlow.files.includeFilePath": "Mostra il percorso del file nel nome dell'elenco dei file generati",
 	"jsonFlow.graph.layoutOrientation": "Direzione del layout del grafico. TB per dall'alto in basso e LR per da sinistra a destra",
-	"jsonFlow.image.folder": "Cartella in cui verranno salvati i grafici. L'impostazione predefinita è json-flow/images",
 	"jsonFlow.files.refreshList": "Aggiorna Elenco",
 	"jsonFlow.files.openFile": "Apri File",
 	"jsonFlow.files.convertToJson": "Converti in JSON",

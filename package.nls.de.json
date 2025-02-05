@@ -4,7 +4,6 @@
 	"jsonFlow.files.excludedFilePatterns": "Glob-Muster, die aus dem Paket ausgeschlossen werden sollen. Der Standardwert ist node_modules, dist, out, build und alle versteckten Dateien",
 	"jsonFlow.files.includeFilePath": "Den Dateipfad im Namen der Liste der generierten Dateien anzeigen",
 	"jsonFlow.graph.layoutOrientation": "Layoutrichtung des Diagramms. TB für von oben nach unten und LR für von links nach rechts",
-	"jsonFlow.image.folder": "Ordner, in dem die Diagramme gespeichert werden. Der Standardwert ist json-flow/images",
 	"jsonFlow.files.refreshList": "Liste aktualisieren",
 	"jsonFlow.files.openFile": "Datei öffnen",
 	"jsonFlow.files.convertToJson": "In JSON konvertieren",

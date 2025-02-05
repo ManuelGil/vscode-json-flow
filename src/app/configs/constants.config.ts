@@ -95,16 +95,16 @@ export const EXTENSION_MARKETPLACE_URL: string = `https://marketplace.visualstud
 export const EXTENSION_BUGS_URL: string = `${EXTENSION_REPOSITORY_URL}/issues`;
 
 /**
- * INCLUDE: The files to include.
+ * DEFAULT_INCLUDE_PATTERNS: The files to include.
  * @type {string[]}
  * @public
  * @memberof Constants
  * @example
- * console.log(INCLUDE);
+ * console.log(DEFAULT_INCLUDE_PATTERNS);
  *
  * @returns {string[]} - The files to include
  */
-export const INCLUDE: string[] = [
+export const DEFAULT_INCLUDE_PATTERNS: string[] = [
   'json',
   'jsonc',
   'json5',
@@ -122,16 +122,16 @@ export const INCLUDE: string[] = [
 ];
 
 /**
- * EXCLUDE: The files to exclude.
+ * DEFAULT_EXCLUDE_PATTERNS: The files to exclude.
  * @type {string[]}
  * @public
  * @memberof Constants
  * @example
- * console.log(EXCLUDE);
+ * console.log(DEFAULT_EXCLUDE_PATTERNS);
  *
  * @returns {string[]} - The files to exclude
  */
-export const EXCLUDE: string[] = [
+export const DEFAULT_EXCLUDE_PATTERNS: string[] = [
   '**/node_modules/**',
   '**/dist/**',
   '**/out/**',
@@ -140,16 +140,16 @@ export const EXCLUDE: string[] = [
 ];
 
 /**
- * SHOW_PATH: Whether to show the path or not.
+ * IS_INCLUDE_FILE_PATH_DEFAULT: Whether to show the path or not.
  * @type {boolean}
  * @public
  * @memberof Constants
  * @example
- * console.log(SHOW_PATH);
+ * console.log(IS_INCLUDE_FILE_PATH_DEFAULT);
  *
  * @returns {boolean} - Whether to show the path or not
  */
-export const SHOW_PATH: boolean = true;
+export const IS_INCLUDE_FILE_PATH_DEFAULT: boolean = true;
 
 /**
  * LAYOUT_DIRECTION: The layout direction.
@@ -162,15 +162,3 @@ export const SHOW_PATH: boolean = true;
  * @returns {string} - The layout direction
  */
 export const LAYOUT_DIRECTION: 'TB' | 'LR' | 'BT' | 'RL' = 'TB';
-
-/**
- * IMAGE_FOLDER: The image folder.
- * @type {string}
- * @public
- * @memberof Constants
- * @example
- * console.log(IMAGE_FOLDER);
- *
- * @returns {string} - The image folder
- */
-export const IMAGE_FOLDER: string = '.json-flow/images';

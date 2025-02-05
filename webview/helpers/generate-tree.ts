@@ -92,9 +92,21 @@ export function getRootId(treeData: TreeMap): string {
   const allNodes = new Set(Object.keys(treeData));
 
   for (const node of Object.values(treeData)) {
-    if (node.children) for (const id of node.children) allNodes.delete(id);
-    if (node.spouses) for (const id of node.spouses) allNodes.delete(id);
-    if (node.siblings) for (const id of node.siblings) allNodes.delete(id);
+    if (node.children) {
+      for (const id of node.children) {
+        allNodes.delete(id);
+      }
+    }
+    if (node.spouses) {
+      for (const id of node.spouses) {
+        allNodes.delete(id);
+      }
+    }
+    if (node.siblings) {
+      for (const id of node.siblings) {
+        allNodes.delete(id);
+      }
+    }
   }
 
   if (allNodes.size === 1) {

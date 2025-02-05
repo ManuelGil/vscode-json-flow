@@ -7,8 +7,8 @@ const nodeWidth = 150;
 const nodeHeight = 36;
 
 const Orientation = {
-  Vertical: 'vertical',
-  Horizontal: 'horizontal',
+  vertical: 'vertical',
+  horizontal: 'horizontal',
 } as const;
 
 type OrientationType = (typeof Orientation)[keyof typeof Orientation];
@@ -63,7 +63,7 @@ const entitreeSettings: EntitreeSettings = {
   nextBeforeSpacing: 100,
   nodeHeight,
   nodeWidth,
-  orientation: Orientation.Vertical,
+  orientation: Orientation.vertical,
   rootX: 0,
   rootY: 0,
   secondDegreeSpacing: 100,
@@ -87,7 +87,7 @@ export const layoutElements = (
     tree,
     {
       ...entitreeSettings,
-      orientation: isHorizontal ? Orientation.Horizontal : Orientation.Vertical,
+      orientation: isHorizontal ? Orientation.horizontal : Orientation.vertical,
     },
   );
 

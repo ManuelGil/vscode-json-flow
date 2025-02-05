@@ -9,7 +9,6 @@ import {
 } from 'vscode';
 
 import { EXTENSION_ID } from '../configs';
-import { JsonController } from '../controllers';
 import { getNonce } from '../helpers';
 
 /**
@@ -85,10 +84,6 @@ export class JSONProvider {
     this._panel.webview.onDidReceiveMessage(
       (message) => {
         switch (message.type) {
-          case 'onSaveImage':
-            JsonController.saveImage(message.data);
-            break;
-
           default:
             break;
         }

@@ -168,7 +168,6 @@ Configure your project by creating or updating a settings.json file at the proje
      ], // The files to exclude from watching. Example: "**/node_modules/**", "**/dist/**", "**/out/**", "**/build/**", "**/vendor/**"
      "jsonFlow.files.includeFilePath": true, // Show the path of the file in the file name. Example: "home.component.tsx (pages/home)"
      "jsonFlow.graph.layoutOrientation": "TB", // The layout direction of the graph. Example: "TB", "LR", "BT", "RL"
-     "jsonFlow.image.folder": "images", // The folder where the images will be saved. Example: "images"
    }
    ```
 
