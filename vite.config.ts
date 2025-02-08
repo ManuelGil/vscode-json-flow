@@ -6,6 +6,7 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   build: {
+    outDir: 'media',
     minify: true,
     rollupOptions: {
       output: {
@@ -16,8 +17,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@src": path.resolve(__dirname, "./src"),
-      "@webview": path.resolve(__dirname, "./webview"),
+      '@src': path.resolve(__dirname, './src'),
+      '@webview': path.resolve(__dirname, './webview'),
     },
   },
 });

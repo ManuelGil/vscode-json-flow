@@ -240,12 +240,12 @@ export class JSONProvider {
   private _getHtmlForWebview(webview: Webview): string {
     // Get the local path to main script run in the webview, then convert it to a uri we can use in the webview.
     const scriptUri = webview.asWebviewUri(
-      Uri.joinPath(this._extensionUri, './dist', 'main.js'),
+      Uri.joinPath(this._extensionUri, './media', 'main.js'),
     );
 
     // Do the same for the stylesheet.
     const styleMainUri = webview.asWebviewUri(
-      Uri.joinPath(this._extensionUri, './dist', 'main.css'),
+      Uri.joinPath(this._extensionUri, './media', 'main.css'),
     );
 
     // Use a nonce to only allow a specific script to be run.

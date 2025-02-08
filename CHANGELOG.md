@@ -5,6 +5,17 @@ All notable changes to the "JSON Flow" extension will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+* refactor: 💄 clean up configuration and remove unused properties ([8235223](https://github.com/ManuelGil/vscode-json-flow/commit/8235223))
+* refactor: update file patterns handling and rename layoutDirection to layoutOrientation ([9cf5c17](https://github.com/ManuelGil/vscode-json-flow/commit/9cf5c17))
+* feat: update package.json keywords and categories, adjust webview resource paths ([2d318a6](https://github.com/ManuelGil/vscode-json-flow/commit/2d318a6))
+* refactor: remove webview configuration from JsonController and update related components ([6377f5b](https://github.com/ManuelGil/vscode-json-flow/commit/6377f5b))
+* feat: implement tree generation from JSON data structure ([f286fd1](https://github.com/ManuelGil/vscode-json-flow/commit/f286fd1))
+* feat: enhance tree generation logic and improve background rendering options ([0109a9e](https://github.com/ManuelGil/vscode-json-flow/commit/0109a9e))
+* refactor: simplify configuration by removing global.d.ts and using constants for layout properties ([d057d67](https://github.com/ManuelGil/vscode-json-flow/commit/d057d67))
+* chore: update dependencies to latest versions ([0eb8634](https://github.com/ManuelGil/vscode-json-flow/commit/0eb8634))
+
 ## [1.13.0] - 2025-01-16
 
 * feat: add error messages for cancelled operations in controllers ([ee5787a](https://github.com/ManuelGil/vscode-json-flow/commit/ee5787a))
@@ -125,7 +136,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * build: add webview path ([960fb18](https://github.com/ManuelGil/vscode-json-flow/commit/960fb18))
 * fix: :rotating_light: fix compilation settings ([1ccbfa5](https://github.com/ManuelGil/vscode-json-flow/commit/1ccbfa5))
 
-[unreleased]: https://github.com/ManuelGil/vscode-json-flow/compare/v1.12.0...HEAD
+[unreleased]: https://github.com/ManuelGil/vscode-json-flow/compare/v1.13.0...HEAD
+[1.13.0]: https://github.com/ManuelGil/vscode-json-flow/compare/v1.12.0...v1.13.0
 [1.12.0]: https://github.com/ManuelGil/vscode-json-flow/compare/v1.11.0...v1.12.0
 [1.11.0]: https://github.com/ManuelGil/vscode-json-flow/compare/v1.10.0...v1.11.0
 [1.10.0]: https://github.com/ManuelGil/vscode-json-flow/compare/v1.9.0...v1.10.0
