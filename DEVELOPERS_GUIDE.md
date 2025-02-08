@@ -9,9 +9,9 @@ Welcome to the **JSON Flow** developer's guide! This document provides an overvi
 - [Developer's Guide](#developers-guide)
   - [Index](#index)
   - [Project Structure](#project-structure)
-    - [**1. src/**](#1-src)
-    - [**2. webview/**](#2-webview)
-    - [**3. Additional Important Folders:**](#3-additional-important-folders)
+    - [1. src/](#1-src)
+    - [2. webview/](#2-webview)
+    - [3. Additional Important Folders](#3-additional-important-folders)
   - [Setting Up the Project](#setting-up-the-project)
   - [Running Tests](#running-tests)
   - [Extending Functionality](#extending-functionality)
@@ -25,7 +25,7 @@ Welcome to the **JSON Flow** developer's guide! This document provides an overvi
 
 The project follows a modular organization for maintainability and scalability:
 
-### **1. src/**
+### 1. src/
 
 - **Purpose:** Core application logic following an MVC-like structure.
 - **Key Subfolders:**
@@ -36,7 +36,7 @@ The project follows a modular organization for maintainability and scalability:
   - `models/`: Data models, such as nodes for the JSON tree.
   - `providers/`: Abstraction layers for external resources, like feedback and file operations.
 
-### **2. webview/**
+### 2. webview/
 
 - **Purpose:** Manages the graphical user interface built with React and React Flow.
 - **Key Subfolders:**
@@ -46,7 +46,7 @@ The project follows a modular organization for maintainability and scalability:
   - `lib/`: Shared utility functions for the webview.
   - `types/`: Shared TypeScript types.
 
-### **3. Additional Important Folders:**
+### 3. Additional Important Folders
 
 - **schemas/**: JSON schema definitions for configuration validation.
 - **l10n/**: Localization files for internationalization.

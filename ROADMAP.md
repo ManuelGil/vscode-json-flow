@@ -4,6 +4,23 @@ This document outlines the future direction of JSON Flow, highlighting planned i
 
 ---
 
+## Index
+
+- [JSON Flow - Roadmap](#json-flow---roadmap)
+  - [Index](#index)
+  - [Vision and Long-Term Objectives](#vision-and-long-term-objectives)
+  - [Planned Features and Improvements](#planned-features-and-improvements)
+    - [1. Performance Optimization for Large Files](#1-performance-optimization-for-large-files)
+    - [2. Customizable Data Visualization](#2-customizable-data-visualization)
+    - [3. Enhanced Navigation and Interactivity](#3-enhanced-navigation-and-interactivity)
+    - [4. Accessibility and Localization](#4-accessibility-and-localization)
+    - [5. Community Engagement and Feedback](#5-community-engagement-and-feedback)
+  - [Release Schedule](#release-schedule)
+  - [Contribution and Feedback](#contribution-and-feedback)
+  - [Known Challenges](#known-challenges)
+
+---
+
 ## Vision and Long-Term Objectives
 
 JSON Flow aims to be the preferred solution for developers and analysts working with JSON, YAML, XML, CSV, and other data formats. By combining intuitive visualizations with practical features, the extension simplifies data exploration and enhances productivity.
@@ -12,7 +29,7 @@ JSON Flow aims to be the preferred solution for developers and analysts working 
 
 ## Planned Features and Improvements
 
-### 1. **Performance Optimization for Large Files**
+### 1. Performance Optimization for Large Files
 
 - **Objective**: Address challenges when visualizing very large or deeply nested data files.
 - **Details**:
@@ -23,7 +40,7 @@ JSON Flow aims to be the preferred solution for developers and analysts working 
 
 ---
 
-### 2. **Customizable Data Visualization**
+### 2. Customizable Data Visualization
 
 - **Objective**: Provide users with greater control over how data is displayed.
 - **Details**:
@@ -35,7 +52,7 @@ JSON Flow aims to be the preferred solution for developers and analysts working 
 
 ---
 
-### 3. **Enhanced Navigation and Interactivity**
+### 3. Enhanced Navigation and Interactivity
 
 - **Objective**: Make the exploration of complex data structures more intuitive.
 - **Details**:
@@ -47,7 +64,7 @@ JSON Flow aims to be the preferred solution for developers and analysts working 
 
 ---
 
-### 4. **Accessibility and Localization**
+### 4. Accessibility and Localization
 
 - **Objective**: Ensure JSON Flow is accessible to a diverse audience.
 - **Details**:
@@ -59,7 +76,7 @@ JSON Flow aims to be the preferred solution for developers and analysts working 
 
 ---
 
-### 5. **Community Engagement and Feedback**
+### 5. Community Engagement and Feedback
 
 - **Objective**: Foster collaboration and gather user feedback to shape the extension’s evolution.
 - **Details**:
