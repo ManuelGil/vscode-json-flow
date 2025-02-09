@@ -2,7 +2,6 @@
 *.vsix
 compodoc/
 dist
-media
 node_modules
 out
 

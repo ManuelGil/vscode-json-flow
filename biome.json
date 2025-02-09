@@ -22,7 +22,6 @@
 			"./coverage",
 			"./dist",
 			"./docs",
-			"./media",
 			"./node_modules",
 			"./out",
 			"./tests",
@@ -119,7 +118,6 @@
 		"ignore": [
 			"**/node_modules",
 			"**/dist",
-			"**/media",
 			"**/out",
 			"**/*.d.ts",
 			"**/vite.config.ts",
@@ -129,7 +127,6 @@
 			"**/coverage/",
 			"**/dist/",
 			"**/docs/",
-			"**/media/",
 			"**/node_modules/",
 			"**/out/",
 			"**/tests/",

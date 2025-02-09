@@ -1,15 +1,3 @@
-import { useCallback, useState } from 'react';
-import {
-  ReactFlow,
-  Background,
-  ConnectionLineType,
-  addEdge,
-  ReactFlowProvider,
-  BackgroundVariant,
-  useViewport,
-} from '@xyflow/react';
-import type { Connection, NodeTypes } from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
 import {
   CustomControls,
   CustomNode,
@@ -17,9 +5,21 @@ import {
   ThemeProvider,
   useTheme,
 } from '@webview/components';
-import { useNodeVisibility, useLayoutOrientation } from '@webview/hooks';
 import { generateTree, getRootId } from '@webview/helpers/generate-tree';
+import { useLayoutOrientation, useNodeVisibility } from '@webview/hooks';
 import type { TreeMap } from '@webview/types';
+import type { Connection, NodeTypes } from '@xyflow/react';
+import {
+  Background,
+  BackgroundVariant,
+  ConnectionLineType,
+  ReactFlow,
+  ReactFlowProvider,
+  addEdge,
+  useViewport,
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
+import { useCallback, useEffect, useState } from 'react';
 
 // @ts-ignore
 // biome-ignore lint/correctness/noUndeclaredVariables: vscode is a global variable
@@ -29,10 +29,11 @@ const nodeTypes: NodeTypes = {
   custom: CustomNode,
 };
 
-const jsonState = vscode.getState();
-
 function FlowComponent() {
-  const [treeData] = useState<TreeMap>(() => generateTree(jsonState));
+  const jsonState = vscode.getState().json;
+  const [treeData, useTreeData] = useState<TreeMap>(() =>
+    generateTree(jsonState)
+  );
   const treeRootId = getRootId(treeData);
   const { nodes, setNodes, onNodesChange, hiddenNodes } =
     useNodeVisibility(treeData);
@@ -42,15 +43,41 @@ function FlowComponent() {
   const { colorMode } = useTheme();
   const { zoom } = useViewport();
 
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      const message = event.data;
+
+      switch (message.type) {
+        case 'clearJson': {
+          useTreeData(null);
+          vscode.setState(null);
+          break;
+        }
+
+        case 'setJson': {
+          useTreeData(generateTree(message.data));
+          vscode.setState({
+            ...vscode.getState(),
+            json: generateTree(message.data),
+          });
+          break;
+        }
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
   const onConnect = useCallback(
     (params: Connection) =>
       setEdges((eds) =>
         addEdge(
           { ...params, type: ConnectionLineType.SmoothStep, animated: true },
-          eds,
-        ),
+          eds
+        )
       ),
-    [setEdges],
+    [setEdges]
   );
 
   const handleRotate = useCallback(() => {

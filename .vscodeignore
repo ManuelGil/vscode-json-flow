@@ -15,7 +15,6 @@
 biome.json
 commitlint.config.js
 compodoc/**
-dist/**
 docs/**
 out/test/**
 src/**
