@@ -9,6 +9,10 @@ export function useNodeVisibility(treeData: TreeMap) {
   const [hiddenNodes, setHiddenNodes] = useState(new Set<string>());
 
   useEffect(() => {
+    if (!treeData || Object.keys(treeData).length === 0) {
+      setNodes([]);
+      return;
+    }
     const initialNodes = generateNodes(treeData);
     setNodes(initialNodes);
   }, [treeData]);

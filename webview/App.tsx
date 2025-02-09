@@ -1,15 +1,3 @@
-import { useCallback, useState } from 'react';
-import {
-  ReactFlow,
-  Background,
-  ConnectionLineType,
-  addEdge,
-  ReactFlowProvider,
-  BackgroundVariant,
-  useViewport,
-} from '@xyflow/react';
-import type { Connection, NodeTypes } from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
 import {
   CustomControls,
   CustomNode,
@@ -19,19 +7,18 @@ import {
 } from '@webview/components';
 import { generateTree, getRootId } from '@webview/helpers/generate-tree';
 import { useLayoutOrientation, useNodeVisibility } from '@webview/hooks';
-import type { TreeMap } from '@webview/types';
+import type { TreeMap, Direction } from '@webview/types';
 import type { Connection, NodeTypes } from '@xyflow/react';
 import {
   Background,
   BackgroundVariant,
-  ConnectionLineType,
   ReactFlow,
   ReactFlowProvider,
   addEdge,
-  useViewport,
+  useViewport
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 
 // @ts-ignore
 // biome-ignore lint/correctness/noUndeclaredVariables: vscode is a global variable
@@ -41,51 +28,39 @@ const nodeTypes: NodeTypes = {
   custom: CustomNode,
 };
 
-const jsonState = {
-  'squadName': 'Super hero squad',
-  'homeTown': 'Metro City',
-  'formed': 2016,
-  'secretBase': 'Super tower',
-  'active': true,
-  'members': [
-    {
-      'name': 'Molecule Man',
-      'age': 29,
-      'secretIdentity': 'Dan Jukes',
-      'powers': ['Radiation resistance', 'Turning tiny', 'Radiation blast'],
-    },
-    {
-      'name': 'Madame Uppercut',
-      'age': null,
-      'secretIdentity': 'Jane Wilson',
-      'powers': [
-        'Million tonne punch',
-        'Damage resistance',
-        'Superhuman reflexes',
-      ],
-    },
-    {
-      'name': 'Eternal Flame',
-      'age': 1000000,
-      'secretIdentity': 'Unknown',
-      'powers': [
-        'Immortality',
-        'Heat Immunity',
-        'Inferno',
-        'Teleportation',
-        'Interdimensional travel',
-      ],
-    },
-  ],
-};
-
 function FlowComponent() {
-  const [treeData] = useState<TreeMap>(() => generateTree(jsonState));
-  const treeRootId = getRootId(treeData);
-  const { nodes, setNodes, onNodesChange, hiddenNodes } =
-    useNodeVisibility(treeData);
-  const { edges, setEdges, onEdgesChange, currentDirection, rotateLayout } =
-    useLayoutOrientation({ treeData, treeRootId });
+  const [jsonData, setJsonData] = useState(null);
+  const [treeData, setTreeData] = useState<TreeMap | null>(null);
+  const [layoutDirection, setLayoutDirection] = useState<Direction>('TB');
+  
+  useEffect(() => {
+    const messageHandler = (event: MessageEvent) => {
+      const message = event.data;
+      switch (message.type) {
+        case 'setJson':
+          setJsonData(message.data);
+          setTreeData(generateTree(message.data));
+          setLayoutDirection((message.layoutDirection || 'TB') as Direction);
+          break;
+        case 'clearJson':
+          setJsonData(null);
+          setTreeData(null);
+          break;
+      }
+    };
+
+    window.addEventListener('message', messageHandler);
+    
+    // Initial request for data
+    vscode.postMessage({ type: 'ready' });
+
+    return () => window.removeEventListener('message', messageHandler);
+  }, []);
+
+  const treeRootId = treeData ? getRootId(treeData) : null;
+  const { nodes, setNodes, onNodesChange, hiddenNodes } = useNodeVisibility(treeData || {});
+  const { edges, setEdges, onEdgesChange, currentDirection, rotateLayout } = 
+    useLayoutOrientation({ treeData: treeData || {}, treeRootId: treeRootId || '', initialDirection: layoutDirection });
   const [isInteractive, setIsInteractive] = useState(true);
   const { colorMode } = useTheme();
   const { zoom } = useViewport();
