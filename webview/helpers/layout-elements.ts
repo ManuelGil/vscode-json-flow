@@ -17,94 +17,158 @@ const spacing = {
   sourceTargetSpacing: 60,
 } as const;
 
-const baseSettings = {
-  nodeWidth: MIN_NODE_WIDTH,
-  nodeHeight: NODE_HEIGHT,
-  centerNodes: true,
-  compact: true,
-  siblingsMargin: spacing.firstDegreeSpacing,
-  levelMargin: spacing.sourceTargetSpacing,
-  mixedLayout: true,
-  compactMargin: spacing.nextBeforeSpacing,
-} as const;
-
 const calculateNodeWidth = (text: string): number => {
   const textWidth = text.length * CHAR_WIDTH;
   const width = textWidth + PADDING;
   return Math.max(width, MIN_NODE_WIDTH);
 };
 
-const getPositions = (direction: Direction, type: string) => {
-  const isHorz = isHorizontal(direction);
-  const isRev = isReversed(direction);
+const Orientation = {
+  vertical: 'vertical',
+  horizontal: 'horizontal',
+} as const;
 
-  let source = Position.Bottom;
-  let target = Position.Top;
+type OrientationType = (typeof Orientation)[keyof typeof Orientation];
 
-  if (type === 'spouse') {
-    source = isHorz ? Position.Bottom : Position.Right;
-    target = isHorz ? Position.Top : Position.Left;
-  } else if (type === 'sibling') {
-    source = isHorz ? Position.Top : Position.Left;
-    target = isHorz ? Position.Bottom : Position.Right;
-  } else {
-    source = isHorz ? Position.Right : Position.Bottom;
-    target = isHorz ? Position.Left : Position.Top;
-  }
+interface EntitreeNode {
+  id: string;
+  name: string;
+  x: number;
+  y: number;
+  isSpouse?: boolean;
+  isSibling?: boolean;
+}
 
-  return { source, target };
+interface EntitreeEdge {
+  source: {
+    id: string;
+  };
+  target: {
+    id: string;
+    isSpouse?: boolean;
+    isSibling?: boolean;
+  };
+}
+
+interface EntitreeSettings {
+  clone: boolean;
+  enableFlex: boolean;
+  firstDegreeSpacing: number;
+  nextAfterAccessor: string;
+  nextAfterSpacing: number;
+  nextBeforeAccessor: string;
+  nextBeforeSpacing: number;
+  nodeHeight: number;
+  nodeWidth: number;
+  orientation: OrientationType;
+  rootX: number;
+  rootY: number;
+  secondDegreeSpacing: number;
+  sourcesAccessor: string;
+  sourceTargetSpacing: number;
+  targetsAccessor: string;
+}
+
+const baseSettings: Omit<
+  EntitreeSettings,
+  | 'orientation'
+  | 'firstDegreeSpacing'
+  | 'nextAfterSpacing'
+  | 'nextBeforeSpacing'
+  | 'secondDegreeSpacing'
+  | 'sourceTargetSpacing'
+  | 'nodeWidth'
+> = {
+  clone: true,
+  enableFlex: true,
+  nextAfterAccessor: 'spouses',
+  nextBeforeAccessor: 'siblings',
+  nodeHeight: NODE_HEIGHT,
+  rootX: 0,
+  rootY: 0,
+  sourcesAccessor: 'parents',
+  targetsAccessor: 'children',
+};
+
+const { Top, Bottom, Left, Right } = Position;
+
+type NodeType = 'spouse' | 'sibling' | 'normal';
+
+const getNodeType = (node: {
+  isSpouse?: boolean;
+  isSibling?: boolean;
+}): NodeType =>
+  node.isSpouse ? 'spouse' : node.isSibling ? 'sibling' : 'normal';
+
+const getPositions = (direction: Direction, type: NodeType) => {
+  const positions = {
+    spouse: {
+      horizontal: {
+        source: isReversed(direction) ? Top : Bottom,
+        target: isReversed(direction) ? Bottom : Top,
+      },
+      vertical: {
+        source: isReversed(direction) ? Left : Right,
+        target: isReversed(direction) ? Right : Left,
+      },
+    },
+    sibling: {
+      horizontal: {
+        source: isReversed(direction) ? Bottom : Top,
+        target: isReversed(direction) ? Top : Bottom,
+      },
+      vertical: {
+        source: isReversed(direction) ? Right : Left,
+        target: isReversed(direction) ? Left : Right,
+      },
+    },
+    normal: {
+      horizontal: {
+        source: isReversed(direction) ? Left : Right,
+        target: isReversed(direction) ? Right : Left,
+      },
+      vertical: {
+        source: isReversed(direction) ? Top : Bottom,
+        target: isReversed(direction) ? Bottom : Top,
+      },
+    },
+  };
+  return positions[type][isHorizontal(direction) ? 'horizontal' : 'vertical'];
 };
 
 const createEdge = (
-  sourceId: string,
-  targetId: string,
+  sourceNode: string,
+  targetNode: string,
   direction: Direction,
-  type: string,
+  type: NodeType,
 ): Edge => {
-  const positions = getPositions(direction, type);
+  const { source, target } = getPositions(direction, type);
   return {
-    id: `e${sourceId}-${targetId}`,
-    source: sourceId,
-    target: targetId,
+    id: `e${sourceNode}${targetNode}`,
+    source: sourceNode,
+    target: targetNode,
     type: 'smoothstep',
-    sourceHandle: positions.source,
-    targetHandle: positions.target,
+    animated: true,
+    sourceHandle: source,
+    targetHandle: target,
   };
-};
-
-const getNodeType = (node: any): string => {
-  if (node.isSpouse) return 'spouse';
-  if (node.isSibling) return 'sibling';
-  return 'default';
 };
 
 const createNode = (
-  node: any,
+  node: EntitreeNode,
   direction: Direction,
-  type: string,
+  type: NodeType,
   rootId: string,
   tree: TreeMap,
 ): Node => {
-  if (!node || !node.id) {
-    console.error('Invalid node:', node);
-    return {
-      id: 'error',
-      type: 'custom',
-      position: { x: 0, y: 0 },
-      data: { label: 'Error' }
-    };
-  }
-
   const { source, target } = getPositions(direction, type);
-  const position = {
-    x: isReversed(direction) && isHorizontal(direction) ? -(node.x || 0) : (node.x || 0),
-    y: isReversed(direction) && !isHorizontal(direction) ? -(node.y || 0) : (node.y || 0)
-  };
-
   return {
     id: node.id,
     type: 'custom',
-    position,
+    position: {
+      x: isReversed(direction) && isHorizontal(direction) ? -(node.x || 0) : (node.x || 0),
+      y: isReversed(direction) && !isHorizontal(direction) ? -(node.y || 0) : (node.y || 0),
+    },
     data: {
       label: node.name,
       direction,
@@ -138,19 +202,34 @@ export const layoutElements = (
         ...baseSettings,
         ...spacing,
         nodeWidth: maxNodeWidth,
-        orientation: isHorizontal(direction) ? 'horizontal' : 'vertical',
+        orientation: isHorizontal(direction)
+          ? Orientation.horizontal
+          : Orientation.vertical,
       },
     );
 
+    if (!entitreeNodes || !Array.isArray(entitreeNodes)) {
+      console.error('Invalid nodes from layoutFromMap:', entitreeNodes);
+      return { nodes: [], edges: [] };
+    }
+
     const edges = (entitreeEdges || []).map((edge) => {
+      if (!edge?.source?.id || !edge?.target?.id) {
+        console.error('Invalid edge:', edge);
+        return null;
+      }
       const type = getNodeType(edge.target);
       return createEdge(edge.source.id, edge.target.id, direction, type);
-    });
+    }).filter(Boolean) as Edge[];
 
-    const nodes = (entitreeNodes || []).map((node) => {
+    const nodes = entitreeNodes.map((node) => {
+      if (!node?.id || typeof node.x === 'undefined' || typeof node.y === 'undefined') {
+        console.error('Invalid node:', node);
+        return null;
+      }
       const type = getNodeType(node);
-      return createNode(node, direction, type, rootId, tree);
-    });
+      return createNode(node as EntitreeNode, direction, type, rootId, tree);
+    }).filter(Boolean) as Node[];
 
     return { nodes, edges };
   } catch (error) {

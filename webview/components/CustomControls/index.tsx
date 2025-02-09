@@ -3,7 +3,6 @@ import { ModeToggle } from './ModeToggle';
 import { ImageDownload } from './ImageDownload';
 import { RotateLayout } from './RotateLayout';
 import { ZoomControl } from './ZoomControl';
-import { FullscreenToggle } from './FullscreenToggle';
 import { InteractivityToggle } from './InteractivityToggle';
 import { GoToLine } from './GoToLine';
 import { Settings } from './Settings';
@@ -28,7 +27,6 @@ export function CustomControls({
         isInteractive={isInteractive}
         setIsInteractive={setIsInteractive}
       />
-      <FullscreenToggle />
       <ImageDownload />
       <ModeToggle />
       <GoToLine />
