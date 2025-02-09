@@ -166,8 +166,14 @@ const createNode = (
     id: node.id,
     type: 'custom',
     position: {
-      x: isReversed(direction) && isHorizontal(direction) ? -(node.x || 0) : (node.x || 0),
-      y: isReversed(direction) && !isHorizontal(direction) ? -(node.y || 0) : (node.y || 0),
+      x:
+        isReversed(direction) && isHorizontal(direction)
+          ? -(node.x || 0)
+          : node.x || 0,
+      y:
+        isReversed(direction) && !isHorizontal(direction)
+          ? -(node.y || 0)
+          : node.y || 0,
     },
     data: {
       label: node.name,
@@ -213,23 +219,31 @@ export const layoutElements = (
       return { nodes: [], edges: [] };
     }
 
-    const edges = (entitreeEdges || []).map((edge) => {
-      if (!edge?.source?.id || !edge?.target?.id) {
-        console.error('Invalid edge:', edge);
-        return null;
-      }
-      const type = getNodeType(edge.target);
-      return createEdge(edge.source.id, edge.target.id, direction, type);
-    }).filter(Boolean) as Edge[];
+    const edges = (entitreeEdges || [])
+      .map((edge) => {
+        if (!edge?.source?.id || !edge?.target?.id) {
+          console.error('Invalid edge:', edge);
+          return null;
+        }
+        const type = getNodeType(edge.target);
+        return createEdge(edge.source.id, edge.target.id, direction, type);
+      })
+      .filter(Boolean) as Edge[];
 
-    const nodes = entitreeNodes.map((node) => {
-      if (!node?.id || typeof node.x === 'undefined' || typeof node.y === 'undefined') {
-        console.error('Invalid node:', node);
-        return null;
-      }
-      const type = getNodeType(node);
-      return createNode(node as EntitreeNode, direction, type, rootId, tree);
-    }).filter(Boolean) as Node[];
+    const nodes = entitreeNodes
+      .map((node) => {
+        if (
+          !node?.id ||
+          typeof node.x === 'undefined' ||
+          typeof node.y === 'undefined'
+        ) {
+          console.error('Invalid node:', node);
+          return null;
+        }
+        const type = getNodeType(node);
+        return createNode(node as EntitreeNode, direction, type, rootId, tree);
+      })
+      .filter(Boolean) as Node[];
 
     return { nodes, edges };
   } catch (error) {

@@ -24,11 +24,11 @@ export function getAllDescendants(
 
 export function generateNodes(treeData: TreeMap): Node[] {
   if (!Object.keys(treeData).length) return [];
-  
+
   const rootId = getRootId(treeData);
   const { nodes } = layoutElements(treeData, rootId, 'TB');
-  return nodes.map(node => ({
+  return nodes.map((node) => ({
     ...node,
-    position: node.position || { x: 0, y: 0 }
+    position: node.position || { x: 0, y: 0 },
   }));
 }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import type { Node, NodeChange } from '@xyflow/react';
 import { applyNodeChanges } from '@xyflow/react';
 import { generateNodes, getAllDescendants } from '@webview/helpers';
@@ -7,6 +7,22 @@ import type { TreeMap } from '@webview/types';
 export function useNodeVisibility(treeData: TreeMap) {
   const [nodes, setNodes] = useState<Node[]>([]);
   const [hiddenNodes, setHiddenNodes] = useState(new Set<string>());
+
+  const descendantsCache = useMemo(() => {
+    const cache = new Map<string, string[]>();
+    Object.keys(treeData).forEach((nodeId) => {
+      cache.set(nodeId, getAllDescendants(nodeId, treeData));
+    });
+    return cache;
+  }, [treeData]);
+
+  const directChildrenCache = useMemo(() => {
+    const cache = new Map<string, string[]>();
+    Object.entries(treeData).forEach(([nodeId, node]) => {
+      cache.set(nodeId, node.children || []);
+    });
+    return cache;
+  }, [treeData]);
 
   useEffect(() => {
     if (!treeData || Object.keys(treeData).length === 0) {
@@ -45,20 +61,18 @@ export function useNodeVisibility(treeData: TreeMap) {
 
   const toggleNodeVisibility = useCallback(
     (nodeId: string) => {
+      const descendants = descendantsCache.get(nodeId) || [];
+      const directChildren = directChildrenCache.get(nodeId) || [];
+
       setHiddenNodes((prev) => {
         const newHidden = new Set(prev);
-        const descendants = getAllDescendants(nodeId, treeData);
-        const directChildren = treeData[nodeId]?.children || [];
-
         const anyDirectChildVisible = directChildren.some(
           (id) => !prev.has(id),
         );
 
         if (anyDirectChildVisible) {
           const visibilityState = descendants.filter((id) => !prev.has(id));
-          for (const id of descendants) {
-            newHidden.add(id);
-          }
+          descendants.forEach((id) => newHidden.add(id));
 
           setNodes((nodes) =>
             updateNodesVisibility(nodes, nodeId, newHidden, visibilityState),
@@ -68,13 +82,9 @@ export function useNodeVisibility(treeData: TreeMap) {
             ?.previousVisibility as string[] | undefined;
 
           if (previousVisibility?.length) {
-            for (const id of previousVisibility) {
-              newHidden.delete(id);
-            }
+            previousVisibility.forEach((id) => newHidden.delete(id));
           } else {
-            for (const id of directChildren) {
-              newHidden.delete(id);
-            }
+            directChildren.forEach((id) => newHidden.delete(id));
           }
 
           setNodes((nodes) =>
@@ -85,12 +95,12 @@ export function useNodeVisibility(treeData: TreeMap) {
         return newHidden;
       });
     },
-    [nodes, updateNodesVisibility, treeData],
+    [nodes, updateNodesVisibility, descendantsCache, directChildrenCache],
   );
 
-  const getVisibleNodes = useCallback(() => {
+  const getVisibleNodes = useMemo(() => {
     return nodes.map((node) => {
-      const nodeDescendants = getAllDescendants(node.id, treeData);
+      const nodeDescendants = descendantsCache.get(node.id) || [];
       return {
         ...node,
         data: {
@@ -102,10 +112,10 @@ export function useNodeVisibility(treeData: TreeMap) {
         },
       };
     });
-  }, [nodes, hiddenNodes, toggleNodeVisibility, treeData]);
+  }, [nodes, hiddenNodes, toggleNodeVisibility, descendantsCache]);
 
   return {
-    nodes: getVisibleNodes(),
+    nodes: getVisibleNodes,
     setNodes,
     onNodesChange,
     hiddenNodes,

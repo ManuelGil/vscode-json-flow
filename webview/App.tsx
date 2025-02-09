@@ -18,11 +18,40 @@ import {
   useViewport,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useReducer, useEffect, useState } from 'react';
 
 // @ts-ignore
 // biome-ignore lint/correctness/noUndeclaredVariables: vscode is a global variable
 const vscode = acquireVsCodeApi();
+
+interface TreeState {
+  data: any;
+  treeData: TreeMap | null;
+  orientation: Direction;
+}
+
+type TreeAction =
+  | { type: 'UPDATE'; payload: { data: any; orientation: Direction } }
+  | { type: 'CLEAR' };
+
+function treeReducer(state: TreeState, action: TreeAction): TreeState {
+  switch (action.type) {
+    case 'UPDATE':
+      return {
+        data: action.payload.data,
+        treeData: generateTree(action.payload.data),
+        orientation: action.payload.orientation,
+      };
+    case 'CLEAR':
+      return {
+        data: null,
+        treeData: null,
+        orientation: 'TB',
+      };
+    default:
+      return state;
+  }
+}
 
 const nodeTypes: NodeTypes = {
   custom: CustomNode,
@@ -30,11 +59,11 @@ const nodeTypes: NodeTypes = {
 
 function FlowComponent() {
   const stateData = vscode.getState();
-  const [_, setJsonData] = useState(stateData?.data || null);
-  const [treeData, setTreeData] = useState<TreeMap | null>(null);
-  const [layoutOrientation, changeLayoutOrientation] = useState<Direction>(
-    stateData?.orientation || 'TB'
-  );
+  const [treeState, dispatch] = useReducer(treeReducer, {
+    data: stateData?.data || null,
+    treeData: stateData?.data ? generateTree(stateData.data) : null,
+    orientation: (stateData?.orientation || 'TB') as Direction,
+  });
 
   useEffect(() => {
     const messageHandler = (event: MessageEvent) => {
@@ -42,9 +71,13 @@ function FlowComponent() {
 
       switch (message.command) {
         case 'update':
-          setJsonData(message.data);
-          setTreeData(generateTree(message.data));
-          changeLayoutOrientation((message.orientation || 'TB') as Direction);
+          dispatch({
+            type: 'UPDATE',
+            payload: {
+              data: message.data,
+              orientation: (message.orientation || 'TB') as Direction,
+            },
+          });
           vscode.setState({
             data: message.data,
             orientation: message.orientation,
@@ -52,8 +85,7 @@ function FlowComponent() {
           break;
 
         case 'clear':
-          setJsonData(null);
-          setTreeData(null);
+          dispatch({ type: 'CLEAR' });
           vscode.setState(null);
           break;
       }
@@ -61,21 +93,18 @@ function FlowComponent() {
 
     window.addEventListener('message', messageHandler);
 
-    // Initial request for data
-    vscode.postMessage({ type: 'ready' });
-
     return () => window.removeEventListener('message', messageHandler);
   }, []);
 
-  const treeRootId = treeData ? getRootId(treeData) : null;
+  const treeRootId = treeState.treeData ? getRootId(treeState.treeData) : null;
   const { nodes, setNodes, onNodesChange, hiddenNodes } = useNodeVisibility(
-    treeData || {}
+    treeState.treeData || {},
   );
   const { edges, setEdges, onEdgesChange, currentDirection, rotateLayout } =
     useLayoutOrientation({
-      treeData: treeData || {},
+      treeData: treeState.treeData || {},
       treeRootId: treeRootId || '',
-      initialDirection: layoutOrientation,
+      initialDirection: treeState.orientation,
     });
   const [isInteractive, setIsInteractive] = useState(true);
   const { colorMode } = useTheme();
@@ -83,7 +112,7 @@ function FlowComponent() {
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges]
+    [setEdges],
   );
 
   const handleRotate = useCallback(() => {
@@ -92,7 +121,7 @@ function FlowComponent() {
     setEdges(newEdges);
   }, [rotateLayout, hiddenNodes, setNodes, setEdges]);
 
-  if (!treeData) {
+  if (!treeState.treeData) {
     return <Loading />;
   }
 
