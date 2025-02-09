@@ -114,9 +114,9 @@ export class JsonController {
       // Post the message to the webview with a delay
       setTimeout(() => {
         panel.webview.postMessage({
-          type: 'setJson',
+          command: 'update',
           data: parsedJsonData,
-          layoutDirection: graphLayoutOrientation,
+          orientation: graphLayoutOrientation,
         });
       }, this._processingDelay);
     });
@@ -212,9 +212,9 @@ export class JsonController {
     // Post the message to the webview with a delay
     setTimeout(() => {
       panel.webview.postMessage({
-        type: 'setJson',
+        command: 'update',
         data: parsedJsonData,
-        layoutDirection: graphLayoutOrientation,
+        orientation: graphLayoutOrientation,
       });
     }, this._processingDelay);
   }

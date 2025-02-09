@@ -15,7 +15,7 @@ import {
   ReactFlow,
   ReactFlowProvider,
   addEdge,
-  useViewport
+  useViewport,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useCallback, useState, useEffect } from 'react';
@@ -29,28 +29,38 @@ const nodeTypes: NodeTypes = {
 };
 
 function FlowComponent() {
-  const [jsonData, setJsonData] = useState(null);
+  const stateData = vscode.getState();
+  const [_, setJsonData] = useState(stateData?.data || null);
   const [treeData, setTreeData] = useState<TreeMap | null>(null);
-  const [layoutDirection, setLayoutDirection] = useState<Direction>('TB');
-  
+  const [layoutOrientation, changeLayoutOrientation] = useState<Direction>(
+    stateData?.orientation || 'TB'
+  );
+
   useEffect(() => {
     const messageHandler = (event: MessageEvent) => {
       const message = event.data;
-      switch (message.type) {
-        case 'setJson':
+
+      switch (message.command) {
+        case 'update':
           setJsonData(message.data);
           setTreeData(generateTree(message.data));
-          setLayoutDirection((message.layoutDirection || 'TB') as Direction);
+          changeLayoutOrientation((message.orientation || 'TB') as Direction);
+          vscode.setState({
+            data: message.data,
+            orientation: message.orientation,
+          });
           break;
-        case 'clearJson':
+
+        case 'clear':
           setJsonData(null);
           setTreeData(null);
+          vscode.setState(null);
           break;
       }
     };
 
     window.addEventListener('message', messageHandler);
-    
+
     // Initial request for data
     vscode.postMessage({ type: 'ready' });
 
@@ -58,16 +68,22 @@ function FlowComponent() {
   }, []);
 
   const treeRootId = treeData ? getRootId(treeData) : null;
-  const { nodes, setNodes, onNodesChange, hiddenNodes } = useNodeVisibility(treeData || {});
-  const { edges, setEdges, onEdgesChange, currentDirection, rotateLayout } = 
-    useLayoutOrientation({ treeData: treeData || {}, treeRootId: treeRootId || '', initialDirection: layoutDirection });
+  const { nodes, setNodes, onNodesChange, hiddenNodes } = useNodeVisibility(
+    treeData || {}
+  );
+  const { edges, setEdges, onEdgesChange, currentDirection, rotateLayout } =
+    useLayoutOrientation({
+      treeData: treeData || {},
+      treeRootId: treeRootId || '',
+      initialDirection: layoutOrientation,
+    });
   const [isInteractive, setIsInteractive] = useState(true);
   const { colorMode } = useTheme();
   const { zoom } = useViewport();
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges],
+    [setEdges]
   );
 
   const handleRotate = useCallback(() => {

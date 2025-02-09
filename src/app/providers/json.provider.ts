@@ -125,7 +125,7 @@ export class JSONProvider {
   static createPanel(extensionUri: Uri): WebviewPanel {
     if (JSONProvider.currentProvider) {
       JSONProvider.currentProvider._panel.webview.postMessage({
-        type: 'clearJson',
+        command: 'clear',
       });
 
       JSONProvider.currentProvider._panel.reveal(ViewColumn.One);
