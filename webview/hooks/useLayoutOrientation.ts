@@ -1,10 +1,15 @@
 import { useCallback, useState, useEffect } from 'react';
 import { useEdgesState } from '@xyflow/react';
 import { layoutElements } from '@webview/helpers';
-import type { TreeMap } from '@webview/types';
+import type { TreeMap, Direction } from '@webview/types';
+import type { Edge } from '@xyflow/react';
 
-export type Direction = 'TB' | 'LR' | 'BT' | 'RL';
 const directions: Direction[] = ['TB', 'RL', 'BT', 'LR'];
+
+export const isHorizontal = (direction: Direction) =>
+  direction === 'LR' || direction === 'RL';
+export const isReversed = (direction: Direction) =>
+  direction === 'BT' || direction === 'RL';
 
 interface UseLayoutOrientationProps {
   treeData: TreeMap;
@@ -19,14 +24,7 @@ export function useLayoutOrientation({
 }: UseLayoutOrientationProps) {
   const [currentDirection, setCurrentDirection] =
     useState<Direction>(initialDirection);
-
-  const { edges: initialLayoutedEdges } = layoutElements(
-    treeData,
-    treeRootId,
-    initialDirection,
-  );
-
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialLayoutedEdges);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([] as Edge[]);
 
   useEffect(() => {
     const { edges: newEdges } = layoutElements(

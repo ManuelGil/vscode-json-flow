@@ -1,3 +1,15 @@
+import { useCallback, useState } from 'react';
+import {
+  ReactFlow,
+  Background,
+  ConnectionLineType,
+  addEdge,
+  ReactFlowProvider,
+  BackgroundVariant,
+  useViewport,
+} from '@xyflow/react';
+import type { Connection, NodeTypes } from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
 import {
   CustomControls,
   CustomNode,
@@ -29,55 +41,58 @@ const nodeTypes: NodeTypes = {
   custom: CustomNode,
 };
 
+const jsonState = {
+  'squadName': 'Super hero squad',
+  'homeTown': 'Metro City',
+  'formed': 2016,
+  'secretBase': 'Super tower',
+  'active': true,
+  'members': [
+    {
+      'name': 'Molecule Man',
+      'age': 29,
+      'secretIdentity': 'Dan Jukes',
+      'powers': ['Radiation resistance', 'Turning tiny', 'Radiation blast'],
+    },
+    {
+      'name': 'Madame Uppercut',
+      'age': null,
+      'secretIdentity': 'Jane Wilson',
+      'powers': [
+        'Million tonne punch',
+        'Damage resistance',
+        'Superhuman reflexes',
+      ],
+    },
+    {
+      'name': 'Eternal Flame',
+      'age': 1000000,
+      'secretIdentity': 'Unknown',
+      'powers': [
+        'Immortality',
+        'Heat Immunity',
+        'Inferno',
+        'Teleportation',
+        'Interdimensional travel',
+      ],
+    },
+  ],
+};
+
 function FlowComponent() {
-  const jsonState = vscode.getState().json;
-  const [treeData, useTreeData] = useState<TreeMap>(() =>
-    generateTree(jsonState)
-  );
+  const [treeData] = useState<TreeMap>(() => generateTree(jsonState));
   const treeRootId = getRootId(treeData);
   const { nodes, setNodes, onNodesChange, hiddenNodes } =
     useNodeVisibility(treeData);
   const { edges, setEdges, onEdgesChange, currentDirection, rotateLayout } =
     useLayoutOrientation({ treeData, treeRootId });
-  const [isInteractive, setIsInteractive] = useState(false);
+  const [isInteractive, setIsInteractive] = useState(true);
   const { colorMode } = useTheme();
   const { zoom } = useViewport();
 
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      const message = event.data;
-
-      switch (message.type) {
-        case 'clearJson': {
-          useTreeData(null);
-          vscode.setState(null);
-          break;
-        }
-
-        case 'setJson': {
-          useTreeData(generateTree(message.data));
-          vscode.setState({
-            ...vscode.getState(),
-            json: generateTree(message.data),
-          });
-          break;
-        }
-      }
-    };
-
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, []);
-
   const onConnect = useCallback(
-    (params: Connection) =>
-      setEdges((eds) =>
-        addEdge(
-          { ...params, type: ConnectionLineType.SmoothStep, animated: true },
-          eds
-        )
-      ),
-    [setEdges]
+    (params: Connection) => setEdges((eds) => addEdge(params, eds)),
+    [setEdges],
   );
 
   const handleRotate = useCallback(() => {
@@ -101,7 +116,6 @@ function FlowComponent() {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
-        connectionLineType={ConnectionLineType.SmoothStep}
         fitView
         nodeTypes={nodeTypes}
         nodesDraggable={isInteractive}

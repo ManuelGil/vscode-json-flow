@@ -144,11 +144,11 @@ export function ImageDownload() {
         height,
         0.5,
         2,
-        0.1
+        0.1,
       );
 
       const flowElement = document.querySelector(
-        '.react-flow__viewport'
+        '.react-flow__viewport',
       ) as HTMLElement;
       if (!flowElement) {
         return;
@@ -169,6 +169,7 @@ export function ImageDownload() {
           }
           return (
             !node.classList?.contains('react-flow__panel') &&
+            !node.classList?.contains('react-flow__minimap') &&
             !node.classList?.contains('react-flow__controls')
           );
         },
@@ -199,7 +200,7 @@ export function ImageDownload() {
       link.href = dataUrl;
       link.click();
     },
-    [getNodes, downloadForm]
+    [getNodes, downloadForm],
   );
 
   const colorPickerRef = useRef<HTMLInputElement>(null);
@@ -219,7 +220,7 @@ export function ImageDownload() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" size="icon" tooltip="Download as PNG">
+        <Button variant="outline" size="icon" tooltip="Download as Image">
           <Download />
         </Button>
       </DialogTrigger>

@@ -1,10 +1,27 @@
 import { Position } from '@xyflow/react';
 import type { Node, Edge } from '@xyflow/react';
 import { layoutFromMap } from 'entitree-flex';
-import type { TreeMap } from '@webview/types';
+import type { TreeMap, Direction } from '@webview/types';
+import { isHorizontal, isReversed } from '@webview/hooks';
 
-const nodeWidth = 150;
-const nodeHeight = 36;
+const NODE_HEIGHT = 36;
+const MIN_NODE_WIDTH = 150;
+const PADDING = 32;
+const CHAR_WIDTH = 8;
+
+const spacing = {
+  firstDegreeSpacing: 30,
+  nextAfterSpacing: 30,
+  nextBeforeSpacing: 30,
+  secondDegreeSpacing: 60,
+  sourceTargetSpacing: 60,
+} as const;
+
+const calculateNodeWidth = (text: string): number => {
+  const textWidth = text.length * CHAR_WIDTH;
+  const width = textWidth + PADDING;
+  return Math.max(width, MIN_NODE_WIDTH);
+};
 
 const Orientation = {
   vertical: 'vertical',
@@ -12,7 +29,6 @@ const Orientation = {
 } as const;
 
 type OrientationType = (typeof Orientation)[keyof typeof Orientation];
-type Direction = 'TB' | 'LR' | 'BT' | 'RL';
 
 interface EntitreeNode {
   id: string;
@@ -53,146 +69,149 @@ interface EntitreeSettings {
   targetsAccessor: string;
 }
 
-const entitreeSettings: EntitreeSettings = {
+const baseSettings: Omit<
+  EntitreeSettings,
+  | 'orientation'
+  | 'firstDegreeSpacing'
+  | 'nextAfterSpacing'
+  | 'nextBeforeSpacing'
+  | 'secondDegreeSpacing'
+  | 'sourceTargetSpacing'
+  | 'nodeWidth'
+> = {
   clone: true,
   enableFlex: true,
-  firstDegreeSpacing: 100,
   nextAfterAccessor: 'spouses',
-  nextAfterSpacing: 100,
   nextBeforeAccessor: 'siblings',
-  nextBeforeSpacing: 100,
-  nodeHeight,
-  nodeWidth,
-  orientation: Orientation.vertical,
+  nodeHeight: NODE_HEIGHT,
   rootX: 0,
   rootY: 0,
-  secondDegreeSpacing: 100,
   sourcesAccessor: 'parents',
-  sourceTargetSpacing: 100,
   targetsAccessor: 'children',
 };
 
 const { Top, Bottom, Left, Right } = Position;
+
+type NodeType = 'spouse' | 'sibling' | 'normal';
+
+const getNodeType = (node: {
+  isSpouse?: boolean;
+  isSibling?: boolean;
+}): NodeType =>
+  node.isSpouse ? 'spouse' : node.isSibling ? 'sibling' : 'normal';
+
+const getPositions = (direction: Direction, type: NodeType) => {
+  const positions = {
+    spouse: {
+      horizontal: {
+        source: isReversed(direction) ? Top : Bottom,
+        target: isReversed(direction) ? Bottom : Top,
+      },
+      vertical: {
+        source: isReversed(direction) ? Left : Right,
+        target: isReversed(direction) ? Right : Left,
+      },
+    },
+    sibling: {
+      horizontal: {
+        source: isReversed(direction) ? Bottom : Top,
+        target: isReversed(direction) ? Top : Bottom,
+      },
+      vertical: {
+        source: isReversed(direction) ? Right : Left,
+        target: isReversed(direction) ? Left : Right,
+      },
+    },
+    normal: {
+      horizontal: {
+        source: isReversed(direction) ? Left : Right,
+        target: isReversed(direction) ? Right : Left,
+      },
+      vertical: {
+        source: isReversed(direction) ? Top : Bottom,
+        target: isReversed(direction) ? Bottom : Top,
+      },
+    },
+  };
+  return positions[type][isHorizontal(direction) ? 'horizontal' : 'vertical'];
+};
+
+const createEdge = (
+  sourceNode: string,
+  targetNode: string,
+  direction: Direction,
+  type: NodeType,
+): Edge => {
+  const { source, target } = getPositions(direction, type);
+  return {
+    id: `e${sourceNode}${targetNode}`,
+    source: sourceNode,
+    target: targetNode,
+    type: 'smoothstep',
+    animated: true,
+    sourceHandle: source,
+    targetHandle: target,
+  };
+};
+
+const createNode = (
+  node: EntitreeNode,
+  direction: Direction,
+  type: NodeType,
+  rootId: string,
+  tree: TreeMap,
+): Node => {
+  const { source, target } = getPositions(direction, type);
+  return {
+    id: node.id,
+    type: 'custom',
+    position: {
+      x: isReversed(direction) && isHorizontal(direction) ? -node.x : node.x,
+      y: isReversed(direction) && !isHorizontal(direction) ? -node.y : node.y,
+    },
+    data: {
+      label: node.name,
+      direction,
+      isRoot: node.id === rootId,
+      line: tree[node.id]?.data?.line,
+      ...node,
+    },
+    sourcePosition: source,
+    targetPosition: target,
+  };
+};
 
 export const layoutElements = (
   tree: TreeMap,
   rootId: string,
   direction: Direction = 'TB',
 ): { nodes: Node[]; edges: Edge[] } => {
-  const isHorizontal = direction === 'LR' || direction === 'RL';
-  const isReversed = direction === 'BT' || direction === 'RL';
+  const maxNodeWidth = Math.max(
+    ...Object.values(tree).map((node) => calculateNodeWidth(node.name)),
+  );
 
   const { nodes: entitreeNodes, rels: entitreeEdges } = layoutFromMap(
     rootId,
     tree,
     {
-      ...entitreeSettings,
-      orientation: isHorizontal ? Orientation.horizontal : Orientation.vertical,
+      ...baseSettings,
+      ...spacing,
+      nodeWidth: maxNodeWidth,
+      orientation: isHorizontal(direction)
+        ? Orientation.horizontal
+        : Orientation.vertical,
     },
   );
 
-  const nodes: Node[] = [];
-  const edges: Edge[] = [];
+  const edges = (entitreeEdges as EntitreeEdge[]).map((edge) => {
+    const type = getNodeType(edge.target);
+    return createEdge(edge.source.id, edge.target.id, direction, type);
+  });
 
-  for (const edge of entitreeEdges as EntitreeEdge[]) {
-    const sourceNode = edge.source.id;
-    const targetNode = edge.target.id;
-
-    const newEdge: Edge = {
-      id: `e${sourceNode}${targetNode}`,
-      source: sourceNode,
-      target: targetNode,
-      type: 'smoothstep',
-      animated: true,
-      sourceHandle: undefined,
-      targetHandle: undefined,
-    };
-
-    const isTargetSpouse = !!edge.target.isSpouse;
-    const isTargetSibling = !!edge.target.isSibling;
-
-    if (isTargetSpouse) {
-      if (isHorizontal) {
-        newEdge.sourceHandle = isReversed ? Top : Bottom;
-        newEdge.targetHandle = isReversed ? Bottom : Top;
-      } else {
-        newEdge.sourceHandle = isReversed ? Left : Right;
-        newEdge.targetHandle = isReversed ? Right : Left;
-      }
-    } else if (isTargetSibling) {
-      if (isHorizontal) {
-        newEdge.sourceHandle = isReversed ? Bottom : Top;
-        newEdge.targetHandle = isReversed ? Top : Bottom;
-      } else {
-        newEdge.sourceHandle = isReversed ? Right : Left;
-        newEdge.targetHandle = isReversed ? Left : Right;
-      }
-    } else {
-      if (isHorizontal) {
-        newEdge.sourceHandle = isReversed ? Left : Right;
-        newEdge.targetHandle = isReversed ? Right : Left;
-      } else {
-        newEdge.sourceHandle = isReversed ? Top : Bottom;
-        newEdge.targetHandle = isReversed ? Bottom : Top;
-      }
-    }
-
-    edges.push(newEdge);
-  }
-
-  for (const node of entitreeNodes as EntitreeNode[]) {
-    const isSpouse = !!node.isSpouse;
-    const isSibling = !!node.isSibling;
-    const isRoot = node.id === rootId;
-
-    const newNode: Node = {
-      id: node.id,
-      type: 'custom',
-      position: {
-        x: isReversed && isHorizontal ? -node.x : node.x,
-        y: isReversed && !isHorizontal ? -node.y : node.y,
-      },
-      data: {
-        label: node.name,
-        direction,
-        isRoot,
-        line: tree[node.id]?.data?.line,
-        ...node,
-      },
-      width: nodeWidth,
-      height: nodeHeight,
-      sourcePosition: undefined,
-      targetPosition: undefined,
-    };
-
-    if (isSpouse) {
-      if (isHorizontal) {
-        newNode.sourcePosition = isReversed ? Top : Bottom;
-        newNode.targetPosition = isReversed ? Bottom : Top;
-      } else {
-        newNode.sourcePosition = isReversed ? Left : Right;
-        newNode.targetPosition = isReversed ? Right : Left;
-      }
-    } else if (isSibling) {
-      if (isHorizontal) {
-        newNode.sourcePosition = isReversed ? Bottom : Top;
-        newNode.targetPosition = isReversed ? Top : Bottom;
-      } else {
-        newNode.sourcePosition = isReversed ? Right : Left;
-        newNode.targetPosition = isReversed ? Left : Right;
-      }
-    } else {
-      if (isHorizontal) {
-        newNode.sourcePosition = isReversed ? Left : Right;
-        newNode.targetPosition = isReversed ? Right : Left;
-      } else {
-        newNode.sourcePosition = isReversed ? Top : Bottom;
-        newNode.targetPosition = isReversed ? Bottom : Top;
-      }
-    }
-
-    nodes.push(newNode);
-  }
+  const nodes = (entitreeNodes as EntitreeNode[]).map((node) => {
+    const type = getNodeType(node);
+    return createNode(node, direction, type, rootId, tree);
+  });
 
   return { nodes, edges };
 };

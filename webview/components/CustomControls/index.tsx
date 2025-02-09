@@ -6,7 +6,7 @@ import { ZoomControl } from './ZoomControl';
 import { FullscreenToggle } from './FullscreenToggle';
 import { InteractivityToggle } from './InteractivityToggle';
 import { GoToLine } from './GoToLine';
-
+import { Settings } from './Settings';
 interface CustomControlsProps {
   isInteractive: boolean;
   setIsInteractive: (value: boolean) => void;
@@ -32,6 +32,7 @@ export function CustomControls({
       <ImageDownload />
       <ModeToggle />
       <GoToLine />
+      <Settings />
     </Panel>
   );
 }

@@ -6,12 +6,14 @@ export interface TreeData {
   spouses?: string[];
 }
 
+export type Direction = 'TB' | 'LR' | 'BT' | 'RL';
+
 export interface CustomNodeData {
   id: string;
   isSpouse?: boolean;
   isSibling?: boolean;
   label?: string;
-  direction?: 'TB' | 'LR' | 'BT' | 'RL';
+  direction?: Direction;
   isRoot?: boolean;
   children?: TreeData[];
   siblings?: TreeData[];
