@@ -57,21 +57,7 @@ export class JsonController {
   constructor(
     readonly context: ExtensionContext,
     readonly config: ExtensionConfig,
-  ) {
-    JSONProvider.onDidReceiveMessage(async (message) => {
-      switch (message.command) {
-        case 'updateConfig':
-          try {
-            await workspace
-              .getConfiguration('jsonFlow')
-              .update('graph.layoutOrientation', message.orientation, false);
-          } catch (error) {
-            console.error('Error updating config:', error);
-          }
-          break;
-      }
-    });
-  }
+  ) {}
 
   // -----------------------------------------------------------------
   // Methods
