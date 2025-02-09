@@ -28,10 +28,20 @@ interface TreeState {
   data: any;
   treeData: TreeMap | null;
   orientation: Direction;
+  fileName: string;
+  path?: string;
 }
 
 type TreeAction =
-  | { type: 'UPDATE'; payload: { data: any; orientation: Direction } }
+  | {
+      type: 'UPDATE';
+      payload: {
+        data: any;
+        orientation: Direction;
+        fileName: string;
+        path?: string;
+      };
+    }
   | { type: 'CLEAR' };
 
 function treeReducer(state: TreeState, action: TreeAction): TreeState {
@@ -41,12 +51,15 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
         data: action.payload.data,
         treeData: generateTree(action.payload.data),
         orientation: action.payload.orientation,
+        fileName: action.payload.fileName,
+        path: action.payload.path,
       };
     case 'CLEAR':
       return {
         data: null,
         treeData: null,
         orientation: 'TB',
+        fileName: '',
       };
     default:
       return state;
@@ -63,6 +76,7 @@ function FlowComponent() {
     data: stateData?.data || null,
     treeData: stateData?.data ? generateTree(stateData.data) : null,
     orientation: (stateData?.orientation || 'TB') as Direction,
+    fileName: stateData?.fileName,
   });
 
   useEffect(() => {
@@ -79,10 +93,14 @@ function FlowComponent() {
               orientation: (stateData?.orientation ||
                 message.orientation ||
                 'TB') as Direction,
+              fileName: message.fileName,
+              path: message.path,
             },
           });
           vscode.setState({
             data: message.data,
+            fileName: message.fileName,
+            path: message.path,
           });
           break;
 
