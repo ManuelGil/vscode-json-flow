@@ -165,7 +165,7 @@ export class JsonController {
     );
 
     // Get the language ID and file name
-    const { languageId, fileName } = editor.document;
+    const { languageId, fileName, uri } = editor.document;
 
     let fileType = languageId;
 
@@ -217,6 +217,7 @@ export class JsonController {
         command: 'update',
         data: parsedJsonData,
         orientation: graphLayoutOrientation,
+        path: uri.fsPath,
         fileName,
       });
     }, this._processingDelay);

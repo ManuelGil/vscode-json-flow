@@ -28,8 +28,8 @@ interface TreeState {
   data: any;
   treeData: TreeMap | null;
   orientation: Direction;
+  path: string;
   fileName: string;
-  path?: string;
 }
 
 type TreeAction =
@@ -38,8 +38,8 @@ type TreeAction =
       payload: {
         data: any;
         orientation: Direction;
+        path: string;
         fileName: string;
-        path?: string;
       };
     }
   | { type: 'CLEAR' };
@@ -51,14 +51,15 @@ function treeReducer(state: TreeState, action: TreeAction): TreeState {
         data: action.payload.data,
         treeData: generateTree(action.payload.data),
         orientation: action.payload.orientation,
-        fileName: action.payload.fileName,
         path: action.payload.path,
+        fileName: action.payload.fileName,
       };
     case 'CLEAR':
       return {
         data: null,
         treeData: null,
         orientation: 'TB',
+        path: '',
         fileName: '',
       };
     default:
@@ -76,6 +77,7 @@ function FlowComponent() {
     data: stateData?.data || null,
     treeData: stateData?.data ? generateTree(stateData.data) : null,
     orientation: (stateData?.orientation || 'TB') as Direction,
+    path: stateData?.path,
     fileName: stateData?.fileName,
   });
 
