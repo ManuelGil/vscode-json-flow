@@ -117,6 +117,8 @@ export class JsonController {
           command: 'update',
           data: parsedJsonData,
           orientation: graphLayoutOrientation,
+          path: uri.fsPath,
+          fileName,
         });
       }, this._processingDelay);
     });
@@ -215,6 +217,7 @@ export class JsonController {
         command: 'update',
         data: parsedJsonData,
         orientation: graphLayoutOrientation,
+        fileName,
       });
     }, this._processingDelay);
   }

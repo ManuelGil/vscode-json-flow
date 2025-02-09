@@ -68,6 +68,7 @@ function FlowComponent() {
   useEffect(() => {
     const messageHandler = (event: MessageEvent) => {
       const message = event.data;
+      const stateData = vscode.getState();
 
       switch (message.command) {
         case 'update':
@@ -75,12 +76,13 @@ function FlowComponent() {
             type: 'UPDATE',
             payload: {
               data: message.data,
-              orientation: (message.orientation || 'TB') as Direction,
+              orientation: (stateData?.orientation ||
+                message.orientation ||
+                'TB') as Direction,
             },
           });
           vscode.setState({
             data: message.data,
-            orientation: message.orientation,
           });
           break;
 
