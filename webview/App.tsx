@@ -97,15 +97,21 @@ function FlowComponent() {
   }, []);
 
   const treeRootId = treeState.treeData ? getRootId(treeState.treeData) : null;
-  const { nodes, setNodes, onNodesChange, hiddenNodes } = useNodeVisibility(
+  const { onNodesChange, hiddenNodes } = useNodeVisibility(
     treeState.treeData || {},
   );
-  const { edges, setEdges, onEdgesChange, currentDirection, rotateLayout } =
-    useLayoutOrientation({
-      treeData: treeState.treeData || {},
-      treeRootId: treeRootId || '',
-      initialDirection: treeState.orientation,
-    });
+  const {
+    edges,
+    setEdges,
+    onEdgesChange,
+    currentDirection,
+    rotateLayout,
+    nodes,
+  } = useLayoutOrientation({
+    treeData: treeState.treeData || {},
+    treeRootId: treeRootId || '',
+    initialDirection: treeState.orientation,
+  });
   const [isInteractive, setIsInteractive] = useState(true);
   const { colorMode } = useTheme();
   const { zoom } = useViewport();
@@ -116,10 +122,8 @@ function FlowComponent() {
   );
 
   const handleRotate = useCallback(() => {
-    const { nodes: newNodes, edges: newEdges } = rotateLayout(hiddenNodes);
-    setNodes(newNodes);
-    setEdges(newEdges);
-  }, [rotateLayout, hiddenNodes, setNodes, setEdges]);
+    rotateLayout(hiddenNodes);
+  }, [rotateLayout, hiddenNodes]);
 
   if (!treeState.treeData) {
     return <Loading />;

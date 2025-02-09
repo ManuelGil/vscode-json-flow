@@ -25,39 +25,40 @@ export function useLayoutOrientation({
   const [currentDirection, setCurrentDirection] =
     useState<Direction>(initialDirection);
   const [edges, setEdges, onEdgesChange] = useEdgesState([] as Edge[]);
+  const [nodes, setNodes] = useState<any[]>([]);
+
+  const updateLayout = useCallback(
+    (direction: Direction, hiddenNodes?: Set<string>) => {
+      const { nodes: layoutedNodes, edges: layoutedEdges } = layoutElements(
+        treeData,
+        treeRootId,
+        direction,
+      );
+
+      const visibleNodes = hiddenNodes
+        ? layoutedNodes.filter((node) => !hiddenNodes.has(node.id))
+        : layoutedNodes;
+
+      setNodes(visibleNodes);
+      setEdges(layoutedEdges);
+      setCurrentDirection(direction);
+    },
+    [treeData, treeRootId],
+  );
 
   useEffect(() => {
-    const { edges: newEdges } = layoutElements(
-      treeData,
-      treeRootId,
-      currentDirection,
-    );
-    setEdges(newEdges);
-  }, [treeData, treeRootId, currentDirection, setEdges]);
+    updateLayout(initialDirection);
+  }, [initialDirection, updateLayout]);
 
   const rotateLayout = useCallback(
     (hiddenNodes: Set<string>) => {
       const currentIndex = directions.indexOf(currentDirection);
       const nextIndex = (currentIndex + 1) % directions.length;
       const nextDirection = directions[nextIndex];
-      setCurrentDirection(nextDirection);
 
-      const { nodes: layoutedNodes, edges: layoutedEdges } = layoutElements(
-        treeData,
-        treeRootId,
-        nextDirection,
-      );
-
-      const visibleNodes = layoutedNodes.filter(
-        (node) => !hiddenNodes.has(node.id),
-      );
-
-      return {
-        nodes: visibleNodes,
-        edges: layoutedEdges,
-      };
+      updateLayout(nextDirection, hiddenNodes);
     },
-    [currentDirection, treeData, treeRootId],
+    [currentDirection, updateLayout],
   );
 
   return {
@@ -66,5 +67,7 @@ export function useLayoutOrientation({
     onEdgesChange,
     currentDirection,
     rotateLayout,
+    nodes,
+    setNodes,
   };
 }
