@@ -55,8 +55,8 @@ export function useLayoutOrientation({
       const currentIndex = directions.indexOf(currentDirection);
       const nextIndex = (currentIndex + 1) % directions.length;
       const nextDirection = directions[nextIndex];
-
       updateLayout(nextDirection, hiddenNodes);
+      return nextDirection;
     },
     [currentDirection, updateLayout],
   );

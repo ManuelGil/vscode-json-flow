@@ -122,8 +122,18 @@ function FlowComponent() {
   );
 
   const handleRotate = useCallback(() => {
-    rotateLayout(hiddenNodes);
-  }, [rotateLayout, hiddenNodes]);
+    const nextDirection = rotateLayout(hiddenNodes);
+
+    vscode.setState({
+      data: treeState.data,
+      orientation: nextDirection,
+    });
+
+    vscode.postMessage({
+      command: 'updateConfig',
+      orientation: nextDirection,
+    });
+  }, [rotateLayout, hiddenNodes, treeState.data]);
 
   if (!treeState.treeData) {
     return <Loading />;

@@ -50,6 +50,13 @@ export class JSONProvider {
    */
   static readonly viewType: string = `${EXTENSION_ID}.jsonView`;
 
+  /**
+   * Callback for webview messages
+   */
+  static onDidReceiveMessage(callback: (message: any) => void) {
+    this.messageHandlers.push(callback);
+  }
+
   // Private properties
   /**
    * The disposables.
@@ -59,6 +66,8 @@ export class JSONProvider {
    * @type {Disposable[]}
    */
   private _disposables: Disposable[] = [];
+
+  private static messageHandlers: ((message: any) => void)[] = [];
 
   // -----------------------------------------------------------------
   // Constructor
@@ -83,9 +92,8 @@ export class JSONProvider {
 
     this._panel.webview.onDidReceiveMessage(
       (message) => {
-        switch (message.type) {
-          default:
-            break;
+        if (message.command === 'updateConfig') {
+          JSONProvider.messageHandlers.forEach((handler) => handler(message));
         }
       },
       null,
