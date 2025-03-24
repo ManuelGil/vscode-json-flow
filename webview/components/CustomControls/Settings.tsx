@@ -54,8 +54,8 @@ export function Settings() {
     defaultValues: {
       settings: {
         ...DEFAULT_SETTINGS,
-        ...(localStorage.getItem('settings') ? 
-          JSON.parse(localStorage.getItem('settings')!) : 
+        ...(localStorage.getItem('settings') ?
+          JSON.parse(localStorage.getItem('settings')!) :
           {})
       }
     },
@@ -68,10 +68,10 @@ export function Settings() {
 
   const handleOpenChange = (open: boolean) => {
     if (open) {
-      const savedSettings = localStorage.getItem('settings') ? 
-        JSON.parse(localStorage.getItem('settings')!) : 
+      const savedSettings = localStorage.getItem('settings') ?
+        JSON.parse(localStorage.getItem('settings')!) :
         DEFAULT_SETTINGS;
-      
+
       form.reset({ settings: savedSettings });
       setIsDialogOpen(true);
     } else if (isDirty && !showConfirmDialog) {
@@ -185,17 +185,19 @@ export function Settings() {
                 control={form.control}
                 name="settings.animated"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-base">Animated Edges</FormLabel>
+                  <FormItem className="flex flex-row items-center justify-between">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Animated Edges</FormLabel>
+                      <FormDescription>
+                        Enable or disable edge animations
+                      </FormDescription>
+                    </div>
                     <FormControl>
                       <Switch
                         checked={field.value}
                         onCheckedChange={field.onChange}
                       />
                     </FormControl>
-                    <FormDescription>
-                      Enable or disable edge animations
-                    </FormDescription>
                   </FormItem>
                 )}
               />
@@ -213,8 +215,8 @@ export function Settings() {
         </DialogContent>
       </Dialog>
 
-      <Dialog 
-        open={showConfirmDialog} 
+      <Dialog
+        open={showConfirmDialog}
         onOpenChange={(open) => !open && handleCancelClose()}
       >
         <DialogContent>
@@ -228,8 +230,8 @@ export function Settings() {
             <Button variant="outline" onClick={handleCancelClose}>
               Cancel
             </Button>
-            <Button 
-              variant="destructive" 
+            <Button
+              variant="destructive"
               onClick={handleCloseWithoutSaving}
             >
               Close Without Saving
