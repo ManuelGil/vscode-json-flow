@@ -67,9 +67,9 @@
 	}
 }
 
-@layer components {
-	.react-flow__edge.selectable:hover .react-flow__edge-path,
-	.react-flow__edge.selectable.selected .react-flow__edge-path {
-		@apply stroke-black;
-	}
+.react-flow__edge:hover path, 
+.react-flow__edge:focus path {
+	filter: brightness(1.5);
+	transition: all 0.2s ease;
+	stroke-width: 2px;
 }

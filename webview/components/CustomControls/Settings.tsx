@@ -6,7 +6,6 @@ import {
   DialogTitle,
   DialogDescription,
   DialogTrigger,
-  Input,
   Form,
   FormControl,
   FormDescription,
@@ -14,245 +13,230 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Switch,
 } from '@webview/components';
-import { Copy, Download, Settings as SettingsIcon } from 'lucide-react';
+import { Settings as SettingsIcon } from 'lucide-react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { EdgeType, EDGE_TYPE_NAMES } from '@webview/types';
+import { BackgroundVariant } from '@xyflow/react';
+import { useState } from 'react';
 
-const generalSettingsSchema = z.object({
-  general: z.string().min(2).max(50),
+interface Settings {
+  edgeType: EdgeType;
+  animated: boolean;
+  backgroundVariant: BackgroundVariant;
+}
+
+const settingsSchema = z.object({
+  settings: z.object({
+    edgeType: z.nativeEnum(EdgeType),
+    animated: z.boolean(),
+    backgroundVariant: z.nativeEnum(BackgroundVariant)
+  })
 });
 
-const nodeSettingsSchema = z.object({
-  node: z.string().min(2).max(50),
-});
-
-const edgeSettingsSchema = z.object({
-  edge: z.string().min(2).max(50),
-});
-
-const textSettingsSchema = z.object({
-  text: z.string().min(2).max(50),
-});
+export const DEFAULT_SETTINGS: Settings = {
+  edgeType: EdgeType.SmoothStep,
+  animated: true,
+  backgroundVariant: BackgroundVariant.Lines
+};
 
 export function Settings() {
-  const generalSettingsForm = useForm<z.infer<typeof generalSettingsSchema>>({
-    resolver: zodResolver(generalSettingsSchema),
+  const form = useForm<z.infer<typeof settingsSchema>>({
+    resolver: zodResolver(settingsSchema),
     defaultValues: {
-      general: 'JsonFlow General Settings',
+      settings: {
+        ...DEFAULT_SETTINGS,
+        ...(localStorage.getItem('settings') ? 
+          JSON.parse(localStorage.getItem('settings')!) : 
+          {})
+      }
     },
+    mode: 'onChange'
   });
 
-  async function onGeneralSettingsSubmit() {
-    console.log(generalSettingsForm.getValues());
-  }
+  const { isDirty } = form.formState;
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
-  const nodeSettingsForm = useForm<z.infer<typeof nodeSettingsSchema>>({
-    resolver: zodResolver(nodeSettingsSchema),
-    defaultValues: {
-      node: 'JsonFlow Node Settings',
-    },
-  });
+  const handleOpenChange = (open: boolean) => {
+    if (open) {
+      const savedSettings = localStorage.getItem('settings') ? 
+        JSON.parse(localStorage.getItem('settings')!) : 
+        DEFAULT_SETTINGS;
+      
+      form.reset({ settings: savedSettings });
+      setIsDialogOpen(true);
+    } else if (isDirty && !showConfirmDialog) {
+      setShowConfirmDialog(true);
+    } else if (!isDirty) {
+      setIsDialogOpen(false);
+    }
+  };
 
-  async function onNodeSettingsSubmit() {
-    console.log(nodeSettingsForm.getValues());
-  }
+  const onSubmit = (data: z.infer<typeof settingsSchema>) => {
+    localStorage.setItem('settings', JSON.stringify(data.settings));
+    form.reset({ settings: data.settings });
+  };
 
-  const edgeSettingsForm = useForm<z.infer<typeof edgeSettingsSchema>>({
-    resolver: zodResolver(edgeSettingsSchema),
-    defaultValues: {
-      edge: 'JsonFlow Edge Settings',
-    },
-  });
+  const handleResetDefaults = () => {
+    localStorage.setItem('settings', JSON.stringify(DEFAULT_SETTINGS));
+    form.reset({ settings: DEFAULT_SETTINGS });
+  };
 
-  async function onEdgeSettingsSubmit() {
-    console.log(edgeSettingsForm.getValues());
-  }
+  const handleCloseWithoutSaving = () => {
+    setShowConfirmDialog(false);
+    setIsDialogOpen(false);
+  };
 
-  const textSettingsForm = useForm<z.infer<typeof textSettingsSchema>>({
-    resolver: zodResolver(textSettingsSchema),
-    defaultValues: {
-      text: 'JsonFlow Text Settings',
-    },
-  });
-
-  async function onTextSettingsSubmit() {
-    console.log(textSettingsForm.getValues());
-  }
+  const handleCancelClose = () => {
+    setShowConfirmDialog(false);
+  };
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="icon" tooltip="Settings">
-          <SettingsIcon />
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Settings</DialogTitle>
-          <DialogDescription>
-            Configure the settings for the flow.
-          </DialogDescription>
-        </DialogHeader>
-        <Tabs defaultValue="general">
-          <TabsList className="w-full justify-between">
-            <TabsTrigger value="general" className="w-full">
-              General
-            </TabsTrigger>
-            <TabsTrigger value="node" className="w-full">
-              Node
-            </TabsTrigger>
-            <TabsTrigger value="edge" className="w-full">
-              Edge
-            </TabsTrigger>
-            <TabsTrigger value="text" className="w-full">
-              Text
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="general">
-            <Form {...generalSettingsForm}>
-              <form
-                onSubmit={generalSettingsForm.handleSubmit(
-                  onGeneralSettingsSubmit,
+    <>
+      <Dialog open={isDialogOpen} onOpenChange={handleOpenChange}>
+        <DialogTrigger asChild>
+          <Button variant="outline" size="icon" tooltip="Settings">
+            <SettingsIcon />
+          </Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Settings</DialogTitle>
+            <DialogDescription>
+              Configure the settings for the flow.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="settings.backgroundVariant"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Background Pattern</FormLabel>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select background pattern" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Object.entries(BackgroundVariant).map(([key, value]) => (
+                          <SelectItem key={value} value={value}>{key}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Choose the background pattern style for the flow.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
                 )}
-                className="space-y-4"
-              >
-                <FormField
-                  control={generalSettingsForm.control}
-                  name="general"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>General</FormLabel>
+              />
+
+              <FormField
+                control={form.control}
+                name="settings.edgeType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Edge Type</FormLabel>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
                       <FormControl>
-                        <Input
-                          placeholder="Enter general settings"
-                          {...field}
-                        />
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select edge type">
+                            {field.value && EDGE_TYPE_NAMES[field.value]}
+                          </SelectValue>
+                        </SelectTrigger>
                       </FormControl>
-                      <FormDescription>
-                        General settings for the flow.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <div className="flex justify-end gap-2">
-                  <Button type="button" variant="secondary">
-                    <Copy /> Copy to clipboard
-                  </Button>
-                  <Button type="submit" onClick={onGeneralSettingsSubmit}>
-                    <Download /> Download
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </TabsContent>
-          <TabsContent value="node">
-            <Form {...nodeSettingsForm}>
-              <form
-                onSubmit={nodeSettingsForm.handleSubmit(onNodeSettingsSubmit)}
-                className="space-y-4"
-              >
-                <FormField
-                  control={nodeSettingsForm.control}
-                  name="node"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Node</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter node settings" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Node settings for the flow.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <div className="flex justify-end gap-2">
-                  <Button type="button" variant="secondary">
-                    <Copy /> Copy to clipboard
-                  </Button>
-                  <Button type="submit" onClick={onNodeSettingsSubmit}>
-                    <Download /> Download
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </TabsContent>
-          <TabsContent value="edge">
-            <Form {...edgeSettingsForm}>
-              <form
-                onSubmit={edgeSettingsForm.handleSubmit(onEdgeSettingsSubmit)}
-                className="space-y-4"
-              >
-                <FormField
-                  control={edgeSettingsForm.control}
-                  name="edge"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Edge</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter edge settings" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Edge settings for the flow.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <div className="flex justify-end gap-2">
-                  <Button type="button" variant="secondary">
-                    <Copy /> Copy to clipboard
-                  </Button>
-                  <Button type="submit" onClick={onEdgeSettingsSubmit}>
-                    <Download /> Download
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </TabsContent>
-          <TabsContent value="text">
-            <Form {...textSettingsForm}>
-              <form
-                onSubmit={textSettingsForm.handleSubmit(onTextSettingsSubmit)}
-                className="space-y-4"
-              >
-                <FormField
-                  control={textSettingsForm.control}
-                  name="text"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Text</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter text settings" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Text settings for the flow.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <div className="flex justify-end gap-2">
-                  <Button type="button" variant="secondary">
-                    <Copy /> Copy to clipboard
-                  </Button>
-                  <Button type="submit" onClick={onTextSettingsSubmit}>
-                    <Download /> Download
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </TabsContent>
-        </Tabs>
-      </DialogContent>
-    </Dialog>
+                      <SelectContent>
+                        {Object.entries(EDGE_TYPE_NAMES).map(([type, name]) => (
+                          <SelectItem key={type} value={type}>
+                            {name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Select the type of edge connection.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="settings.animated"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-base">Animated Edges</FormLabel>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Enable or disable edge animations
+                    </FormDescription>
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex justify-end gap-2 pt-4">
+                <Button type="button" variant="outline" onClick={handleResetDefaults}>
+                  Reset to Defaults
+                </Button>
+                <Button type="submit">
+                  Save Changes
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog 
+        open={showConfirmDialog} 
+        onOpenChange={(open) => !open && handleCancelClose()}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Unsaved Changes</DialogTitle>
+            <DialogDescription>
+              You have unsaved changes. Are you sure you want to close without saving?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="outline" onClick={handleCancelClose}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleCloseWithoutSaving}
+            >
+              Close Without Saving
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

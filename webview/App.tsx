@@ -5,10 +5,10 @@ import {
   ThemeProvider,
   useTheme,
 } from '@webview/components';
-import { generateTree, getRootId } from '@webview/helpers/generate-tree';
-import { useLayoutOrientation, useNodeVisibility } from '@webview/hooks';
+import { generateTree, getRootId } from '@webview/helpers';
+import { useFlowController } from '@webview/hooks';
 import type { TreeMap, Direction } from '@webview/types';
-import type { Connection, NodeTypes } from '@xyflow/react';
+import type { Connection, NodeTypes, Edge } from '@xyflow/react';
 import {
   Background,
   BackgroundVariant,
@@ -19,6 +19,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useCallback, useReducer, useEffect, useState } from 'react';
+import { DEFAULT_SETTINGS } from '@webview/components/CustomControls/Settings';
 
 // @ts-ignore
 // biome-ignore lint/correctness/noUndeclaredVariables: vscode is a global variable
@@ -73,7 +74,7 @@ const nodeTypes: NodeTypes = {
 
 function FlowComponent() {
   const stateData = vscode.getState();
-  const [treeState, dispatch] = useReducer(treeReducer, {
+  const [flowData, dispatch] = useReducer(treeReducer, {
     data: stateData?.data || null,
     treeData: stateData?.data ? generateTree(stateData.data) : null,
     orientation: (stateData?.orientation || 'TB') as Direction,
@@ -118,36 +119,34 @@ function FlowComponent() {
     return () => window.removeEventListener('message', messageHandler);
   }, []);
 
-  const treeRootId = treeState.treeData ? getRootId(treeState.treeData) : null;
-  const { onNodesChange, hiddenNodes } = useNodeVisibility(
-    treeState.treeData || {},
-  );
+  const treeRootId = flowData.treeData ? getRootId(flowData.treeData) : null;
   const {
+    nodes,
     edges,
     setEdges,
+    onNodesChange,
     onEdgesChange,
     currentDirection,
     rotateLayout,
-    nodes,
-  } = useLayoutOrientation({
-    treeData: treeState.treeData || {},
+  } = useFlowController({
+    treeData: flowData.treeData || {},
     treeRootId: treeRootId || '',
-    initialDirection: treeState.orientation,
+    initialDirection: flowData.orientation,
   });
-  const [isInteractive, setIsInteractive] = useState(true);
+  const [isDraggable, setIsDraggable] = useState(true);
   const { colorMode } = useTheme();
   const { zoom } = useViewport();
 
   const onConnect = useCallback(
-    (params: Connection) => setEdges((eds) => addEdge(params, eds)),
+    (params: Connection) => setEdges((eds: Edge[]) => addEdge(params, eds)),
     [setEdges],
   );
 
-  const handleRotate = useCallback(() => {
-    const nextDirection = rotateLayout(hiddenNodes);
+  const handleLayoutRotation = useCallback(() => {
+    const nextDirection = rotateLayout();
 
     vscode.setState({
-      data: treeState.data,
+      data: flowData.data,
       orientation: nextDirection,
     });
 
@@ -155,9 +154,13 @@ function FlowComponent() {
       command: 'updateConfig',
       orientation: nextDirection,
     });
-  }, [rotateLayout, hiddenNodes, treeState.data]);
+  }, [rotateLayout, flowData.data]);
 
-  if (!treeState.treeData) {
+  const settings = localStorage.getItem('settings') ? 
+    JSON.parse(localStorage.getItem('settings')!) : 
+    DEFAULT_SETTINGS;
+
+  if (!flowData.treeData) {
     return <Loading />;
   }
 
@@ -174,23 +177,23 @@ function FlowComponent() {
         onConnect={onConnect}
         fitView
         nodeTypes={nodeTypes}
-        nodesDraggable={isInteractive}
-        nodesConnectable={isInteractive}
-        elementsSelectable={isInteractive}
+        nodesDraggable={isDraggable}
+        nodesConnectable={isDraggable}
+        elementsSelectable={isDraggable}
         proOptions={{ hideAttribution: true }}
         minZoom={0.1}
         maxZoom={1.5}
       >
         <CustomControls
-          isInteractive={isInteractive}
-          setIsInteractive={setIsInteractive}
+          isDraggable={isDraggable}
+          setIsDraggable={setIsDraggable}
           currentDirection={currentDirection}
-          onRotate={handleRotate}
+          onLayoutRotate={handleLayoutRotation}
         />
         <Background
           bgColor={colorMode === 'light' ? '#fafafa' : '#0a0a0a'}
           gap={dynamicGap}
-          variant={BackgroundVariant.Lines}
+          variant={settings.backgroundVariant}
           style={{ strokeOpacity: 0.1 }}
         />
       </ReactFlow>

@@ -2,7 +2,9 @@ import { Position } from '@xyflow/react';
 import type { Node, Edge } from '@xyflow/react';
 import { layoutFromMap } from 'entitree-flex';
 import type { TreeMap, Direction } from '@webview/types';
-import { isHorizontal, isReversed } from '@webview/hooks';
+import { EdgeType } from '@webview/types';
+import { isHorizontal, isReversed } from './direction';
+import { DEFAULT_SETTINGS } from '@webview/components/CustomControls/Settings';
 
 const NODE_HEIGHT = 36;
 const MIN_NODE_WIDTH = 150;
@@ -143,12 +145,16 @@ const createEdge = (
   type: NodeType,
 ): Edge => {
   const { source, target } = getPositions(direction, type);
+  const settings = localStorage.getItem('settings') ? 
+    JSON.parse(localStorage.getItem('settings')!) : 
+    DEFAULT_SETTINGS;
+  
   return {
     id: `e${sourceNode}${targetNode}`,
     source: sourceNode,
     target: targetNode,
-    type: 'smoothstep',
-    animated: true,
+    type: settings.edgeType || EdgeType.SmoothStep,
+    animated: settings.animated,
     sourceHandle: source,
     targetHandle: target,
   };

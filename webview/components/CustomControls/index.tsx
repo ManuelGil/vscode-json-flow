@@ -6,26 +6,31 @@ import { ZoomControl } from './ZoomControl';
 import { InteractivityToggle } from './InteractivityToggle';
 import { GoToLine } from './GoToLine';
 import { Settings } from './Settings';
+import type { Direction } from '@webview/types';
+
 interface CustomControlsProps {
-  isInteractive: boolean;
-  setIsInteractive: (value: boolean) => void;
-  currentDirection: 'TB' | 'LR' | 'BT' | 'RL';
-  onRotate: () => void;
+  isDraggable: boolean;
+  setIsDraggable: (value: boolean) => void;
+  currentDirection: Direction;
+  onLayoutRotate: () => void;
 }
 
 export function CustomControls({
-  isInteractive,
-  setIsInteractive,
+  isDraggable,
+  setIsDraggable,
   currentDirection,
-  onRotate,
+  onLayoutRotate,
 }: CustomControlsProps) {
   return (
     <Panel position="top-center" className="flex gap-2">
-      <RotateLayout currentDirection={currentDirection} onRotate={onRotate} />
+      <RotateLayout
+        currentDirection={currentDirection}
+        onRotate={onLayoutRotate}
+      />
       <ZoomControl />
       <InteractivityToggle
-        isInteractive={isInteractive}
-        setIsInteractive={setIsInteractive}
+        isInteractive={isDraggable}
+        setIsInteractive={setIsDraggable}
       />
       <ImageDownload />
       <ModeToggle />

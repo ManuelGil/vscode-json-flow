@@ -45,3 +45,23 @@ export interface TreeNode {
 }
 
 export type TreeMap = Record<string, TreeNode>;
+
+export enum EdgeType {
+  Straight = 'straight',
+  Step = 'step',
+  SmoothStep = 'smoothstep',
+  SimpleBezier = 'simplebezier',
+}
+
+export const EDGE_TYPE_NAMES: Record<EdgeType, string> = {
+  [EdgeType.Straight]: 'Straight',
+  [EdgeType.Step]: 'Step',
+  [EdgeType.SmoothStep]: 'Smooth Step',
+  [EdgeType.SimpleBezier]: 'Simple Bezier',
+};
+
+export interface EdgeSettings {
+  edgeType: EdgeType;
+  animated: boolean;
+  edgeColor: string;
+}

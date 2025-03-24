@@ -7,6 +7,26 @@ import type { CustomNodeData } from '@webview/types';
 
 const { Top, Bottom, Left, Right } = Position;
 
+const colors = {
+  node: [
+    'bg-neutral-50 dark:bg-neutral-900',
+    'border-neutral-200 dark:border-neutral-800',
+    'hover:border-neutral-300 dark:hover:border-neutral-700',
+    'focus:ring-neutral-200 dark:focus:ring-neutral-800'
+  ],
+  nodeSelected: 'border-neutral-400 dark:border-neutral-600',
+  handle: [
+    'bg-neutral-50 dark:bg-neutral-900',
+    'border-neutral-300 dark:border-neutral-700',
+    'hover:border-neutral-400 dark:hover:border-neutral-600'
+  ],
+  toggleButton: [
+    'border-neutral-200 dark:border-neutral-800 bg-neutral-200 dark:bg-neutral-800'
+  ],
+  label: 'text-neutral-700 dark:text-neutral-300',
+  icon: 'text-neutral-600 dark:text-neutral-400'
+};
+
 interface CustomNodeProps {
   data: CustomNodeData;
   selected?: boolean;
@@ -73,13 +93,10 @@ export const CustomNode = memo<CustomNodeProps>(({ data, selected }) => {
     <div
       tabIndex={0}
       className={cn(
-        'selectable relative inline-flex h-9',
-        'bg-neutral-50 dark:bg-neutral-900 text-sm rounded-lg border',
-        'border-neutral-200 dark:border-neutral-800 shadow-sm',
-        'hover:border-neutral-300 dark:hover:border-neutral-700',
-        'focus:ring-2 focus:ring-neutral-200 dark:focus:ring-neutral-800 focus:ring-offset-0',
-        'transition-all duration-200',
-        selected && 'border-neutral-400 dark:border-neutral-600',
+        'selectable relative inline-flex h-9 text-sm rounded-lg border shadow-sm',
+        'focus:ring-2 focus:ring-offset-0 transition-all duration-200',
+        ...colors.node,
+        selected && colors.nodeSelected,
       )}
     >
       {hasChildren && (
@@ -88,9 +105,8 @@ export const CustomNode = memo<CustomNodeProps>(({ data, selected }) => {
           position={getSourcePosition('children')}
           id={getSourcePosition('children')}
           className={cn(
-            '!absolute w-2 h-2 bg-neutral-50 dark:bg-neutral-900 border',
-            'border-neutral-300 dark:border-neutral-700',
-            'hover:border-neutral-400 dark:hover:border-neutral-600',
+            '!absolute w-2 h-2 border',
+            ...colors.handle,
             getSourcePosition('children') === Bottom && '!bottom-[0px]',
             getSourcePosition('children') === Top && '!top-[0px]',
             getSourcePosition('children') === Left && '!left-[0px]',
@@ -105,9 +121,8 @@ export const CustomNode = memo<CustomNodeProps>(({ data, selected }) => {
           position={getSourcePosition('spouses')}
           id={getSourcePosition('spouses')}
           className={cn(
-            '!absolute w-2 h-2 bg-neutral-50 dark:bg-neutral-900 border',
-            'border-neutral-300 dark:border-neutral-700',
-            'hover:border-neutral-400 dark:hover:border-neutral-600',
+            '!absolute w-2 h-2 border',
+            ...colors.handle,
             getSourcePosition('spouses') === Bottom && '!bottom-[0px]',
             getSourcePosition('spouses') === Top && '!top-[0px]',
             getSourcePosition('spouses') === Left && '!left-[0px]',
@@ -122,9 +137,8 @@ export const CustomNode = memo<CustomNodeProps>(({ data, selected }) => {
           position={getSourcePosition('siblings')}
           id={getSourcePosition('siblings')}
           className={cn(
-            '!absolute w-2 h-2 bg-neutral-50 dark:bg-neutral-900 border',
-            'border-neutral-300 dark:border-neutral-700',
-            'hover:border-neutral-400 dark:hover:border-neutral-600',
+            '!absolute w-2 h-2 border',
+            ...colors.handle,
             getSourcePosition('siblings') === Bottom && '!bottom-[0px]',
             getSourcePosition('siblings') === Top && '!top-[0px]',
             getSourcePosition('siblings') === Left && '!left-[0px]',
@@ -139,9 +153,8 @@ export const CustomNode = memo<CustomNodeProps>(({ data, selected }) => {
           position={getTargetPosition()}
           id={getTargetPosition()}
           className={cn(
-            '!absolute w-2 h-2 bg-neutral-50 dark:bg-neutral-900 border',
-            'border-neutral-300 dark:border-neutral-700',
-            'hover:border-neutral-400 dark:hover:border-neutral-600',
+            '!absolute w-2 h-2 border',
+            ...colors.handle,
             getTargetPosition() === Bottom && '!bottom-[0px]',
             getTargetPosition() === Top && '!top-[0px]',
             getTargetPosition() === Left && '!left-[0px]',
@@ -151,7 +164,7 @@ export const CustomNode = memo<CustomNodeProps>(({ data, selected }) => {
       )}
       <div className="flex h-full gap-2">
         <div className="flex items-center px-4">
-          <div className="font-medium text-neutral-700 dark:text-neutral-300 truncate">
+          <div className={cn('font-medium truncate', colors.label)}>
             {label}
           </div>
         </div>
@@ -167,16 +180,13 @@ export const CustomNode = memo<CustomNodeProps>(({ data, selected }) => {
             tooltip="Toggle children"
             variant="ghost"
             size="icon"
-            className={cn(
-              'h-full w-9 rounded-none rounded-r-lg p-0',
-              'border-neutral-200 dark:border-neutral-800 bg-neutral-200 dark:bg-neutral-800',
-            )}
+            className={cn('h-full w-9 rounded-none rounded-r-lg p-0', ...colors.toggleButton)}
             onClick={() => onToggleChildren(id)}
           >
             {isCollapsed ? (
-              <EyeOff className="text-neutral-600 dark:text-neutral-400" />
+              <EyeOff className={colors.icon} />
             ) : (
-              <Eye className="text-neutral-600 dark:text-neutral-400" />
+              <Eye className={colors.icon} />
             )}
           </Button>
         )}
