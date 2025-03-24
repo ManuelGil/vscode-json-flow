@@ -192,6 +192,7 @@ function FlowComponent() {
         />
         <Background
           bgColor={colorMode === 'light' ? '#fafafa' : '#0a0a0a'}
+          color={colorMode === 'light' ? '#404040' : '#d4d4d4'}
           gap={dynamicGap}
           variant={settings.backgroundVariant}
           style={{ strokeOpacity: 0.1 }}
