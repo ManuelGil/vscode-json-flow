@@ -1,30 +1,13 @@
-@import './themes/neutral.css';
-@import './themes/blue.css';
-@import './themes/green.css';
-@import './themes/orange.css';
-@import './themes/red.css';
-@import './themes/rose.css';
-@import './themes/slate.css';
-@import './themes/stone.css';
-@import './themes/violet.css';
-@import './themes/yellow.css';
-@import './themes/zinc.css';
-@import './themes/gray.css';
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 @layer base {
-	:root {
+	.red {
 		--background: 0 0% 100%;
 		--foreground: 0 0% 3.9%;
 		--card: 0 0% 100%;
 		--card-foreground: 0 0% 3.9%;
 		--popover: 0 0% 100%;
 		--popover-foreground: 0 0% 3.9%;
-		--primary: 0 0% 9%;
-		--primary-foreground: 0 0% 98%;
+		--primary: 0 72.2% 50.6%;
+		--primary-foreground: 0 85.7% 97.3%;
 		--secondary: 0 0% 96.1%;
 		--secondary-foreground: 0 0% 9%;
 		--muted: 0 0% 96.1%;
@@ -35,23 +18,24 @@
 		--destructive-foreground: 0 0% 98%;
 		--border: 0 0% 89.8%;
 		--input: 0 0% 89.8%;
-		--ring: 0 0% 3.9%;
+		--ring: 0 72.2% 50.6%;
+		--radius: 0.5rem;
 		--chart-1: 12 76% 61%;
 		--chart-2: 173 58% 39%;
 		--chart-3: 197 37% 24%;
 		--chart-4: 43 74% 66%;
 		--chart-5: 27 87% 67%;
-		--radius: 0.5rem;
 	}
-	.dark {
+
+	.red.dark {
 		--background: 0 0% 3.9%;
 		--foreground: 0 0% 98%;
 		--card: 0 0% 3.9%;
 		--card-foreground: 0 0% 98%;
 		--popover: 0 0% 3.9%;
 		--popover-foreground: 0 0% 98%;
-		--primary: 0 0% 98%;
-		--primary-foreground: 0 0% 9%;
+		--primary: 0 72.2% 50.6%;
+		--primary-foreground: 0 85.7% 97.3%;
 		--secondary: 0 0% 14.9%;
 		--secondary-foreground: 0 0% 98%;
 		--muted: 0 0% 14.9%;
@@ -62,27 +46,11 @@
 		--destructive-foreground: 0 0% 98%;
 		--border: 0 0% 14.9%;
 		--input: 0 0% 14.9%;
-		--ring: 0 0% 83.1%;
+		--ring: 0 72.2% 50.6%;
 		--chart-1: 220 70% 50%;
 		--chart-2: 160 60% 45%;
 		--chart-3: 30 80% 55%;
 		--chart-4: 280 65% 60%;
 		--chart-5: 340 75% 55%;
 	}
-}
-
-@layer base {
-	* {
-		@apply border-border;
-	}
-	body {
-		@apply bg-background text-foreground;
-	}
-}
-
-.react-flow__edge:hover path, 
-.react-flow__edge:focus path {
-	filter: brightness(1.5);
-	transition: all 0.2s ease;
-	stroke-width: 2px;
 }

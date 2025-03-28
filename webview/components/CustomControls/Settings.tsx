@@ -27,28 +27,34 @@ import { z } from 'zod';
 import { EdgeType, EDGE_TYPE_NAMES } from '@webview/types';
 import { BackgroundVariant } from '@xyflow/react';
 import { useState } from 'react';
+import { colors, type Color, colorClasses } from '@webview/themes/colors';
+import { useTheme } from '@webview/components/ThemeProvider';
 
 interface Settings {
   edgeType: EdgeType;
   animated: boolean;
   backgroundVariant: BackgroundVariant;
+  color: Color;
 }
 
 const settingsSchema = z.object({
   settings: z.object({
     edgeType: z.nativeEnum(EdgeType),
     animated: z.boolean(),
-    backgroundVariant: z.nativeEnum(BackgroundVariant)
+    backgroundVariant: z.nativeEnum(BackgroundVariant),
+    color: z.enum(colors)
   })
 });
 
 export const DEFAULT_SETTINGS: Settings = {
   edgeType: EdgeType.SmoothStep,
   animated: true,
-  backgroundVariant: BackgroundVariant.Lines
+  backgroundVariant: BackgroundVariant.Lines,
+  color: 'neutral'
 };
 
 export function Settings() {
+  const { setColor } = useTheme();
   const form = useForm<z.infer<typeof settingsSchema>>({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
@@ -83,6 +89,7 @@ export function Settings() {
 
   const onSubmit = (data: z.infer<typeof settingsSchema>) => {
     localStorage.setItem('settings', JSON.stringify(data.settings));
+    setColor(data.settings.color);
     form.reset({ settings: data.settings });
   };
 
@@ -117,6 +124,41 @@ export function Settings() {
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="settings.color"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Theme Color</FormLabel>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select theme color" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {colors.map((color) => (
+                          <SelectItem key={color} value={color}>
+                            <div className="flex items-center gap-2 justify-between">
+                              <span>{color.charAt(0).toUpperCase() + color.slice(1)}</span>
+                              <div className={`h-4 w-4 rounded-full ${colorClasses[color]}`} />
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Choose the color theme for the application.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <FormField
                 control={form.control}
                 name="settings.backgroundVariant"
