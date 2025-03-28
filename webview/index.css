@@ -86,3 +86,7 @@
 	transition: all 0.2s ease;
 	stroke-width: 2px;
 }
+
+body {
+	padding: 0;
+}

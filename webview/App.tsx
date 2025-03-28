@@ -35,14 +35,14 @@ interface TreeState {
 
 type TreeAction =
   | {
-      type: 'UPDATE';
-      payload: {
-        data: any;
-        orientation: Direction;
-        path: string;
-        fileName: string;
-      };
-    }
+    type: 'UPDATE';
+    payload: {
+      data: any;
+      orientation: Direction;
+      path: string;
+      fileName: string;
+    };
+  }
   | { type: 'CLEAR' };
 
 function treeReducer(state: TreeState, action: TreeAction): TreeState {
@@ -156,8 +156,8 @@ function FlowComponent() {
     });
   }, [rotateLayout, flowData.data]);
 
-  const settings = localStorage.getItem('settings') ? 
-    JSON.parse(localStorage.getItem('settings')!) : 
+  const settings = localStorage.getItem('settings') ?
+    JSON.parse(localStorage.getItem('settings')!) :
     DEFAULT_SETTINGS;
 
   if (!flowData.treeData) {
