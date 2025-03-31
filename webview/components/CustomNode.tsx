@@ -9,22 +9,17 @@ const { Top, Bottom, Left, Right } = Position;
 
 const colors = {
   node: [
-    'bg-neutral-50 dark:bg-neutral-900',
-    'border-neutral-200 dark:border-neutral-800',
-    'hover:border-neutral-300 dark:hover:border-neutral-700',
-    'focus:ring-neutral-200 dark:focus:ring-neutral-800'
+    'bg-card border-border hover:border-muted focus:ring-ring',
   ],
-  nodeSelected: 'border-neutral-400 dark:border-neutral-600',
+  nodeSelected: 'border-primary',
   handle: [
-    'bg-neutral-50 dark:bg-neutral-900',
-    'border-neutral-300 dark:border-neutral-700',
-    'hover:border-neutral-400 dark:hover:border-neutral-600'
+    'bg-popover border-muted hover:border-primary',
   ],
   toggleButton: [
-    'border-neutral-200 dark:border-neutral-800 bg-neutral-200 dark:bg-neutral-800'
+    'border-muted bg-secondary hover:bg-secondary/80'
   ],
-  label: 'text-neutral-700 dark:text-neutral-300',
-  icon: 'text-neutral-600 dark:text-neutral-400'
+  label: 'text-card-foreground',
+  icon: 'text-muted-foreground'
 };
 
 interface CustomNodeProps {

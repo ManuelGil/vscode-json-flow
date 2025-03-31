@@ -195,7 +195,7 @@ function FlowComponent() {
           variant={settings.backgroundVariant}
           style={{ strokeOpacity: 0.1 }}
           className='bg-background'
-          patternClassName='!stroke-foreground'
+          patternClassName='!stroke-foreground/30'
         />
       </ReactFlow>
     </div>
