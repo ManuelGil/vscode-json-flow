@@ -1,5 +1,3 @@
-import { existsSync, mkdirSync, writeFileSync } from 'fs';
-import { dirname, join } from 'path';
 import { ExtensionContext, Range, Uri, l10n, window, workspace } from 'vscode';
 import { ExtensionConfig } from '../configs';
 import { FileType, isFileTypeSupported, parseJSONContent } from '../helpers';
@@ -20,16 +18,6 @@ export class JsonController {
   // -----------------------------------------------------------------
   // Properties
   // -----------------------------------------------------------------
-
-  // Public properties
-  /**
-   * The image folder.
-   *
-   * @public
-   * @memberof JsonController
-   * @type {string}
-   */
-  static imageFolder: string;
 
   // Private properties
   /**
