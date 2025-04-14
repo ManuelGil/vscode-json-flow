@@ -34,7 +34,7 @@ export function CustomControls({
       />
       <ImageDownload />
       <ModeToggle />
-      <GoToLine />
+      {/* <GoToLine /> */}
       <Settings />
     </Panel>
   );
