@@ -7,9 +7,7 @@ import { isHorizontal, isReversed } from './direction';
 import { DEFAULT_SETTINGS } from '@webview/components/CustomControls/Settings';
 
 const NODE_HEIGHT = 36;
-const MIN_NODE_WIDTH = 150;
-const PADDING = 32;
-const CHAR_WIDTH = 8;
+const NODE_WIDTH = 160;
 
 const spacing = {
   firstDegreeSpacing: 30,
@@ -18,12 +16,6 @@ const spacing = {
   secondDegreeSpacing: 60,
   sourceTargetSpacing: 60,
 } as const;
-
-const calculateNodeWidth = (text: string): number => {
-  const textWidth = text.length * CHAR_WIDTH;
-  const width = textWidth + PADDING;
-  return Math.max(width, MIN_NODE_WIDTH);
-};
 
 const Orientation = {
   vertical: 'vertical',
@@ -39,17 +31,6 @@ interface EntitreeNode {
   y: number;
   isSpouse?: boolean;
   isSibling?: boolean;
-}
-
-interface EntitreeEdge {
-  source: {
-    id: string;
-  };
-  target: {
-    id: string;
-    isSpouse?: boolean;
-    isSibling?: boolean;
-  };
 }
 
 interface EntitreeSettings {
@@ -202,10 +183,6 @@ export const layoutElements = (
     return { nodes: [], edges: [] };
   }
 
-  const maxNodeWidth = Math.max(
-    ...Object.values(tree).map((node) => calculateNodeWidth(node.name)),
-  );
-
   try {
     const { nodes: entitreeNodes, rels: entitreeEdges } = layoutFromMap(
       rootId,
@@ -213,7 +190,7 @@ export const layoutElements = (
       {
         ...baseSettings,
         ...spacing,
-        nodeWidth: maxNodeWidth,
+        nodeWidth: NODE_WIDTH,
         orientation: isHorizontal(direction)
           ? Orientation.horizontal
           : Orientation.vertical,
