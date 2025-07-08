@@ -457,6 +457,22 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   // Register the commands
+  const disposableAboutUs = vscode.commands.registerCommand(
+    `${EXTENSION_ID}.feedback.aboutUs`,
+    () => {
+      // Check if the extension is enabled
+      if (!config.enable) {
+        const message = vscode.l10n.t(
+          '{0} is disabled in settings. Enable it to use its features',
+          [EXTENSION_NAME],
+        );
+        vscode.window.showErrorMessage(message);
+        return;
+      }
+
+      feedbackProvider.controller.aboutUs();
+    },
+  );
   const disposableReportIssues = vscode.commands.registerCommand(
     `${EXTENSION_ID}.feedback.reportIssues`,
     () => {
@@ -492,6 +508,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     feedbackTreeView,
+    disposableAboutUs,
     disposableReportIssues,
     disposableRateUs,
   );

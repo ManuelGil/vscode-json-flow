@@ -1,6 +1,10 @@
 import { Uri, env } from 'vscode';
 
-import { EXTENSION_BUGS_URL, EXTENSION_MARKETPLACE_URL } from '../configs';
+import {
+  EXTENSION_BUGS_URL,
+  EXTENSION_MARKETPLACE_URL,
+  EXTENSION_WEBSITE_URL,
+} from '../configs';
 
 /**
  * The FeedbackController class.
@@ -19,26 +23,21 @@ export class FeedbackController {
 
   // Public methods
   /**
-   * The reportIssues method.
-   *
-   * @function reportIssues
-   * @public
-   * @memberof FeedbackController
-   *
-   * @returns {void} - No return value
+   * Opens the extension's marketplace page in the browser.
+   */
+  aboutUs(): void {
+    env.openExternal(Uri.parse(EXTENSION_WEBSITE_URL));
+  }
+
+  /**
+   * Opens the extension's repository issues page in the browser.
    */
   reportIssues(): void {
     env.openExternal(Uri.parse(EXTENSION_BUGS_URL));
   }
 
   /**
-   * The rateUs method.
-   *
-   * @function rateUs
-   * @public
-   * @memberof FeedbackController
-   *
-   * @returns {void} - No return value
+   * Opens the review page for the extension in the marketplace.
    */
   rateUs(): void {
     env.openExternal(

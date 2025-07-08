@@ -156,6 +156,10 @@ export class FeedbackProvider implements TreeDataProvider<NodeModel> {
    */
   private getFeedbacks(): NodeModel[] {
     return [
+      new NodeModel(l10n.t('About Us'), new ThemeIcon('info'), {
+        title: 'About Us',
+        command: `${EXTENSION_ID}.feedback.aboutUs`,
+      }),
       new NodeModel(l10n.t('Report Issues'), new ThemeIcon('bug'), {
         title: 'Report Issues',
         command: `${EXTENSION_ID}.feedback.reportIssues`,

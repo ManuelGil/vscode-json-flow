@@ -83,6 +83,18 @@ export const EXTENSION_REPOSITORY_URL: string = `https://github.com/${GITHUB_USE
 export const EXTENSION_MARKETPLACE_URL: string = `https://marketplace.visualstudio.com/items?itemName=${EXTENSION_USER_PUBLISHER}.${EXTENSION_NAME}`;
 
 /**
+ * EXTENSION_WEBSITE_URL: The website URL of the extension.
+ * @type {string}
+ * @public
+ * @memberof Constants
+ * @example
+ * console.log(EXTENSION_WEBSITE_URL);
+ *
+ * @returns {string} - The website URL of the extension
+ */
+export const EXTENSION_WEBSITE_URL: string = `https://json-flow.com`;
+
+/**
  * EXTENSION_BUGS_URL: The bugs URL of the extension.
  * @type {string}
  * @public

@@ -246,7 +246,8 @@ export class TransformController {
         }
 
         // Create an instance of JSONInput
-        const jsonInput = jsonInputForTargetLanguage(targetLanguage);
+        // biome-ignore lint/suspicious/noExplicitAny: this is necessary for the quicktype library
+        const jsonInput = jsonInputForTargetLanguage(targetLanguage as any);
 
         // Add the JSON content to the JSONInput instance
         await jsonInput.addSource({
@@ -261,7 +262,8 @@ export class TransformController {
         // Generate the target language
         const { lines } = await quicktype({
           inputData,
-          lang: targetLanguage,
+          // biome-ignore lint/suspicious/noExplicitAny: this is necessary for the quicktype library
+          lang: targetLanguage as any,
         });
 
         // Open the JSON document
@@ -378,7 +380,8 @@ export class TransformController {
     }
 
     // Create an instance of JSONInput
-    const jsonInput = jsonInputForTargetLanguage(targetLanguage);
+    // biome-ignore lint/suspicious/noExplicitAny: this is necessary for the quicktype library
+    const jsonInput = jsonInputForTargetLanguage(targetLanguage as any);
 
     // Add the JSON content to the JSONInput instance
     await jsonInput.addSource({
@@ -393,7 +396,8 @@ export class TransformController {
     // Generate the target language
     const { lines } = await quicktype({
       inputData,
-      lang: targetLanguage,
+      // biome-ignore lint/suspicious/noExplicitAny: this is necessary for the quicktype library
+      lang: targetLanguage as any,
     });
 
     // Open the JSON document
