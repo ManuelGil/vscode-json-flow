@@ -5,7 +5,7 @@ import { RotateLayout } from './RotateLayout';
 import { ZoomControl } from './ZoomControl';
 import { InteractivityToggle } from './InteractivityToggle';
 import { GoToLine } from './GoToLine';
-import { Settings } from './Settings';
+import { Settings, DEFAULT_SETTINGS } from './Settings';
 import type { Direction } from '@webview/types';
 
 interface CustomControlsProps {
@@ -13,6 +13,7 @@ interface CustomControlsProps {
   setIsDraggable: (value: boolean) => void;
   currentDirection: Direction;
   onLayoutRotate: () => void;
+  onSettingsChange: (newSettings: typeof DEFAULT_SETTINGS) => void;
 }
 
 export function CustomControls({
@@ -20,6 +21,7 @@ export function CustomControls({
   setIsDraggable,
   currentDirection,
   onLayoutRotate,
+  onSettingsChange,
 }: CustomControlsProps) {
   return (
     <Panel position="top-center" className="flex gap-2">
@@ -35,7 +37,7 @@ export function CustomControls({
       <ImageDownload />
       <ModeToggle />
       {/* <GoToLine /> */}
-      <Settings />
+      <Settings onSettingsChange={onSettingsChange} />
     </Panel>
   );
 }

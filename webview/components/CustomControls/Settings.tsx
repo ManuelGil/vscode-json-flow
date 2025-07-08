@@ -53,7 +53,11 @@ export const DEFAULT_SETTINGS: Settings = {
   color: 'neutral'
 };
 
-export function Settings() {
+interface SettingsProps {
+  onSettingsChange: (newSettings: Settings) => void;
+}
+
+export function Settings({ onSettingsChange }: SettingsProps) {
   const { setColor } = useTheme();
   const form = useForm<z.infer<typeof settingsSchema>>({
     resolver: zodResolver(settingsSchema),
@@ -90,7 +94,9 @@ export function Settings() {
   const onSubmit = (data: z.infer<typeof settingsSchema>) => {
     localStorage.setItem('settings', JSON.stringify(data.settings));
     setColor(data.settings.color);
+    onSettingsChange(data.settings);
     form.reset({ settings: data.settings });
+    setIsDialogOpen(false);
   };
 
   const handleResetDefaults = () => {
