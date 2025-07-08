@@ -1,7 +1,7 @@
 {
 	"name": "vscode-json-flow",
 	"displayName": "JSON Flow",
-	"description": "Transform JSON into interactive graphs in VSCode - Free & Open Source",
+	"description": "Transform JSON and structured data into interactive graphs in VSCode and all VSCode-based editors (VSCodium, WindSurf, Cursor, and more) - Free & Open Source",
 	"version": "1.13.0",
 	"icon": "icon.png",
 	"license": "MIT",
@@ -357,13 +357,13 @@
 					"id": "jsonFlow.filesView",
 					"name": "%jsonFlow.filesView%",
 					"visibility": "visible",
-					"icon": "json"
+					"icon": "$(file-directory)"
 				},
 				{
 					"id": "jsonFlow.feedbackView",
 					"name": "%jsonFlow.feedbackView%",
 					"visibility": "visible",
-					"icon": "feedback"
+					"icon": "$(file-feedback)"
 				}
 			]
 		},
@@ -415,7 +415,7 @@
 		"ini": "^5.0.0",
 		"json5": "^2.2.3",
 		"lucide-react": "^0.525.0",
-		"quicktype-core": "^23.2.6",
+		"quicktype-core": "23.2.5",
 		"react": "^19.1.0",
 		"react-colorful": "^5.6.1",
 		"react-dom": "^19.1.0",
