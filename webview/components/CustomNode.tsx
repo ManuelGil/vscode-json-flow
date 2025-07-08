@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { cn } from '@webview/lib';
-import { Badge, Button } from './ui';
+import { Badge, Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui';
 import { Eye, EyeOff } from 'lucide-react';
 import type { CustomNodeData } from '@webview/types';
 
@@ -85,107 +85,129 @@ export const CustomNode = memo<CustomNodeProps>(({ data, selected }) => {
   const childrenCount = data?.children?.length || 0;
 
   return (
-    <div
-      tabIndex={0}
-      className={cn(
-        'selectable relative inline-flex h-9 text-sm rounded-lg border shadow-sm',
-        'focus:ring-2 focus:ring-offset-0 transition-all duration-200',
-        ...colors.node,
-        selected && colors.nodeSelected,
-      )}
-    >
-      {hasChildren && (
-        <Handle
-          type="source"
-          position={getSourcePosition('children')}
-          id={getSourcePosition('children')}
-          className={cn(
-            '!absolute w-2 h-2 border',
-            ...colors.handle,
-            getSourcePosition('children') === Bottom && '!bottom-[0px]',
-            getSourcePosition('children') === Top && '!top-[0px]',
-            getSourcePosition('children') === Left && '!left-[0px]',
-            getSourcePosition('children') === Right && '!right-[0px]',
-          )}
-        />
-      )}
+    <TooltipProvider delayDuration={300}>
+      <div
+        tabIndex={0}
+        className={cn(
+          'selectable relative inline-flex h-9 text-sm rounded-lg border shadow-sm w-40',
+          'focus:ring-2 focus:ring-offset-0 transition-all duration-200',
+          ...colors.node,
+          selected && colors.nodeSelected,
+        )}
+      >
+        {hasChildren && (
+          <Handle
+            type="source"
+            position={getSourcePosition('children')}
+            id={getSourcePosition('children')}
+            className={cn(
+              '!absolute w-2 h-2 border',
+              ...colors.handle,
+              getSourcePosition('children') === Bottom && '!bottom-[0px]',
+              getSourcePosition('children') === Top && '!top-[0px]',
+              getSourcePosition('children') === Left && '!left-[0px]',
+              getSourcePosition('children') === Right && '!right-[0px]',
+            )}
+          />
+        )}
 
-      {hasSpouses && (
-        <Handle
-          type="source"
-          position={getSourcePosition('spouses')}
-          id={getSourcePosition('spouses')}
-          className={cn(
-            '!absolute w-2 h-2 border',
-            ...colors.handle,
-            getSourcePosition('spouses') === Bottom && '!bottom-[0px]',
-            getSourcePosition('spouses') === Top && '!top-[0px]',
-            getSourcePosition('spouses') === Left && '!left-[0px]',
-            getSourcePosition('spouses') === Right && '!right-[0px]',
-          )}
-        />
-      )}
+        {hasSpouses && (
+          <Handle
+            type="source"
+            position={getSourcePosition('spouses')}
+            id={getSourcePosition('spouses')}
+            className={cn(
+              '!absolute w-2 h-2 border',
+              ...colors.handle,
+              getSourcePosition('spouses') === Bottom && '!bottom-[0px]',
+              getSourcePosition('spouses') === Top && '!top-[0px]',
+              getSourcePosition('spouses') === Left && '!left-[0px]',
+              getSourcePosition('spouses') === Right && '!right-[0px]',
+            )}
+          />
+        )}
 
-      {hasSiblings && (
-        <Handle
-          type="source"
-          position={getSourcePosition('siblings')}
-          id={getSourcePosition('siblings')}
-          className={cn(
-            '!absolute w-2 h-2 border',
-            ...colors.handle,
-            getSourcePosition('siblings') === Bottom && '!bottom-[0px]',
-            getSourcePosition('siblings') === Top && '!top-[0px]',
-            getSourcePosition('siblings') === Left && '!left-[0px]',
-            getSourcePosition('siblings') === Right && '!right-[0px]',
-          )}
-        />
-      )}
+        {hasSiblings && (
+          <Handle
+            type="source"
+            position={getSourcePosition('siblings')}
+            id={getSourcePosition('siblings')}
+            className={cn(
+              '!absolute w-2 h-2 border',
+              ...colors.handle,
+              getSourcePosition('siblings') === Bottom && '!bottom-[0px]',
+              getSourcePosition('siblings') === Top && '!top-[0px]',
+              getSourcePosition('siblings') === Left && '!left-[0px]',
+              getSourcePosition('siblings') === Right && '!right-[0px]',
+            )}
+          />
+        )}
 
-      {!isRootNode && (
-        <Handle
-          type="target"
-          position={getTargetPosition()}
-          id={getTargetPosition()}
-          className={cn(
-            '!absolute w-2 h-2 border',
-            ...colors.handle,
-            getTargetPosition() === Bottom && '!bottom-[0px]',
-            getTargetPosition() === Top && '!top-[0px]',
-            getTargetPosition() === Left && '!left-[0px]',
-            getTargetPosition() === Right && '!right-[0px]',
-          )}
-        />
-      )}
-      <div className="flex h-full gap-2">
-        <div className="flex items-center px-4">
-          <div className={cn('font-medium truncate', colors.label)}>
-            {label}
+        {!isRootNode && (
+          <Handle
+            type="target"
+            position={getTargetPosition()}
+            id={getTargetPosition()}
+            className={cn(
+              '!absolute w-2 h-2 border',
+              ...colors.handle,
+              getTargetPosition() === Bottom && '!bottom-[0px]',
+              getTargetPosition() === Top && '!top-[0px]',
+              getTargetPosition() === Left && '!left-[0px]',
+              getTargetPosition() === Right && '!right-[0px]',
+            )}
+          />
+        )}
+        <div className="flex h-full items-center w-full justify-between">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center px-4 overflow-hidden flex-grow justify-center">
+                <div
+                  className={cn(
+                    'font-medium truncate whitespace-nowrap max-w-64',
+                    colors.label,
+                  )}
+                >
+                  {label}
+                </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent
+              className="max-w-sm overflow-auto break-words whitespace-normal"
+            >
+              {label}
+            </TooltipContent>
+          </Tooltip>
+
+          <div className="flex items-center shrink-0 h-full">
+            {childrenCount > 1 && (
+              <div className="flex items-center pr-1">
+                <Badge variant="secondary" className="shrink-0 text-xs">
+                  {childrenCount}
+                </Badge>
+              </div>
+            )}
+            {hasChildren && onToggleChildren && (
+              <Button
+                tooltip="Toggle children"
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  'h-full w-9 rounded-none rounded-r-lg p-0 shrink-0',
+                  ...colors.toggleButton,
+                )}
+                onClick={() => onToggleChildren(id)}
+              >
+                {isCollapsed ? (
+                  <EyeOff className={colors.icon} />
+                ) : (
+                  <Eye className={colors.icon} />
+                )}
+              </Button>
+            )}
           </div>
         </div>
-        {childrenCount > 1 && (
-          <div className="flex items-center">
-            <Badge variant="secondary" className="shrink-0 text-xs">
-              {childrenCount}
-            </Badge>
-          </div>
-        )}
-        {hasChildren && onToggleChildren && (
-          <Button
-            tooltip="Toggle children"
-            variant="ghost"
-            size="icon"
-            className={cn('h-full w-9 rounded-none rounded-r-lg p-0', ...colors.toggleButton)}
-            onClick={() => onToggleChildren(id)}
-          >
-            {isCollapsed ? (
-              <EyeOff className={colors.icon} />
-            ) : (
-              <Eye className={colors.icon} />
-            )}
-          </Button>
-        )}
       </div>
-    </div>
+    </TooltipProvider>
   );
 });
