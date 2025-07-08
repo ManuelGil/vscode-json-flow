@@ -1,9 +1,9 @@
 {
 	"jsonFlow.enable": "Activer JSON Flow",
-	"jsonFlow.files.includedFilePatterns": "Modèles globaux à inclure dans le paquet. La valeur par défaut est json et jsonc",
-	"jsonFlow.files.excludedFilePatterns": "Modèles globaux à exclure du paquet. La valeur par défaut est node_modules, dist, out, build et tout fichier caché",
-	"jsonFlow.files.includeFilePath": "Afficher le chemin du fichier dans le nom de la liste des fichiers générés",
-	"jsonFlow.graph.layoutOrientation": "Direction de la disposition du graphique. TB pour de haut en bas et LR pour de gauche à droite",
+	"jsonFlow.files.includedFilePatterns": "Modèles glob à inclure dans le package. Par défaut : json et jsonc.",
+	"jsonFlow.files.excludedFilePatterns": "Modèles glob à exclure du package. Par défaut : node_modules, dist, out, build et fichiers cachés.",
+	"jsonFlow.files.includeFilePath": "Afficher le chemin du fichier à côté du nom dans la liste des fichiers générés.",
+	"jsonFlow.graph.layoutOrientation": "Orientation du graphique. TB pour haut-bas, LR pour gauche-droite.",
 	"jsonFlow.files.refreshList": "Actualiser la liste",
 	"jsonFlow.files.openFile": "Ouvrir le fichier",
 	"jsonFlow.files.convertToJson": "Convertir en JSON",
@@ -11,12 +11,12 @@
 	"jsonFlow.files.convertToType": "Convertir en type ou structure",
 	"jsonFlow.files.convertPartialToType": "Convertir la sélection en type ou structure",
 	"jsonFlow.files.copyContent": "Copier le contenu dans le presse-papiers",
-	"jsonFlow.files.copyContentAsJson": "Copier le contenu en tant que JSON",
-	"jsonFlow.files.copyContentPartialAsJson": "Copier la sélection en tant que JSON",
+	"jsonFlow.files.copyContentAsJson": "Copier le contenu comme JSON",
+	"jsonFlow.files.copyContentPartialAsJson": "Copier la sélection comme JSON",
 	"jsonFlow.files.getFileProperties": "Obtenir les propriétés du fichier",
 	"jsonFlow.json.showPreview": "Afficher l'aperçu JSON",
-	"jsonFlow.json.showPartialPreview": "Afficher la sélection en tant que JSON",
+	"jsonFlow.json.showPartialPreview": "Afficher la sélection comme JSON",
 	"jsonFlow.filesView": "Liste des fichiers",
-	"jsonFlow.feedbackView": "Aide et retour",
-	"viewsWelcome.jsonFlow.filesView": "Pour capturer efficacement des fichiers, assurez-vous d'inclure le type de fichier dans les paramètres de l'espace de travail.\n[Ouvrir les paramètres de l'espace de travail](command:workbench.action.openWorkspaceSettingsFile)\nPour en savoir plus sur l'utilisation de JSON Flow [lisez notre documentation](https://github.com/ManuelGil/vscode-json-flow)."
+	"jsonFlow.feedbackView": "Aide et commentaires",
+	"viewsWelcome.jsonFlow.filesView": "Pour capturer correctement des fichiers, incluez le type de fichier dans la configuration de l'espace de travail.\n[Ouvrir la configuration de l'espace de travail](command:workbench.action.openWorkspaceSettingsFile)\nPour plus d'informations sur l'utilisation de JSON Flow [consultez la documentation](https://github.com/ManuelGil/vscode-json-flow)."
 }

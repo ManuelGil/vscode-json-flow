@@ -1,6 +1,15 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
+/**
+ * Main entry point for the Angular VSCode extension.
+ * Handles activation, command registration, provider setup, and resource cleanup.
+ * All logic is modular and follows Angular/TypeScript best practices.
+ *
+ * @file extension.ts
+ * @author ManuelGil
+ * @see https://code.visualstudio.com/api
+ */
+
 import * as vscode from 'vscode';
+import { VSCodeMarketplaceClient } from 'vscode-marketplace-client';
 
 // Import the Configs, Controllers, and Providers
 import {
@@ -20,6 +29,17 @@ import { FeedbackProvider, FilesProvider, JSONProvider } from './app/providers';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
+
+/**
+ * Called when the Angular VSCode extension is activated (first time a command is executed).
+ * Registers all commands, providers, and event listeners needed for the extension.
+ *
+ * @param {vscode.ExtensionContext} context - The VSCode extension context object.
+ * @returns {Promise<void>} Resolves when activation is complete.
+ * @example
+ * // In VSCode, extension host calls:
+ * activate(context);
+ */
 export async function activate(context: vscode.ExtensionContext) {
   // The code you place here will be executed every time your command is executed
   let resource: vscode.WorkspaceFolder | undefined;
@@ -36,10 +56,33 @@ export async function activate(context: vscode.ExtensionContext) {
     return;
   }
 
-  // Optionally, prompt the user to select a workspace folder if multiple are available
+  // Try to load previously selected workspace folder from global state
+  const previousFolderUri = context.globalState.get<string>(
+    'selectedWorkspaceFolder',
+  );
+  let previousFolder: vscode.WorkspaceFolder | undefined;
+
+  if (previousFolderUri) {
+    // Find the workspace folder by URI
+    previousFolder = vscode.workspace.workspaceFolders.find(
+      (folder) => folder.uri.toString() === previousFolderUri,
+    );
+  }
+
   if (vscode.workspace.workspaceFolders.length === 1) {
+    // Determine the workspace folder to use
+    // Only one workspace folder available
     resource = vscode.workspace.workspaceFolders[0];
+  } else if (previousFolder) {
+    // Use previously selected workspace folder if available
+    resource = previousFolder;
+
+    // Notify the user which workspace is being used
+    vscode.window.showInformationMessage(
+      vscode.l10n.t('Using workspace folder: {0}', [resource.name]),
+    );
   } else {
+    // Multiple workspace folders and no previous selection
     const placeHolder = vscode.l10n.t(
       'Select a workspace folder to use. This folder will be used to load workspace-specific configuration for the extension',
     );
@@ -48,6 +91,14 @@ export async function activate(context: vscode.ExtensionContext) {
     });
 
     resource = selectedFolder;
+
+    // Remember the selection for future use
+    if (resource) {
+      context.globalState.update(
+        'selectedWorkspaceFolder',
+        resource.uri.toString(),
+      );
+    }
   }
 
   // -----------------------------------------------------------------
@@ -72,12 +123,13 @@ export async function activate(context: vscode.ExtensionContext) {
       config.update(workspaceConfig);
 
       if (isEnabled) {
-        const message = vscode.l10n.t('{0} is now enabled and ready to use', [
-          EXTENSION_DISPLAY_NAME,
-        ]);
+        const message = vscode.l10n.t(
+          'The {0} extension is now enabled and ready to use',
+          [EXTENSION_DISPLAY_NAME],
+        );
         vscode.window.showInformationMessage(message);
       } else {
-        const message = vscode.l10n.t('{0} is now disabled', [
+        const message = vscode.l10n.t('The {0} extension is now disabled', [
           EXTENSION_DISPLAY_NAME,
         ]);
         vscode.window.showInformationMessage(message);
@@ -122,7 +174,7 @@ export async function activate(context: vscode.ExtensionContext) {
     ];
 
     const message = vscode.l10n.t(
-      'New version of {0} is available. Check out the release notes for version {1}',
+      "The {0} extension has been updated. Check out what's new in version {1}",
       [EXTENSION_DISPLAY_NAME, currentVersion],
     );
     vscode.window.showInformationMessage(message, ...actions).then((option) => {
@@ -148,6 +200,94 @@ export async function activate(context: vscode.ExtensionContext) {
     // Update the version in the global state
     context.globalState.update('version', currentVersion);
   }
+
+  // -----------------------------------------------------------------
+  // Check for updates
+  // -----------------------------------------------------------------
+
+  // Check for updates to the extension
+  try {
+    // Retrieve the latest version
+    VSCodeMarketplaceClient.getLatestVersion(
+      EXTENSION_USER_PUBLISHER,
+      EXTENSION_NAME,
+    ).then((latestVersion) => {
+      // Check if the latest version is different from the current version
+      if (latestVersion !== currentVersion) {
+        const actions: vscode.MessageItem[] = [
+          {
+            title: vscode.l10n.t('Update Now'),
+          },
+          {
+            title: vscode.l10n.t('Dismiss'),
+          },
+        ];
+
+        const message = vscode.l10n.t(
+          'A new version of {0} is available. Update to version {1} now',
+          [EXTENSION_DISPLAY_NAME, latestVersion],
+        );
+        vscode.window
+          .showInformationMessage(message, ...actions)
+          .then(async (option) => {
+            if (!option) {
+              return;
+            }
+
+            // Handle the actions
+            switch (option?.title) {
+              case actions[0].title:
+                await vscode.commands.executeCommand(
+                  'workbench.extensions.action.install.anotherVersion',
+                  `${EXTENSION_USER_PUBLISHER}.${EXTENSION_NAME}`,
+                );
+                break;
+
+              default:
+                break;
+            }
+          });
+      }
+    });
+  } catch (error) {
+    console.error('Error retrieving extension version:', error);
+  }
+
+  // -----------------------------------------------------------------
+  // Register commands
+  // -----------------------------------------------------------------
+
+  // Register a command to change the selected workspace folder
+  const disposableChangeWorkspace = vscode.commands.registerCommand(
+    `${EXTENSION_ID}.changeWorkspace`,
+    async () => {
+      const placeHolder = vscode.l10n.t('Select a workspace folder to use');
+      const selectedFolder = await vscode.window.showWorkspaceFolderPick({
+        placeHolder,
+      });
+
+      if (selectedFolder) {
+        resource = selectedFolder;
+        context.globalState.update(
+          'selectedWorkspaceFolder',
+          resource.uri.toString(),
+        );
+
+        // Update configuration for the new workspace folder
+        const workspaceConfig = vscode.workspace.getConfiguration(
+          EXTENSION_ID,
+          resource?.uri,
+        );
+        config.update(workspaceConfig);
+
+        vscode.window.showInformationMessage(
+          vscode.l10n.t('Switched to workspace folder: {0}', [resource.name]),
+        );
+      }
+    },
+  );
+
+  context.subscriptions.push(disposableChangeWorkspace);
 
   // -----------------------------------------------------------------
   // Register FilesController
