@@ -156,6 +156,16 @@ function FlowComponent() {
     });
   }, [rotateLayout, flowData.data]);
 
+  const handleSettingsChange = useCallback((newSettings: typeof DEFAULT_SETTINGS) => {
+    setEdges(currentEdges => 
+      currentEdges.map(edge => ({
+        ...edge,
+        type: newSettings.edgeType,
+        animated: newSettings.animated
+      }))
+    );
+  }, [setEdges]);
+
   const settings = localStorage.getItem('settings') ?
     JSON.parse(localStorage.getItem('settings')!) :
     DEFAULT_SETTINGS;
@@ -189,6 +199,7 @@ function FlowComponent() {
           setIsDraggable={setIsDraggable}
           currentDirection={currentDirection}
           onLayoutRotate={handleLayoutRotation}
+          onSettingsChange={handleSettingsChange}
         />
         <Background
           gap={dynamicGap}
