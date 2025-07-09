@@ -3,6 +3,7 @@ import { env, l10n, Range, ThemeIcon, Uri, window, workspace } from 'vscode';
 
 import { EXTENSION_ID, ExtensionConfig } from '../configs';
 import { FileType, isFileTypeSupported, parseJSONContent } from '../helpers';
+import { normalizeToJsonString } from '../helpers/normalize.helper';
 import { NodeModel } from '../models';
 
 /**
@@ -205,30 +206,15 @@ export class FilesController {
     const { languageId, fileName } = editor.document;
 
     let fileType = languageId;
-
     let text = editor.document.getText(selectionRange);
 
-    if (
-      [
-        'javascript',
-        'javascriptreact',
-        'typescript',
-        'typescriptreact',
-      ].includes(fileType)
-    ) {
-      fileType = 'json';
-
-      text = text
-        .replace(/'([^']+)'/g, '"$1"')
-        .replace(/(['"])?([a-zA-Z0-9_]+)(['"])?:/g, '"$2":')
-        .replace(/,*\s*\n*\]/g, ']')
-        .replace(/{\s*\n*/g, '{')
-        .replace(/,*\s*\n*};*/g, '}');
-    }
+    // Normalización centralizada
+    const { normalized, detectedType } = normalizeToJsonString(text, fileType);
+    fileType = detectedType;
+    text = normalized;
 
     if (!isFileTypeSupported(fileType)) {
       const fileExtension = fileName.split('.').pop();
-
       fileType = isFileTypeSupported(fileExtension) ? fileExtension : 'jsonc';
     }
 

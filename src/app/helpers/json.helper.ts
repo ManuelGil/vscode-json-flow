@@ -1,11 +1,16 @@
-import * as dotenv from 'dotenv';
-import { XMLParser } from 'fast-xml-parser';
-import hcl from 'hcl-parser';
-import * as ini from 'ini';
-import json5 from 'json5';
-import * as toml from 'toml';
 import { l10n, window } from 'vscode';
-import * as yaml from 'yaml';
+
+import {
+  parseCsv,
+  parseEnv,
+  parseHcl,
+  parseIni,
+  parseJson,
+  parseToml,
+  parseTsv,
+  parseXml,
+  parseYaml,
+} from '.';
 
 /**
  * List of supported file types for parsing structured data.
@@ -69,8 +74,7 @@ export const isFileTypeSupported = (value: unknown): value is FileType => {
  * @returns The parsed object or null if parsing fails.
  *
  * @remarks
- * Supports JSON, JSON5, YAML, TOML, INI, ENV, XML, HCL, CSV, TSV and more.
- * Uses appropriate parsing libraries for each format.
+ * Delegates parsing to modular helpers. Centralizes error handling for consistency.
  *
  * @example
  * const obj = parseJSONContent('{ "foo": 1 }', 'json');
@@ -81,64 +85,33 @@ export const parseJSONContent = (
   type: FileType,
 ): object | null => {
   try {
+    // Delegates parsing based on file type to modular helpers.
     switch (type) {
       case 'json':
       case 'jsonc':
       case 'json5':
-        // Use json5 to parse JSON, JSONC, and JSON5 content
-        return json5.parse(content);
-
+        return parseJson(content);
       case 'dockercompose':
       case 'yaml':
       case 'yml':
-        return yaml.parse(content);
-
+        return parseYaml(content);
       case 'toml':
-        return toml.parse(content);
-
+        return parseToml(content);
       case 'ini':
       case 'properties':
-        return ini.parse(content);
-
+        return parseIni(content);
       case 'env':
-        return dotenv.parse(content);
-
-      case 'xml': {
-        const parser = new XMLParser();
-        return parser.parse(content);
-      }
-
+        return parseEnv(content);
+      case 'xml':
+        return parseXml(content);
       case 'hcl':
-        return hcl.parse(content);
-
-      case 'csv': {
-        const rows = content.trim().split('\n');
-        const headers = rows[0].split(',').map((row) => row.replace('\r', ''));
-        return rows.slice(1).map((row) => {
-          const values = row.split(',');
-          return headers.reduce((acc, header, index) => {
-            acc[header] = values[index];
-            return acc;
-          }, {});
-        });
-      }
-
-      case 'tsv': {
-        const rows = content
-          .trim()
-          .split('\n')
-          .map((row) => row.replace('\r', ''));
-        const headers = rows[0].split('\t');
-        return rows.slice(1).map((row) => {
-          const values = row.split('\t');
-          return headers.reduce((acc, header, index) => {
-            acc[header] = values[index];
-            return acc;
-          }, {});
-        });
-      }
-
+        return parseHcl(content);
+      case 'csv':
+        return parseCsv(content);
+      case 'tsv':
+        return parseTsv(content);
       default: {
+        // Show a localized error for unsupported file types
         const message = l10n.t('Invalid file type!');
         window.showErrorMessage(message);
         return null;

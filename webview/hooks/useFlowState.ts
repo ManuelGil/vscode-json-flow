@@ -1,8 +1,13 @@
-import { useCallback, useState, useEffect, useMemo } from 'react';
-import { applyNodeChanges, applyEdgeChanges } from '@xyflow/react';
-import type { Node, Edge, NodeChange, EdgeChange } from '@xyflow/react';
+/**
+ * @file Hooks for state and layout management of the React Flow diagram in the JSON Flow webview.
+ * Provides the main useFlowController hook and related types for flow state orchestration.
+ */
+import type { Edge, EdgeChange, Node, NodeChange } from '@xyflow/react';
+import { applyEdgeChanges, applyNodeChanges } from '@xyflow/react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
 import { getAllDescendants, layoutElements } from '@webview/helpers';
-import type { TreeMap, Direction } from '@webview/types';
+import type { Direction, TreeMap } from '@webview/types';
 
 const directions: Direction[] = ['TB', 'RL', 'BT', 'LR'];
 
@@ -53,7 +58,7 @@ export function useFlowController({
   const immediateChildrenCache = useMemo(() => {
     const cache = new Map<string, string[]>();
     Object.entries(treeData).forEach(([nodeId, node]) => {
-      cache.set(nodeId, node.children || []);
+      cache.set(nodeId, (node as { children?: string[] }).children || []);
     });
     return cache;
   }, [treeData]);
@@ -88,8 +93,16 @@ export function useFlowController({
     [treeData, treeRootId, descendantsCache],
   );
 
+  // Effect: recalculates layout when initialDirection or recalculateLayout changes.
+  // If you add event listeners, subscriptions, or async effects here in the future,
+  // return a cleanup function to avoid memory leaks.
   useEffect(() => {
     recalculateLayout(initialDirection, collapsedNodes);
+    // Cleanup placeholder for future side effects (e.g., event listeners)
+    return () => {
+      // Example: window.removeEventListener(...)
+      // No cleanup needed at present.
+    };
   }, [initialDirection, recalculateLayout]);
 
   const onNodesChange = useCallback((changes: NodeChange[]) => {

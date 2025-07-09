@@ -1,10 +1,17 @@
+import { zodResolver } from '@hookform/resolvers/zod';
+import { BackgroundVariant } from '@xyflow/react';
+import { Settings as SettingsIcon } from 'lucide-react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+
+import { Button, Switch } from '@webview/components/atoms';
 import {
-  Button,
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogTrigger,
   Form,
   FormControl,
@@ -18,17 +25,10 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Switch,
-} from '@webview/components';
-import { Settings as SettingsIcon } from 'lucide-react';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { EdgeType, EDGE_TYPE_NAMES } from '@webview/types';
-import { BackgroundVariant } from '@xyflow/react';
-import { useState } from 'react';
-import { colors, type Color, colorClasses } from '@webview/themes/colors';
+} from '@webview/components/organisms';
 import { useTheme } from '@webview/components/ThemeProvider';
+import { type Color, colorClasses, colors } from '@webview/themes/colors';
+import { EDGE_TYPE_NAMES, EdgeType } from '@webview/types';
 
 interface Settings {
   edgeType: EdgeType;
@@ -42,15 +42,15 @@ const settingsSchema = z.object({
     edgeType: z.nativeEnum(EdgeType),
     animated: z.boolean(),
     backgroundVariant: z.nativeEnum(BackgroundVariant),
-    color: z.enum(colors)
-  })
+    color: z.enum(colors),
+  }),
 });
 
 export const DEFAULT_SETTINGS: Settings = {
   edgeType: EdgeType.SmoothStep,
   animated: true,
   backgroundVariant: BackgroundVariant.Lines,
-  color: 'neutral'
+  color: 'neutral',
 };
 
 interface SettingsProps {
@@ -64,12 +64,12 @@ export function Settings({ onSettingsChange }: SettingsProps) {
     defaultValues: {
       settings: {
         ...DEFAULT_SETTINGS,
-        ...(localStorage.getItem('settings') ?
-          JSON.parse(localStorage.getItem('settings')!) :
-          {})
-      }
+        ...(localStorage.getItem('settings')
+          ? JSON.parse(localStorage.getItem('settings')!)
+          : {}),
+      },
     },
-    mode: 'onChange'
+    mode: 'onChange',
   });
 
   const { isDirty } = form.formState;
@@ -78,9 +78,9 @@ export function Settings({ onSettingsChange }: SettingsProps) {
 
   const handleOpenChange = (open: boolean) => {
     if (open) {
-      const savedSettings = localStorage.getItem('settings') ?
-        JSON.parse(localStorage.getItem('settings')!) :
-        DEFAULT_SETTINGS;
+      const savedSettings = localStorage.getItem('settings')
+        ? JSON.parse(localStorage.getItem('settings')!)
+        : DEFAULT_SETTINGS;
 
       form.reset({ settings: savedSettings });
       setIsDialogOpen(true);
@@ -149,9 +149,13 @@ export function Settings({ onSettingsChange }: SettingsProps) {
                       <SelectContent>
                         {colors.map((color) => (
                           <SelectItem key={color} value={color}>
-                            <div className="flex items-center gap-2 justify-between">
-                              <span>{color.charAt(0).toUpperCase() + color.slice(1)}</span>
-                              <div className={`h-4 w-4 rounded-full ${colorClasses[color]}`} />
+                            <div className="flex items-center justify-between gap-2">
+                              <span>
+                                {color.charAt(0).toUpperCase() + color.slice(1)}
+                              </span>
+                              <div
+                                className={`h-4 w-4 rounded-full ${colorClasses[color]}`}
+                              />
                             </div>
                           </SelectItem>
                         ))}
@@ -182,9 +186,13 @@ export function Settings({ onSettingsChange }: SettingsProps) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {Object.entries(BackgroundVariant).map(([key, value]) => (
-                          <SelectItem key={value} value={value}>{key}</SelectItem>
-                        ))}
+                        {Object.entries(BackgroundVariant).map(
+                          ([key, value]) => (
+                            <SelectItem key={value} value={value}>
+                              {key}
+                            </SelectItem>
+                          ),
+                        )}
                       </SelectContent>
                     </Select>
                     <FormDescription>
@@ -235,7 +243,9 @@ export function Settings({ onSettingsChange }: SettingsProps) {
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between">
                     <div className="space-y-0.5">
-                      <FormLabel className="text-base">Animated Edges</FormLabel>
+                      <FormLabel className="text-base">
+                        Animated Edges
+                      </FormLabel>
                       <FormDescription>
                         Enable or disable edge animations
                       </FormDescription>
@@ -251,12 +261,14 @@ export function Settings({ onSettingsChange }: SettingsProps) {
               />
 
               <div className="flex justify-end gap-2 pt-4">
-                <Button type="button" variant="outline" onClick={handleResetDefaults}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleResetDefaults}
+                >
                   Reset to Defaults
                 </Button>
-                <Button type="submit">
-                  Save Changes
-                </Button>
+                <Button type="submit">Save Changes</Button>
               </div>
             </form>
           </Form>
@@ -271,17 +283,15 @@ export function Settings({ onSettingsChange }: SettingsProps) {
           <DialogHeader>
             <DialogTitle>Unsaved Changes</DialogTitle>
             <DialogDescription>
-              You have unsaved changes. Are you sure you want to close without saving?
+              You have unsaved changes. Are you sure you want to close without
+              saving?
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-2 pt-4">
             <Button variant="outline" onClick={handleCancelClose}>
               Cancel
             </Button>
-            <Button
-              variant="destructive"
-              onClick={handleCloseWithoutSaving}
-            >
+            <Button variant="destructive" onClick={handleCloseWithoutSaving}>
               Close Without Saving
             </Button>
           </div>

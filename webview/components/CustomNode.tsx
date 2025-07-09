@@ -1,27 +1,27 @@
-import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import { cn } from '@webview/lib';
-import { Button } from './atoms/Button';
-import { Badge } from './atoms/Badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './molecules/Tooltip';
 import { Eye, EyeOff } from 'lucide-react';
+import { memo } from 'react';
+
+import { cn } from '@webview/lib';
 import type { CustomNodeData } from '@webview/types';
+import { Badge } from './atoms/Badge';
+import { Button } from './atoms/Button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from './molecules/Tooltip';
 
 const { Top, Bottom, Left, Right } = Position;
 
 const colors = {
-  node: [
-    'bg-card border-border hover:border-muted focus:ring-ring',
-  ],
+  node: ['bg-card border-border hover:border-muted focus:ring-ring'],
   nodeSelected: 'border-primary',
-  handle: [
-    'bg-popover border-muted hover:border-primary',
-  ],
-  toggleButton: [
-    'border-muted bg-secondary hover:bg-secondary/80'
-  ],
+  handle: ['bg-popover border-muted hover:border-primary'],
+  toggleButton: ['border-muted bg-secondary hover:bg-secondary/80'],
   label: 'text-card-foreground',
-  icon: 'text-muted-foreground'
+  icon: 'text-muted-foreground',
 };
 
 interface CustomNodeProps {
@@ -160,10 +160,10 @@ export const CustomNode = memo<CustomNodeProps>(({ data, selected }) => {
             )}
           />
         )}
-        <div className="flex h-full items-center w-full justify-between">
+        <div className="flex h-full w-full items-center justify-between">
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center px-4 overflow-hidden flex-grow justify-center">
+              <div className="flex flex-grow items-center justify-center overflow-hidden px-4">
                 <div
                   className={cn(
                     'font-medium truncate whitespace-nowrap max-w-64',
@@ -174,14 +174,12 @@ export const CustomNode = memo<CustomNodeProps>(({ data, selected }) => {
                 </div>
               </div>
             </TooltipTrigger>
-            <TooltipContent
-              className="max-w-sm overflow-auto break-words whitespace-normal"
-            >
+            <TooltipContent className="max-w-sm overflow-auto whitespace-normal break-words">
               {label}
             </TooltipContent>
           </Tooltip>
 
-          <div className="flex items-center shrink-0 h-full">
+          <div className="flex h-full shrink-0 items-center">
             {childrenCount > 1 && (
               <div className="flex items-center pr-1">
                 <Badge variant="secondary" className="shrink-0 text-xs">

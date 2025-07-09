@@ -1,12 +1,13 @@
 import { Moon, Sun } from 'lucide-react';
+
+import { useTheme } from '@webview/components/ThemeProvider';
+import { Button } from '@webview/components/atoms';
 import {
-  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@webview/components';
-import { useTheme } from '@webview/components';
+} from '@webview/components/molecules/DropdownMenu';
 
 export function ModeToggle() {
   const { setTheme } = useTheme();

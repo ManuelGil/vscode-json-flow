@@ -1,5 +1,5 @@
 /**
- * Represents a node in the JSON Flow tree structure for use in tree views and providers.
+ * TreeNode represents a node in the JSON Flow tree structure for use in tree views and providers.
  * Each node is uniquely identified by its ID and has a human-readable name.
  * Optionally, a node may have children, which are referenced by their IDs.
  *
@@ -22,7 +22,7 @@ export interface TreeNode {
 }
 
 /**
- * Represents a hierarchical mapping of tree nodes by level.
+ * Tree is a hierarchical mapping of tree nodes by level.
  * Each key is a tree depth (level), and the value is an array of nodes at that level.
  *
  * @example

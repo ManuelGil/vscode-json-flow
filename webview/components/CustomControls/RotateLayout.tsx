@@ -1,10 +1,11 @@
-import { Button } from '@webview/components';
 import {
-  AlignVerticalJustifyStart,
-  AlignVerticalJustifyEnd,
-  AlignHorizontalJustifyStart,
   AlignHorizontalJustifyEnd,
+  AlignHorizontalJustifyStart,
+  AlignVerticalJustifyEnd,
+  AlignVerticalJustifyStart,
 } from 'lucide-react';
+
+import { Button } from '@webview/components/atoms';
 
 interface RotateLayoutProps {
   currentDirection: 'TB' | 'LR' | 'BT' | 'RL';

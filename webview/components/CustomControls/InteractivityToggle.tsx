@@ -1,5 +1,6 @@
-import { Button } from '@webview/components';
 import { Lock, Unlock } from 'lucide-react';
+
+import { Button } from '@webview/components/atoms';
 
 interface InteractivityToggleProps {
   isInteractive: boolean;

@@ -1,3 +1,9 @@
+/**
+ * Representa un nodo simple del árbol, usado para relaciones básicas.
+ */
+/**
+ * Basic tree node with relationship references by ID.
+ */
 export interface TreeData {
   id: string;
   label?: string;
@@ -6,8 +12,19 @@ export interface TreeData {
   spouses?: string[];
 }
 
+/**
+ * Diagram layout direction.
+ * TB = Top-Bottom, LR = Left-Right, BT = Bottom-Top, RL = Right-Left
+ */
 export type Direction = 'TB' | 'LR' | 'BT' | 'RL';
 
+/**
+ * Datos extendidos para nodos personalizados usados en React Flow.
+ */
+/**
+ * Extended node data for React Flow nodes. All relationships are by ID.
+ * No UI handlers or functions should be included.
+ */
 export interface CustomNodeData {
   id: string;
   isSpouse?: boolean;
@@ -24,6 +41,9 @@ export interface CustomNodeData {
   line?: number;
 }
 
+/**
+ * Full tree node with extended metadata.
+ */
 export interface TreeNode {
   id: string;
   name: string;
@@ -44,8 +64,14 @@ export interface TreeNode {
   };
 }
 
+/**
+ * Map of tree nodes by ID.
+ */
 export type TreeMap = Record<string, TreeNode>;
 
+/**
+ * Supported edge types for React Flow.
+ */
 export enum EdgeType {
   Straight = 'straight',
   Step = 'step',
@@ -53,6 +79,9 @@ export enum EdgeType {
   SimpleBezier = 'simplebezier',
 }
 
+/**
+ * Human-readable names for edge types.
+ */
 export const EDGE_TYPE_NAMES: Record<EdgeType, string> = {
   [EdgeType.Straight]: 'Straight',
   [EdgeType.Step]: 'Step',
@@ -60,8 +89,28 @@ export const EDGE_TYPE_NAMES: Record<EdgeType, string> = {
   [EdgeType.SimpleBezier]: 'Simple Bezier',
 };
 
+/**
+ * Edge configuration for the diagram.
+ */
 export interface EdgeSettings {
   edgeType: EdgeType;
   animated: boolean;
   edgeColor: string;
 }
+
+/**
+ * CSS class definitions for node colors.
+ */
+export type NodeColors = {
+  node: string[];
+  nodeSelected: string;
+  handle: string[];
+  toggleButton: string[];
+  label: string;
+  icon: string;
+};
+
+/**
+ * Alias for serialized JSON strings.
+ */
+export type JsonString = string;

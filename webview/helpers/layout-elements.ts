@@ -1,10 +1,10 @@
+import type { Edge, Node } from '@xyflow/react';
 import { Position } from '@xyflow/react';
-import type { Node, Edge } from '@xyflow/react';
 import { layoutFromMap } from 'entitree-flex';
-import type { TreeMap, Direction } from '@webview/types';
-import { EdgeType } from '@webview/types';
-import { isHorizontal, isReversed } from './direction';
+
 import { DEFAULT_SETTINGS } from '@webview/components/CustomControls/Settings';
+import { EdgeType, type Direction, type TreeMap } from '@webview/types';
+import { isHorizontal, isReversed } from './direction';
 
 const NODE_HEIGHT = 36;
 const NODE_WIDTH = 160;

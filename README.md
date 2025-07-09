@@ -46,6 +46,7 @@ Exploring complex data structures in code or configuration files can be cumberso
     - [Supported Formats](#supported-formats)
     - [Advanced Configuration](#advanced-configuration)
     - [Architecture Overview](#architecture-overview)
+      - [Design Philosophy](#design-philosophy)
     - [Typical Workflow](#typical-workflow)
   - [Requirements \& Limitations](#requirements--limitations)
   - [Security \& Privacy](#security--privacy)
@@ -118,14 +119,21 @@ Exploring complex data structures in code or configuration files can be cumberso
 
 ### Architecture Overview
 
-- **src/**: Core extension logic, command registration, and VSCode API integration (`extension.ts`).
-  - **src/app/**: Business logic, services, and data transformation modules.
-- **webview/**: React-based UI for interactive graph visualization and file management, estructurada bajo principios de Atomic Design.
-  - **webview/components/**: Componentes UI organizados como `atoms`, `molecules`, `organisms` y controles personalizados. Cada subcarpeta cuenta con un archivo barrel (`index.ts`) para simplificar importaciones.
-  - **webview/hooks/** y **webview/helpers/**: Hooks personalizados y funciones utilitarias, todos documentados con JSDoc y ejemplos de uso. Exponen barrels para facilitar su consumo en el resto del proyecto.
-- **l10n/**: Localization files for multi-language support.
-- **schemas/**: JSON schemas for configuration validation and autocompletion.
-- **assets/**, **images/**: Icons, screenshots, and static resources.
+- **src/app/helpers/**: Modular parsing helpers for each supported format (JSON, YAML, TOML, INI, ENV, XML, HCL, CSV, TSV) in archivos individuales. Centralized error handling (`error-handler.helper.ts`). Barrel file (`parsers/index.ts`) para imports limpios.
+- **src/app/models/**: Data models como `NodeModel`, documentados y alineados con SOLID.
+- **src/app/interfaces/**: Interfaces como `TreeNode` y `Tree`, documentadas con JSDoc.
+- **src/app/providers/**: Providers desacoplados y documentados para archivos, feedback y vistas JSON, siguiendo principios SOLID.
+- **src/app/controllers/**: Lógica de negocio separada de la UI y providers.
+- **src/app/configs/**: Configuración y constantes centralizadas.
+- **webview/**: UI Reactiva (Atomic Design), hooks y providers para el webview.
+- **Barrel Files**: Uso de `index.ts` para imports consistentes y limpios en helpers y otros módulos.
+
+#### Design Philosophy
+
+- **Atomic Design**: Componentes UI organizados por nivel de atomicidad.
+- **SOLID Principles**: Providers y helpers desacoplados y fácilmente testeables.
+- **Centralized Error Handling**: Todos los helpers usan un único punto de entrada para errores.
+- **JSDoc Everywhere**: Documentación clara y relevante en inglés en todos los módulos y funciones públicas.
 
 ### Typical Workflow
 

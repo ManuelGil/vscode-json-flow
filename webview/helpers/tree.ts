@@ -1,4 +1,5 @@
 import type { Node } from '@xyflow/react';
+
 import type { TreeMap, TreeData } from '@webview/types';
 import { layoutElements } from './layout-elements';
 import { getRootId } from './generate-tree';

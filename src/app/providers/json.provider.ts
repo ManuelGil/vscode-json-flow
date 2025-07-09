@@ -12,7 +12,12 @@ import { EXTENSION_ID } from '../configs';
 import { getNonce } from '../helpers';
 
 /**
- * Manages the JSON preview webview panel.
+ * JSONProvider manages the JSON preview webview panel for the VSCode JSON Flow extension.
+ * Responsible for rendering and updating the webview panel content.
+ * Follows SOLID principles for maintainability and extensibility.
+ *
+ * @example
+ * JSONProvider.createPanel(extensionUri);
  */
 export class JSONProvider {
   // -----------------------------------------------------------------
@@ -34,6 +39,10 @@ export class JSONProvider {
    * Tracks all disposables for this provider to ensure proper cleanup of resources and event listeners.
    */
   private _disposables: Disposable[] = [];
+  /**
+   * Tracks whether the provider has been disposed to prevent double-dispose.
+   */
+  private _isDisposed: boolean = false;
 
   // -----------------------------------------------------------------
   // Constructor
@@ -134,6 +143,7 @@ export class JSONProvider {
   /**
    * Disposes resources used by the JSON provider to prevent memory leaks.
    * This method ensures that all disposables and the webview panel are properly cleaned up.
+   * It is idempotent: calling dispose multiple times is safe and has no effect after the first call.
    *
    * @remarks
    * Always call this method when the provider is no longer needed to avoid resource leaks.
@@ -142,21 +152,40 @@ export class JSONProvider {
    * provider.dispose();
    */
   dispose(): void {
+    if (this._isDisposed) {
+      // Prevent double-dispose and cyclic cleanup
+      return;
+    }
+
+    this._isDisposed = true;
+
     // Remove reference to the current provider
     JSONProvider.currentProvider = undefined;
 
     // Dispose the webview panel if it exists
     if (this._panel) {
-      this._panel.dispose();
+      try {
+        this._panel.dispose();
+      } catch (e) {
+        // Ignore errors if already disposed
+        console.error('Error disposing webview panel:', e);
+      }
     }
 
     // Dispose all registered disposables safely
     while (this._disposables.length) {
       const disposable = this._disposables.pop();
       if (disposable && typeof disposable.dispose === 'function') {
-        disposable.dispose();
+        try {
+          disposable.dispose();
+        } catch (e) {
+          // Ignore errors if already disposed
+          console.error('Error disposing disposable:', e);
+        }
       }
     }
+
+    this._disposables = undefined;
   }
 
   /**

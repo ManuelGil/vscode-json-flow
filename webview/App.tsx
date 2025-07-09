@@ -1,3 +1,14 @@
+import type { Connection, Edge, NodeTypes } from '@xyflow/react';
+import {
+  addEdge,
+  Background,
+  ReactFlow,
+  ReactFlowProvider,
+  useViewport,
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
+import { useCallback, useEffect, useReducer, useState } from 'react';
+
 import {
   CustomControls,
   CustomNode,
@@ -5,21 +16,10 @@ import {
   ThemeProvider,
   useTheme,
 } from '@webview/components';
+import { DEFAULT_SETTINGS } from '@webview/components/CustomControls/Settings';
 import { generateTree, getRootId } from '@webview/helpers';
 import { useFlowController } from '@webview/hooks';
-import type { TreeMap, Direction } from '@webview/types';
-import type { Connection, NodeTypes, Edge } from '@xyflow/react';
-import {
-  Background,
-  BackgroundVariant,
-  ReactFlow,
-  ReactFlowProvider,
-  addEdge,
-  useViewport,
-} from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
-import { useCallback, useReducer, useEffect, useState } from 'react';
-import { DEFAULT_SETTINGS } from '@webview/components/CustomControls/Settings';
+import type { Direction, TreeMap } from '@webview/types';
 
 // @ts-ignore
 // biome-ignore lint/correctness/noUndeclaredVariables: vscode is a global variable
@@ -35,14 +35,14 @@ interface TreeState {
 
 type TreeAction =
   | {
-    type: 'UPDATE';
-    payload: {
-      data: any;
-      orientation: Direction;
-      path: string;
-      fileName: string;
-    };
-  }
+      type: 'UPDATE';
+      payload: {
+        data: any;
+        orientation: Direction;
+        path: string;
+        fileName: string;
+      };
+    }
   | { type: 'CLEAR' };
 
 function treeReducer(state: TreeState, action: TreeAction): TreeState {
@@ -156,19 +156,22 @@ function FlowComponent() {
     });
   }, [rotateLayout, flowData.data]);
 
-  const handleSettingsChange = useCallback((newSettings: typeof DEFAULT_SETTINGS) => {
-    setEdges(currentEdges => 
-      currentEdges.map(edge => ({
-        ...edge,
-        type: newSettings.edgeType,
-        animated: newSettings.animated
-      }))
-    );
-  }, [setEdges]);
+  const handleSettingsChange = useCallback(
+    (newSettings: typeof DEFAULT_SETTINGS) => {
+      setEdges((currentEdges) =>
+        currentEdges.map((edge) => ({
+          ...edge,
+          type: newSettings.edgeType,
+          animated: newSettings.animated,
+        })),
+      );
+    },
+    [setEdges],
+  );
 
-  const settings = localStorage.getItem('settings') ?
-    JSON.parse(localStorage.getItem('settings')!) :
-    DEFAULT_SETTINGS;
+  const settings = localStorage.getItem('settings')
+    ? JSON.parse(localStorage.getItem('settings')!)
+    : DEFAULT_SETTINGS;
 
   if (!flowData.treeData) {
     return <Loading />;
@@ -205,8 +208,8 @@ function FlowComponent() {
           gap={dynamicGap}
           variant={settings.backgroundVariant}
           style={{ strokeOpacity: 0.1 }}
-          className='bg-background'
-          patternClassName='!stroke-foreground/30'
+          className="bg-background"
+          patternClassName="!stroke-foreground/30"
         />
       </ReactFlow>
     </div>

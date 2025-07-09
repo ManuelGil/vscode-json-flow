@@ -8,8 +8,9 @@ import {
 } from 'vscode';
 
 /**
- * Represents a node in the custom tree view for the VSCode extension explorer.
+ * NodeModel represents a node in the custom tree view for the VSCode extension explorer.
  * Encapsulates label, icon, command, children, and other VSCode-specific metadata.
+ * Follows SOLID principles for maintainability and extensibility.
  *
  * @example
  * const node = new NodeModel('Settings', undefined, undefined, undefined, 'settings', []);

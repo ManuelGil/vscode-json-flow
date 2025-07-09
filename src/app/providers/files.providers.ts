@@ -10,8 +10,12 @@ import { FilesController } from '../controllers';
 import { NodeModel } from '../models';
 
 /**
- * Provides the file tree for the VSCode JSON Flow extension.
- * Responsible for managing and grouping file nodes for display in the explorer view.
+ * FilesProvider supplies the file tree for the VSCode JSON Flow extension.
+ * Manages and groups file nodes for display in the explorer view.
+ * Follows SOLID principles for maintainability and extensibility.
+ *
+ * @example
+ * const provider = new FilesProvider(controller);
  */
 export class FilesProvider implements TreeDataProvider<NodeModel> {
   // -----------------------------------------------------------------
@@ -25,11 +29,14 @@ export class FilesProvider implements TreeDataProvider<NodeModel> {
 
   /**
    * Internal event emitter for file tree data changes. Used to signal the view to update.
-   * @private
    */
   private _onDidChangeTreeData: EventEmitter<
     NodeModel | undefined | null | void
   >;
+  /**
+   * Tracks whether the provider has been disposed to prevent redundant disposal.
+   */
+  private _isDisposed = false;
 
   // -----------------------------------------------------------------
   // Constructor
@@ -48,9 +55,20 @@ export class FilesProvider implements TreeDataProvider<NodeModel> {
 
   /**
    * Disposes internal resources and event listeners to prevent memory leaks.
+   * This method is idempotent and safe to call multiple times.
+   *
+   * @remarks
+   * Always call this method when the provider is no longer needed to avoid resource leaks.
    */
   dispose(): void {
-    this._onDidChangeTreeData.dispose();
+    if (this._isDisposed) {
+      return;
+    }
+    this._isDisposed = true;
+    if (this._onDidChangeTreeData) {
+      this._onDidChangeTreeData.dispose();
+    }
+    this._onDidChangeTreeData = undefined;
   }
 
   // -----------------------------------------------------------------

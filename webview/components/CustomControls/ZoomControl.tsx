@@ -1,14 +1,14 @@
-import { useReactFlow, useViewport, useNodes } from '@xyflow/react';
+import { useNodes, useReactFlow, useViewport } from '@xyflow/react';
+import { ChevronDown, Focus, Maximize, ZoomIn, ZoomOut } from 'lucide-react';
+
+import { Button, Input } from '@webview/components/atoms';
 import {
-  Button,
-  Input,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
   DropdownMenuSeparator,
-} from '@webview/components';
-import { ZoomIn, ZoomOut, Maximize, Focus, ChevronDown } from 'lucide-react';
+  DropdownMenuTrigger,
+} from '@webview/components/molecules/DropdownMenu';
 
 export function ZoomControl() {
   const { zoomIn, zoomOut, fitView, setCenter } = useReactFlow();
@@ -33,7 +33,7 @@ export function ZoomControl() {
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
-          className="flex gap-2 items-center"
+          className="flex items-center gap-2"
           tooltip={`Current: ${Math.round(zoom * 100)}%`}
         >
           <span>{Math.round(zoom * 100)}%</span>

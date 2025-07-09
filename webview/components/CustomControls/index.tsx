@@ -1,12 +1,12 @@
 import { Panel } from '@xyflow/react';
-import { ModeToggle } from './ModeToggle';
-import { ImageDownload } from './ImageDownload';
-import { RotateLayout } from './RotateLayout';
-import { ZoomControl } from './ZoomControl';
-import { InteractivityToggle } from './InteractivityToggle';
-import { GoToLine } from './GoToLine';
-import { Settings, DEFAULT_SETTINGS } from './Settings';
+
 import type { Direction } from '@webview/types';
+import { ImageDownload } from './ImageDownload';
+import { InteractivityToggle } from './InteractivityToggle';
+import { ModeToggle } from './ModeToggle';
+import { RotateLayout } from './RotateLayout';
+import { DEFAULT_SETTINGS, Settings } from './Settings';
+import { ZoomControl } from './ZoomControl';
 
 interface CustomControlsProps {
   isDraggable: boolean;
