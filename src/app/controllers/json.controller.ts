@@ -1,46 +1,31 @@
-import { ExtensionContext, Range, Uri, l10n, window, workspace } from 'vscode';
+import { ExtensionContext, l10n, Range, Uri, window, workspace } from 'vscode';
+
 import { ExtensionConfig } from '../configs';
 import { FileType, isFileTypeSupported, parseJSONContent } from '../helpers';
 import { JSONProvider } from '../providers';
 
 /**
- * The JsonController class.
- *
- * @class
- * @classdesc The class that represents the JSON controller.
- * @export
- * @public
- * @property {ExtensionContext} context - The extension context
- * @example
- * const controller = new JsonController(context);
+ * Controls JSON preview and parsing actions for the VSCode JSON Flow extension.
+ * Handles showing JSON previews, parsing, and error handling in the editor.
  */
 export class JsonController {
   // -----------------------------------------------------------------
   // Properties
   // -----------------------------------------------------------------
 
-  // Private properties
   /**
-   * The preview delay constant.
-   * @type {number}
-   * @private
-   * @memberof JsonController
-   * @example
-   * private _processingDelay: number = 1000;
+   * Delay in milliseconds for initializing the JSON preview panel (to ensure webview is ready).
    */
-  private _processingDelay: number = 1000; // Delay constant for preview initialization
+  private _processingDelay: number = 1000;
 
   // -----------------------------------------------------------------
   // Constructor
   // -----------------------------------------------------------------
 
   /**
-   * Constructor for the JsonController class
-   *
-   * @constructor
-   * @param {ExtensionContext} context - The extension context
-   * @public
-   * @memberof JsonController
+   * Creates a new JsonController.
+   * @param context The VSCode extension context.
+   * @param config The extension configuration instance.
    */
   constructor(
     readonly context: ExtensionContext,
@@ -51,18 +36,10 @@ export class JsonController {
   // Methods
   // -----------------------------------------------------------------
 
-  // Public methods
   /**
-   * The showPreview method.
-   *
-   * @function showPreview
-   * @param {Uri} uri - The URI of the file
-   * @public
-   * @memberof JsonController
-   * @example
-   * controller.showPreview(uri);
-   *
-   * @returns {void}
+   * Displays a JSON preview for the given file URI in a webview panel.
+   * Shows error messages for invalid files or parsing errors.
+   * @param uri The file URI to preview.
    */
   showPreview(uri: Uri): void {
     // Open the text document
@@ -113,15 +90,8 @@ export class JsonController {
   }
 
   /**
-   * The showPartialPreview method.
-   *
-   * @function showPartialPreview
-   * @public
-   * @memberof JsonController
-   * @example
-   * controller.showPartialPreview();
-   *
-   * @returns {void}
+   * Displays a JSON preview for the currently selected text in the active editor.
+   * Shows error messages if there is no selection or if parsing fails.
    */
   showPartialPreview(): void {
     const { graphLayoutOrientation } = this.config;

@@ -1,86 +1,59 @@
 /**
- * Provides protection against directory traversal.
- *
- * @param {string} filename - The filename to sanitize
- * @example
- * sanitizeFilename('foo.bar');
- *
- * @returns {string} - The sanitized filename
+ * Sanitizes a filename to prevent directory traversal.
  */
 export const sanitizeFilename = (filename: string): string => {
   return filename.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
 };
 
 /**
- * Strips HTML tags from a string.
- *
- * @param {string} html - The HTML to strip
- * @example
- * stripHtmlTags('<p>foo</p>');
- *
- * @returns {string} - The stripped HTML
+ * Removes all HTML tags from a string.
+ * @param html The HTML string to clean.
+ * @returns The string without HTML tags.
  */
 export const stripHtmlTags = (html: string): string => {
   return html.replace(/<[^>]*>/g, '');
 };
 
 /**
- * Escapes a string for use in HTML.
- * @param {string} str - The string to escape
- * @example
- * escapeHtml('<p>foo</p>');
- *
- * @returns {string} - The escaped string
+ * Escapes HTML special characters in the input string to prevent XSS attacks in webviews or rendered content.
+ * @param unsafe The unsafe string to escape.
+ * @returns The escaped string, safe for HTML rendering.
  */
-export const escapeHtml = (str: string): string => {
-  return str.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-};
+export function escapeHtml(unsafe: string): string {
+  return unsafe.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
 
 /**
- * Escapes a string for use in JavaScript.
- * @param {string} str - The string to escape
- * @example
- * escapeJs('foo "bar"');
- *
- * @returns {string} - The escaped string
+ * Escapes a string for safe use in JavaScript to prevent code injection attacks.
+ * Replaces single and double quotes with their escaped equivalents.
+ * @param str The string to escape.
+ * @returns The escaped string.
  */
 export const escapeJs = (str: string): string => {
   return str.replace(/'/g, "\\'").replace(/"/g, '\\"');
 };
 
 /**
- * Escapes a string for use in a URL.
- *
- * @param {string} str - The string to escape
- * @example
- * escapeUrl('foo bar');
- *
- * @returns {string} - The escaped string
+ * Encodes a string for safe use in a URL.
+ * @param str The string to encode.
+ * @returns The encoded string.
  */
 export const escapeUrl = (str: string): string => {
   return encodeURIComponent(str);
 };
 
 /**
- * Escapes a string for use in a regular expression.
- *
- * @param {string} str - The string to escape
- * @example
- * escapeRegExp('foo.bar');
- *
- * @returns {string} - The escaped string
+ * Escapes special RegExp characters in a string so it can be safely used in a regular expression pattern.
+ * @param str The string to escape.
+ * @returns The escaped string, safe for use in RegExp constructors.
  */
 export const escapeRegExp = (str: string): string => {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 };
 
 /**
- * Returns a random nonce.
- *
- * @example
- * const nonce = getNonce();
- *
- * @returns {string} - The nonce
+ * Generates a random nonce string for security purposes.
+ * @returns The generated nonce string.
  */
 export const getNonce = () => {
   let text = '';

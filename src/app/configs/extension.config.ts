@@ -3,82 +3,40 @@ import { WorkspaceConfiguration } from 'vscode';
 import {
   DEFAULT_EXCLUDE_PATTERNS,
   DEFAULT_INCLUDE_PATTERNS,
-  LAYOUT_DIRECTION,
   IS_INCLUDE_FILE_PATH_DEFAULT,
+  LAYOUT_DIRECTION,
 } from './constants.config';
 
 /**
- * The Config class.
- *
- * @class
- * @classdesc The class that represents the configuration of the extension.
- * @export
- * @public
- * @property {boolean} enable - Whether the extension is enabled or not
- * @property {string[]} includedFilePatterns - The extension files to include in the search
- * @property {string[]} excludedFilePatterns - The pattern to exclude files or folders from the search
- * @property {boolean} includeFilePath - Whether to show the path or not in the search results
- * @property {'TB' | 'LR' | 'BT' | 'RL'} graphLayoutOrientation - The layout direction of the graph
- * @example
- * const config = new Config(workspace.getConfiguration());
- * console.log(config.include);
- * console.log(config.exclude);
+ * Stores and manages extension configuration options.
  */
 export class ExtensionConfig {
   // -----------------------------------------------------------------
   // Properties
   // -----------------------------------------------------------------
 
-  // Public properties
   /**
-   * Whether the extension is enabled or not.
-   * @type {boolean}
-   * @public
-   * @memberof ExtensionConfig
-   * @example
-   * const config = new ExtensionConfig(workspace.getConfiguration());
-   * console.log(config.enable);
+   * Indicates whether the extension is enabled and active in the current workspace.
    */
   enable: boolean;
 
   /**
-   * The extension files to include in the search.
-   * @type {string[]}
-   * @public
-   * @memberof Config
-   * @example
-   * const config = new Config(workspace.getConfiguration());
-   * console.log(config.includedFilePatterns);
+   * Glob patterns for files to include in the extension's file operations (e.g., for tree views and search).
    */
   includedFilePatterns: string[];
+
   /**
-   * The pattern to exclude files or folders from the search.
-   * @type {string[]}
-   * @public
-   * @memberof Config
-   * @example
-   * const config = new Config(workspace.getConfiguration());
-   * console.log(config.excludedFilePatterns);
+   * Glob patterns for files to exclude from the extension's file operations.
    */
   excludedFilePatterns: string[];
+
   /**
-   * Whether to show the path or not in the search results.
-   * @type {boolean}
-   * @public
-   * @memberof Config
-   * @example
-   * const config = new Config(workspace.getConfiguration());
-   * console.log(config.includeFilePath);
+   * Whether to show the file path in the search results.
    */
   includeFilePath: boolean;
+
   /**
-   * The layout direction of the graph.
-   * @type {'TB' | 'LR' | 'BT' | 'RL'}
-   * @public
-   * @memberof Config
-   * @example
-   * const config = new Config(workspace.getConfiguration());
-   * console.log(config.graphLayoutOrientation);
+   * Orientation of the graph layout in the extension's UI (e.g., for visualizations or previews).
    */
   graphLayoutOrientation: 'TB' | 'LR' | 'BT' | 'RL';
 
@@ -87,12 +45,9 @@ export class ExtensionConfig {
   // -----------------------------------------------------------------
 
   /**
-   * Constructor for the Config class.
-   *
-   * @constructor
-   * @param {WorkspaceConfiguration} config - The workspace configuration
-   * @public
-   * @memberof Config
+   * Initializes the extension configuration from the provided VSCode workspace configuration.
+   * Loads all relevant settings and applies defaults as needed.
+   * @param config The VSCode workspace configuration object.
    */
   constructor(readonly config: WorkspaceConfiguration) {
     this.enable = config.get<boolean>('enable', true);
@@ -118,17 +73,8 @@ export class ExtensionConfig {
   // Methods
   // -----------------------------------------------------------------
 
-  // Public methods
   /**
-   * The update method.
-   *
-   * @function update
-   * @param {WorkspaceConfiguration} config - The workspace configuration
-   * @public
-   * @memberof Config
-   * @example
-   * const config = new Config(workspace.getConfiguration());
-   * config.update(workspace.getConfiguration());
+   * Updates the configuration properties from a VSCode workspace configuration.
    */
   update(config: WorkspaceConfiguration): void {
     this.enable = config.get<boolean>('enable', this.enable);

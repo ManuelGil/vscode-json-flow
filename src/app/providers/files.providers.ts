@@ -1,7 +1,6 @@
 import {
   Event,
   EventEmitter,
-  ProviderResult,
   ThemeIcon,
   TreeDataProvider,
   TreeItem,
@@ -11,51 +10,22 @@ import { FilesController } from '../controllers';
 import { NodeModel } from '../models';
 
 /**
- * The FilesProvider class
- *
- * @class
- * @classdesc The class that represents the files provider.
- * @export
- * @public
- * @implements {TreeDataProvider<NodeModel>}
- * @property {EventEmitter<NodeModel | undefined | null | void>} _onDidChangeTreeData - The onDidChangeTreeData event emitter
- * @property {Event<NodeModel | undefined | null | void>} onDidChangeTreeData - The onDidChangeTreeData event
- * @property {filesController} controller - The files controller
- * @example
- * const provider = new FilesProvider();
- *
- * @see https://code.visualstudio.com/api/references/vscode-api#TreeDataProvider
+ * Provides the file tree for the VSCode JSON Flow extension.
+ * Responsible for managing and grouping file nodes for display in the explorer view.
  */
 export class FilesProvider implements TreeDataProvider<NodeModel> {
   // -----------------------------------------------------------------
   // Properties
   // -----------------------------------------------------------------
 
-  // Public properties
   /**
-   * The onDidChangeTreeData event.
-   * @type {Event<NodeModel | undefined | null | void>}
-   * @public
-   * @memberof FilesProvider
-   * @example
-   * readonly onDidChangeTreeData: Event<Node | undefined | null | void>;
-   * this.onDidChangeTreeData = this._onDidChangeTreeData.event;
-   *
-   * @see https://code.visualstudio.com/api/references/vscode-api#Event
+   * Event fired when the file tree data changes.
    */
   readonly onDidChangeTreeData: Event<NodeModel | undefined | null | void>;
 
-  // Private properties
   /**
-   * The onDidChangeTreeData event emitter.
-   * @type {EventEmitter<NodeModel | undefined | null | void>}
+   * Internal event emitter for file tree data changes. Used to signal the view to update.
    * @private
-   * @memberof FilesProvider
-   * @example
-   * this._onDidChangeTreeData = new EventEmitter<Node | undefined | null | void>();
-   * this.onDidChangeTreeData = this._onDidChangeTreeData.event;
-   *
-   * @see https://code.visualstudio.com/api/references/vscode-api#EventEmitter
    */
   private _onDidChangeTreeData: EventEmitter<
     NodeModel | undefined | null | void
@@ -66,11 +36,8 @@ export class FilesProvider implements TreeDataProvider<NodeModel> {
   // -----------------------------------------------------------------
 
   /**
-   * Constructor for the FilesProvider class
-   *
-   * @constructor
-   * @public
-   * @memberof FilesProvider
+   * Constructs a FilesProvider responsible for managing and grouping file nodes in the explorer view.
+   * @param controller FilesController instance providing file data and configuration.
    */
   constructor(readonly controller: FilesController) {
     this._onDidChangeTreeData = new EventEmitter<
@@ -79,45 +46,30 @@ export class FilesProvider implements TreeDataProvider<NodeModel> {
     this.onDidChangeTreeData = this._onDidChangeTreeData.event;
   }
 
+  /**
+   * Disposes internal resources and event listeners to prevent memory leaks.
+   */
+  dispose(): void {
+    this._onDidChangeTreeData.dispose();
+  }
+
   // -----------------------------------------------------------------
   // Methods
   // -----------------------------------------------------------------
 
-  // Public methods
   /**
-   * Returns the tree item for the supplied element.
-   *
-   * @function getTreeItem
-   * @param {NodeModel} element - The element
-   * @public
-   * @memberof FilesProvider
-   * @example
-   * const treeItem = provider.getTreeItem(element);
-   *
-   * @returns {TreeItem | Thenable<TreeItem>} - The tree item
-   *
-   * @see https://code.visualstudio.com/api/references/vscode-api#TreeDataProvider
+   * Returns the tree item representation for the given file node.
+   * @param element The node for which to return the tree item.
    */
-  // biome-ignore lint/correctness/noUndeclaredVariables: we dont control vscode's api
-  getTreeItem(element: NodeModel): TreeItem | Thenable<TreeItem> {
+  getTreeItem(element: NodeModel): TreeItem {
     return element;
   }
 
   /**
-   * Returns the children for the supplied element.
-   *
-   * @function getChildren
-   * @param {NodeModel} [element] - The element
-   * @public
-   * @memberof FilesProvider
-   * @example
-   * const children = provider.getChildren(element);
-   *
-   * @returns {ProviderResult<NodeModel[]>} - The children
-   *
-   * @see https://code.visualstudio.com/api/references/vscode-api#TreeDataProvider
+   * Returns the child nodes for the given file node, or the root file groups if no node is provided.
+   * @param element The parent node, or undefined for root nodes.
    */
-  getChildren(element?: NodeModel): ProviderResult<NodeModel[]> {
+  async getChildren(element?: NodeModel): Promise<NodeModel[] | undefined> {
     if (element) {
       return element.children;
     }
@@ -126,35 +78,19 @@ export class FilesProvider implements TreeDataProvider<NodeModel> {
   }
 
   /**
-   * Refreshes the tree data.
-   *
-   * @function refresh
-   * @public
-   * @memberof FeedbackProvider
-   * @example
-   * provider.refresh();
-   *
-   * @returns {void} - No return value
+   * Refreshes the file tree view, causing it to be re-rendered in the explorer.
    */
   refresh(): void {
     this._onDidChangeTreeData.fire();
   }
 
-  // Private methods
   /**
-   * Gets the list of files.
-   *
-   * @function getListFiles
-   * @private
-   * @memberof FilesProvider
-   * @example
-   * const files = provider.getListFiles();
-   *
-   * @returns {Promise<NodeModel[] | undefined>} - The list of files
+   * Retrieves and groups files by type, constructing NodeModel nodes for the tree view.
+   * Only NodeModel instances are used to ensure type consistency.
+   * @returns Promise resolving to an array of grouped NodeModel nodes or undefined if none.
    */
   private async getListFiles(): Promise<NodeModel[] | undefined> {
     const { includedFilePatterns } = this.controller.config;
-
     const files = await this.controller.getFiles();
 
     if (!files) {

@@ -13,51 +13,22 @@ import { FeedbackController } from '../controllers';
 import { NodeModel } from '../models';
 
 /**
- * The FeedbackProvider class
- *
- * @class
- * @classdesc The class that represents the feedback provider.
- * @export
- * @public
- * @implements {TreeDataProvider<NodeModel>}
- * @property {EventEmitter<NodeModel | undefined | null | void>} _onDidChangeTreeData - The onDidChangeTreeData event emitter
- * @property {Event<NodeModel | undefined | null | void>} onDidChangeTreeData - The onDidChangeTreeData event
- * @property {FeedbackController} controller - The feedback controller
- * @example
- * const provider = new FeedbackProvider();
- *
- * @see https://code.visualstudio.com/api/references/vscode-api#TreeDataProvider
+ * Provides the feedback tree for the VSCode JSON Flow extension.
+ * Responsible for displaying feedback actions in the explorer view.
  */
-export class FeedbackProvider implements TreeDataProvider<NodeModel> {
+export class FeedbackProvider implements TreeDataProvider<TreeItem> {
   // -----------------------------------------------------------------
   // Properties
   // -----------------------------------------------------------------
 
-  // Public properties
   /**
-   * The onDidChangeTreeData event.
-   * @type {Event<NodeModel | undefined | null | void>}
-   * @public
-   * @memberof FeedbackProvider
-   * @example
-   * readonly onDidChangeTreeData: Event<Node | undefined | null | void>;
-   * this.onDidChangeTreeData = this._onDidChangeTreeData.event;
-   *
-   * @see https://code.visualstudio.com/api/references/vscode-api#Event
+   * Event triggered when the feedback tree data is updated, prompting the VSCode view to refresh.
    */
   readonly onDidChangeTreeData: Event<NodeModel | undefined | null | void>;
 
-  // Private properties
   /**
-   * The onDidChangeTreeData event emitter.
-   * @type {EventEmitter<NodeModel | undefined | null | void>}
+   * Internal event emitter for feedback tree data changes. Used to signal the view to update.
    * @private
-   * @memberof FeedbackProvider
-   * @example
-   * this._onDidChangeTreeData = new EventEmitter<Node | undefined | null | void>();
-   * this.onDidChangeTreeData = this._onDidChangeTreeData.event;
-   *
-   * @see https://code.visualstudio.com/api/references/vscode-api#EventEmitter
    */
   private _onDidChangeTreeData: EventEmitter<
     NodeModel | undefined | null | void
@@ -68,11 +39,8 @@ export class FeedbackProvider implements TreeDataProvider<NodeModel> {
   // -----------------------------------------------------------------
 
   /**
-   * Constructor for the FeedbackProvider class
-   *
-   * @constructor
-   * @public
-   * @memberof FeedbackProvider
+   * Constructs a FeedbackProvider responsible for managing feedback actions in the explorer view.
+   * @param controller FeedbackController instance providing feedback-related actions.
    */
   constructor(readonly controller: FeedbackController) {
     this._onDidChangeTreeData = new EventEmitter<
@@ -81,93 +49,85 @@ export class FeedbackProvider implements TreeDataProvider<NodeModel> {
     this.onDidChangeTreeData = this._onDidChangeTreeData.event;
   }
 
+  /**
+   * Disposes internal resources and event listeners to prevent memory leaks.
+   */
+  dispose(): void {
+    this._onDidChangeTreeData.dispose();
+  }
+
   // -----------------------------------------------------------------
   // Methods
   // -----------------------------------------------------------------
 
-  // Public methods
   /**
-   * Returns the tree item for the supplied element.
-   *
-   * @function getTreeItem
-   * @param {NodeModel} element - The element
-   * @public
-   * @memberof FeedbackProvider
-   * @example
-   * const treeItem = provider.getTreeItem(element);
-   *
-   * @returns {TreeItem | Thenable<TreeItem>} - The tree item
-   *
-   * @see https://code.visualstudio.com/api/references/vscode-api#TreeDataProvider
+   * Returns the tree item representation for the given element.
+   * @param element The element for which to return the tree item.
    */
-  // biome-ignore lint/correctness/noUndeclaredVariables: we dont control vscode's api
   getTreeItem(element: NodeModel): TreeItem | Thenable<TreeItem> {
     return element;
   }
 
   /**
-   * Returns the children for the supplied element.
-   *
-   * @function getChildren
-   * @param {NodeModel} [element] - The element
-   * @public
-   * @memberof FeedbackProvider
-   * @example
-   * const children = provider.getChildren(element);
-   *
-   * @returns {ProviderResult<NodeModel[]>} - The children
-   *
-   * @see https://code.visualstudio.com/api/references/vscode-api#TreeDataProvider
+   * Returns the child nodes for the given element, or the root feedback actions if no element is provided.
+   * @param element The parent node, or undefined for root nodes.
    */
   getChildren(element?: NodeModel): ProviderResult<NodeModel[]> {
     if (element) {
-      return element.children;
+      return element.children ?? [];
     }
-
-    return this.getFeedbacks();
+    return this.getListFeedback();
   }
 
   /**
-   * Refreshes the tree data.
-   *
-   * @function refresh
-   * @public
-   * @memberof FeedbackProvider
-   * @example
-   * provider.refresh();
-   *
-   * @returns {void} - No return value
+   * Refreshes the feedback tree view, causing it to be re-rendered in the explorer.
    */
   refresh(): void {
     this._onDidChangeTreeData.fire();
   }
 
-  // Private methods
   /**
-   * Returns the feedbacks.
-   *
-   * @function getFeedbacks
+   * Returns the feedback actions for the feedback tree view as NodeModel instances.
    * @private
-   * @memberof FeedbackProvider
-   * @example
-   * const feedbacks = this.getFeedbacks();
-   *
-   * @returns {NodeModel[]} - The feedbacks
+   * @returns Promise<NodeModel[]> Array of feedback action nodes.
    */
-  private getFeedbacks(): NodeModel[] {
-    return [
-      new NodeModel(l10n.t('About JSON Flow'), new ThemeIcon('info'), {
-        title: 'About JSON Flow',
-        command: `${EXTENSION_ID}.feedback.aboutUs`,
-      }),
-      new NodeModel(l10n.t('Report an Issue'), new ThemeIcon('bug'), {
-        title: 'Report an Issue',
-        command: `${EXTENSION_ID}.feedback.reportIssues`,
-      }),
-      new NodeModel(l10n.t('Rate This Extension'), new ThemeIcon('star'), {
-        title: 'Rate This Extension',
-        command: `${EXTENSION_ID}.feedback.rateUs`,
-      }),
+  private async getListFeedback(): Promise<NodeModel[]> {
+    return this.buildFeedbackActions();
+  }
+
+  /**
+   * Creates the feedback action nodes (e.g., open website, report bug, rate extension) for the tree view.
+   * @returns Array of NodeModel instances representing feedback actions.
+   */
+  private buildFeedbackActions(): NodeModel[] {
+    const actions = [
+      {
+        label: l10n.t('Extension Website'),
+        icon: new ThemeIcon('globe'),
+        command: {
+          command: `${EXTENSION_ID}.feedback.aboutUs`,
+          title: l10n.t('Open Extension Website'),
+        },
+      },
+      {
+        label: l10n.t('Report a Bug'),
+        icon: new ThemeIcon('bug'),
+        command: {
+          command: `${EXTENSION_ID}.feedback.reportIssues`,
+          title: l10n.t('Report a Bug'),
+        },
+      },
+      {
+        label: l10n.t('Rate Us'),
+        icon: new ThemeIcon('star-full'),
+        command: {
+          command: `${EXTENSION_ID}.feedback.rateUs`,
+          title: l10n.t('Rate Us'),
+        },
+      },
     ];
+    return actions.map(
+      (action) => new NodeModel(action.label, action.icon, action.command),
+    );
   }
 }

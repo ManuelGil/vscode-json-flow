@@ -8,24 +8,11 @@ import {
 } from 'vscode';
 
 /**
- * The Node class
+ * Represents a node in the custom tree view for the VSCode extension explorer.
+ * Encapsulates label, icon, command, children, and other VSCode-specific metadata.
  *
- * @class
- * @classdesc The class that represents a node in the tree view.
- * @export
- * @public
- * @extends {TreeItem}
- * @property {string | TreeItemLabel} label - The label
- * @property {string | Uri | { light: Uri; dark: Uri } | ThemeIcon} [iconPath] - The icon path
- * @property {Command} [command] - The command
- * @property {Uri} [resourceUri] - The resource URI
- * @property {string} [contextValue] - The context value
- * @property {Node[]} [children] - The children
  * @example
- * const node = new Node('About Us', TreeItemCollapsibleState.None, 'about', {
- *   title: 'About Us',
- *   command: 'extension-stater-kit.aboutUs',
- * });
+ * const node = new NodeModel('Settings', undefined, undefined, undefined, 'settings', []);
  *
  * @see https://code.visualstudio.com/api/references/vscode-api#TreeItem
  */
@@ -34,14 +21,8 @@ export class NodeModel extends TreeItem {
   // Properties
   // -----------------------------------------------------------------
 
-  // Public properties
   /**
-   * The children.
-   * @type {NodeModel[]}
-   * @public
-   * @memberof NodeModel
-   * @example
-   * node.children = [];
+   * Child nodes of this tree node, used for hierarchical tree structures in the explorer.
    */
   children?: NodeModel[];
 
@@ -50,20 +31,13 @@ export class NodeModel extends TreeItem {
   // -----------------------------------------------------------------
 
   /**
-   * The constructor
-   *
-   * @constructor
-   * @param {string | TreeItemLabel} label - The label
-   * @param {string | Uri | { light: Uri; dark: Uri } | ThemeIcon} [iconPath] - The icon path
-   * @param {Command} [command] - The command
-   * @param {Uri} [resourceUri] - The resource URI
-   * @param {string} [contextValue] - The context value
-   * @param {NodeModel[]} [children] - The children
-   * @example
-   * const node = new Node('About Us', new ThemeIcon('info'), {
-   *   title: 'About Us',
-   *   command: 'extension-stater-kit.aboutUs',
-   * });
+   * Creates a new node for the tree view, encapsulating label, icon, command, and child nodes.
+   * @param {string | TreeItemLabel} label The label for the node.
+   * @param {string | Uri | { light: Uri; dark: Uri } | ThemeIcon} [iconPath] Optional icon for the node.
+   * @param {Command} [command] Optional command to execute when the node is activated.
+   * @param {Uri} [resourceUri] Optional resource URI associated with this node.
+   * @param {string} [contextValue] Optional context value for VSCode context menus.
+   * @param {NodeModel[]} [children] Optional array of child NodeModel instances.
    */
   constructor(
     readonly label: string | TreeItemLabel,
@@ -90,18 +64,9 @@ export class NodeModel extends TreeItem {
   // Methods
   // -----------------------------------------------------------------
 
-  // Public methods
   /**
-   * The setChildren method
-   *
-   * @function setChildren
-   * @param {NodeModel[]} children - The children
-   * @public
-   * @memberof NodeModel
-   * @example
-   * node.setChildren([]);
-   *
-   * @returns {void} The result
+   * Assigns an array of child nodes to this node and updates its collapsible state.
+   * @param children Array of NodeModel instances to set as children.
    */
   setChildren(children: NodeModel[]): void {
     this.collapsibleState = TreeItemCollapsibleState.Expanded;
@@ -109,17 +74,10 @@ export class NodeModel extends TreeItem {
   }
 
   /**
-   * The hasChildren method
-   *
-   * @function hasChildren
-   * @public
-   * @memberof NodeModel
-   * @example
-   * const hasChildren = node.hasChildren();
-   *
-   * @returns {boolean} The result
+   * Checks whether this node has any child nodes.
+   * @returns True if children exist, false otherwise.
    */
   hasChildren(): boolean {
-    return !!(this.children && this.children.length);
+    return !!this.children && this.children.length > 0;
   }
 }

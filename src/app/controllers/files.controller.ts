@@ -1,20 +1,12 @@
 import fg from 'fast-glob';
-import { Range, ThemeIcon, Uri, env, l10n, window, workspace } from 'vscode';
+import { env, l10n, Range, ThemeIcon, Uri, window, workspace } from 'vscode';
 
 import { EXTENSION_ID, ExtensionConfig } from '../configs';
 import { FileType, isFileTypeSupported, parseJSONContent } from '../helpers';
 import { NodeModel } from '../models';
 
 /**
- * The FilesController class.
- *
- * @class
- * @classdesc The class that represents the list files controller.
- * @export
- * @public
- * @property {ExtensionConfig} config - The configuration object
- * @example
- * const controller = new FilesController(config);
+ * Handles file operations such as listing, opening, and copying files for the VSCode JSON Flow extension.
  */
 export class FilesController {
   // -----------------------------------------------------------------
@@ -22,31 +14,15 @@ export class FilesController {
   // -----------------------------------------------------------------
 
   /**
-   * Constructor for the FilesController class
-   *
-   * @constructor
-   * @param {ExtensionConfig} config - The configuration object
-   * @public
-   * @memberof FilesController
+   * Creates a new FilesController instance.
+   * @param config Extension configuration object.
    */
   constructor(readonly config: ExtensionConfig) {}
 
-  // -----------------------------------------------------------------
-  // Methods
-  // -----------------------------------------------------------------
-
-  // Public methods
   /**
-   * The getFiles method.
-   *
-   * @function getFiles
-   * @public
-   * @async
-   * @memberof FilesController
-   * @example
-   * controller.getFiles();
-   *
-   * @returns {Promise<NodeModel[] | void>} - The list of files
+   * Returns a list of files in the workspace as plain file objects.
+   * Shows an error message if no workspace is open or operation is cancelled.
+   * @returns Promise resolving to an array of file info objects or void if cancelled.
    */
   async getFiles(): Promise<NodeModel[] | void> {
     // Get the files in the folder
@@ -114,22 +90,14 @@ export class FilesController {
       return nodes;
     }
 
-    return;
+    return [];
   }
 
   /**
-   * The openFile method.
-   *
-   * @function openFile
-   * @param {NodeModel} node - The node model
-   * @public
-   * @memberof FilesController
-   * @example
-   * controller.openFile('file:///path/to/file');
-   *
-   * @returns {Promise<void>} - The promise
+   * Opens the file associated with the given node in the editor.
+   * @param node NodeModel representing the file to open.
    */
-  openFile(node: NodeModel) {
+  openFile(node: { resourceUri: Uri }) {
     if (node.resourceUri) {
       workspace.openTextDocument(node.resourceUri).then((filename) => {
         window.showTextDocument(filename);
@@ -138,16 +106,8 @@ export class FilesController {
   }
 
   /**
-   * The copyContent method.
-   *
-   * @function copyContent
-   * @param {NodeModel} node - The node model
-   * @public
-   * @memberof FilesController
-   * @example
-   * controller.copyContent('file:///path/to/file');
-   *
-   * @returns {void} - The promise
+   * Copies the content of the file represented by the node to the clipboard.
+   * @param node NodeModel representing the file to copy.
    */
   copyContent(node: NodeModel) {
     if (node.resourceUri) {
@@ -160,16 +120,8 @@ export class FilesController {
   }
 
   /**
-   * The copyContentAsJson method.
-   *
-   * @function copyContentAsJson
-   * @param {NodeModel | Uri} node - The node model
-   * @public
-   * @memberof FilesController
-   * @example
-   * controller.copyContentAsJson('file:///path/to/file');
-   *
-   * @returns {void} - The promise
+   * Copies the content of the file as JSON to the clipboard.
+   * @param node NodeModel or Uri representing the file.
    */
   copyContentAsJson(node: NodeModel) {
     if (node) {
@@ -219,15 +171,7 @@ export class FilesController {
   }
 
   /**
-   * The copyContentPartialAsJson method.
-   *
-   * @function copyContentPartialAsJson
-   * @public
-   * @memberof FilesController
-   * @example
-   * controller.copyContentPartialAsJson();
-   *
-   * @returns {void} - The promise
+   * Copies the selected content in the active editor as JSON to the clipboard.
    */
   copyContentPartialAsJson() {
     // Get the active text editor
@@ -305,16 +249,8 @@ export class FilesController {
   }
 
   /**
-   * The getFileProperties method.
-   *
-   * @function getFileProperties
-   * @param {NodeModel} node - The node model
-   * @public
-   * @memberof FilesController
-   * @example
-   * controller.getFileProperties('file:///path/to/file');
-   *
-   * @returns {void} - The promise
+   * Shows properties of the file represented by the given node in a modal message.
+   * @param node NodeModel representing the file.
    */
   getFileProperties(node: NodeModel) {
     if (node.resourceUri) {
@@ -332,21 +268,13 @@ export class FilesController {
     }
   }
 
-  // Private methods
   /**
-   * The findFiles method.
-   *
-   * @function findFiles
-   * @param {string} baseDir - The base directory
-   * @param {string[]} include - The include pattern
-   * @param {string[]} exclude - The exclude pattern
-   * @private
-   * @async
-   * @memberof FilesController
-   * @example
-   * controller.findFiles('baseDir', ['include'], ['exclude']);
-   *
-   * @returns {Promise<Uri[]>} - The promise with the files
+   * Finds files in the workspace based on the given include and exclude patterns.
+   * @param baseDir The base directory.
+   * @param include The include patterns.
+   * @param exclude The exclude patterns.
+   * @param allowRecursion Toggle recursive search.
+   * @returns The promise with the files.
    */
   private async findFiles(
     baseDir: string,

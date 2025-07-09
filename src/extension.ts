@@ -8,6 +8,10 @@
  * @see https://code.visualstudio.com/api
  */
 
+/**
+ * Main entry point for the VSCode JSON Flow extension.
+ * Handles activation, command registration, and extension lifecycle management.
+ */
 import * as vscode from 'vscode';
 import { VSCodeMarketplaceClient } from 'vscode-marketplace-client';
 
@@ -27,18 +31,11 @@ import {
 } from './app/controllers';
 import { FeedbackProvider, FilesProvider, JSONProvider } from './app/providers';
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
-
 /**
- * Called when the Angular VSCode extension is activated (first time a command is executed).
- * Registers all commands, providers, and event listeners needed for the extension.
- *
- * @param {vscode.ExtensionContext} context - The VSCode extension context object.
- * @returns {Promise<void>} Resolves when activation is complete.
- * @example
- * // In VSCode, extension host calls:
- * activate(context);
+ * Called when the VSCode JSON Flow extension is activated for the first time.
+ * Responsible for registering all commands, providers, and event listeners needed for the extension's functionality.
+ * Handles setup and initialization of extension resources.
+ * @param context The VSCode extension context object.
  */
 export async function activate(context: vscode.ExtensionContext) {
   // The code you place here will be executed every time your command is executed
@@ -522,7 +519,7 @@ export async function activate(context: vscode.ExtensionContext) {
         return;
       }
 
-      transformController.convertToType(uri, targetLanguage);
+      transformController.convertFileToType(uri, targetLanguage);
     },
   );
 
@@ -713,6 +710,10 @@ export async function activate(context: vscode.ExtensionContext) {
   }
 }
 
-// this method is called when your extension is deactivated
-// biome-ignore lint/suspicious/noEmptyBlockStatements: we dont control vscode's api
-export function deactivate() {}
+/**
+ * Called when the VSCode JSON Flow extension is deactivated.
+ * Responsible for cleaning up extension resources and disposables.
+ */
+export function deactivate() {
+  // This method is intentionally left empty for extension deactivation cleanup if needed in the future.
+}

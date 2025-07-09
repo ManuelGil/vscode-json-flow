@@ -8,9 +8,10 @@ import { l10n, window } from 'vscode';
 import * as yaml from 'yaml';
 
 /**
- * The FileType type.
+ * List of supported file types for parsing structured data.
  *
- * @type {FileType}
+ * @example
+ * let type: FileType = 'json';
  */
 export type FileType =
   | 'csv'
@@ -29,10 +30,14 @@ export type FileType =
   | 'yml';
 
 /**
- * Type guard to verify if a value is a valid FileType.
+ * Checks if a value is a supported FileType.
  *
- * @param value - The value to check.
- * @returns {value is FileType} - True if the value is a valid FileType, false otherwise.
+ * @param value The value to check.
+ * @returns True if the value is a supported FileType, false otherwise.
+ *
+ * @example
+ * isFileTypeSupported('json'); // true
+ * isFileTypeSupported('unsupported'); // false
  */
 export const isFileTypeSupported = (value: unknown): value is FileType => {
   const validFileTypes: FileType[] = [
@@ -56,12 +61,20 @@ export const isFileTypeSupported = (value: unknown): value is FileType => {
 };
 
 /**
- * The parseJSONContent function.
+ * Parses the given string content using the specified file type parser.
+ * Returns an object representation or null if parsing fails.
  *
- * @function parseJSONContent
- * @param {string} content - The content to parse
- * @param {FileType} type - The type of content
- * @returns {object | null} - The parsed content
+ * @param content The string content to parse.
+ * @param type The type of file format to parse as.
+ * @returns The parsed object or null if parsing fails.
+ *
+ * @remarks
+ * Supports JSON, JSON5, YAML, TOML, INI, ENV, XML, HCL, CSV, TSV and more.
+ * Uses appropriate parsing libraries for each format.
+ *
+ * @example
+ * const obj = parseJSONContent('{ "foo": 1 }', 'json');
+ * if (obj) { console.log(obj.foo); }
  */
 export const parseJSONContent = (
   content: string,
@@ -72,6 +85,7 @@ export const parseJSONContent = (
       case 'json':
       case 'jsonc':
       case 'json5':
+        // Use json5 to parse JSON, JSONC, and JSON5 content
         return json5.parse(content);
 
       case 'dockercompose':

@@ -7,39 +7,31 @@ import {
 } from '../configs';
 
 /**
- * The FeedbackController class.
- *
- * @class
- * @classdesc The class that represents the feedback controller.
- * @export
- * @public
- * @example
- * const controller = new FeedbackController();
+ * Handles feedback actions such as opening the extension website, reporting bugs, and rating the extension.
  */
 export class FeedbackController {
   // -----------------------------------------------------------------
   // Methods
   // -----------------------------------------------------------------
 
-  // Public methods
   /**
-   * Opens the extension's marketplace page in the browser.
+   * Opens the extension's website in the default browser for user feedback or information.
    */
-  aboutUs(): void {
+  async aboutUs(): Promise<void> {
     env.openExternal(Uri.parse(EXTENSION_WEBSITE_URL));
   }
 
   /**
-   * Opens the extension's repository issues page in the browser.
+   * Opens the extension's repository issues page in the browser, allowing users to report bugs or request features.
    */
-  reportIssues(): void {
+  async reportIssues(): Promise<void> {
     env.openExternal(Uri.parse(EXTENSION_BUGS_URL));
   }
 
   /**
-   * Opens the review page for the extension in the marketplace.
+   * Opens the review page for the extension in the marketplace, enabling users to rate and provide feedback.
    */
-  rateUs(): void {
+  async rateUs(): Promise<void> {
     env.openExternal(
       Uri.parse(`${EXTENSION_MARKETPLACE_URL}&ssr=false#review-details`),
     );

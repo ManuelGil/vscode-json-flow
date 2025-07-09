@@ -12,51 +12,26 @@ import { EXTENSION_ID } from '../configs';
 import { getNonce } from '../helpers';
 
 /**
- * The JSONProvider class.
- *
- * @class
- * @classdesc The class that represents the json provider.
- * @export
- * @public
- * @property {string} static viewType - The view type
- * @property {WebviewView} [_view] - The view
- * @property {OpenAIService} [openAISservice] - The OpenAI service
- * @example
- * const provider = new JSONProvider(extensionUri);
+ * Manages the JSON preview webview panel.
  */
 export class JSONProvider {
   // -----------------------------------------------------------------
   // Properties
   // -----------------------------------------------------------------
 
-  // Public properties
   /**
-   * The current provider.
-   *
-   * @public
+   * The current JSONProvider instance for the webview panel.
    * @static
-   * @memberof JSONProvider
-   * @type {JSONProvider | undefined}
    */
   static currentProvider: JSONProvider | undefined;
 
   /**
-   * The view type.
-   *
-   * @public
-   * @static
-   * @memberof JSONProvider
-   * @type {string}
+   * Unique identifier for the JSON Flow webview type.
    */
   static readonly viewType: string = `${EXTENSION_ID}.jsonView`;
 
-  // Private properties
   /**
-   * The disposables.
-   *
-   * @private
-   * @memberof JSONProvider
-   * @type {Disposable[]}
+   * Tracks all disposables for this provider to ensure proper cleanup of resources and event listeners.
    */
   private _disposables: Disposable[] = [];
 
@@ -65,13 +40,9 @@ export class JSONProvider {
   // -----------------------------------------------------------------
 
   /**
-   * Constructor for the JSONProvider class.
-   *
-   * @constructor
-   * @param {WebviewPanel} _panel - The webview panel
-   * @param {Uri} _extensionUri - The extension URI
-   * @public
-   * @memberof JSONProvider
+   * Creates a new JSONProvider instance for managing the JSON preview webview panel.
+   * @param _panel The webview panel instance to manage.
+   * @param _extensionUri The extension URI for resource resolution.
    */
   private constructor(
     private readonly _panel: WebviewPanel,
@@ -79,8 +50,10 @@ export class JSONProvider {
   ) {
     this._update();
 
+    // Dispose resources when the panel is closed.
     this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
 
+    // Listen for messages from the webview (extend as needed for interactivity).
     this._panel.webview.onDidReceiveMessage(
       (message) => {
         switch (message.type) {
@@ -92,6 +65,7 @@ export class JSONProvider {
       this._disposables,
     );
 
+    // Update the webview when the panel becomes visible again.
     this._panel.onDidChangeViewState(
       () => {
         if (this._panel.visible) {
@@ -107,20 +81,11 @@ export class JSONProvider {
   // Methods
   // -----------------------------------------------------------------
 
-  // Public methods
   /**
-   * The createPanel method.
-   *
-   * @function createPanel
-   * @param {Uri} extensionUri - The extension URI
-   * @param {Uri} json - The JSON URI
-   * @public
-   * @static
-   * @memberof JSONProvider
-   * @example
-   * JSONProvider.createPanel(extensionUri);
-   *
-   * @returns {WebviewPanel}
+   * Creates and returns a new webview panel for JSON preview.
+   * If a panel is already open, it will be revealed instead of creating a new one.
+   * @param extensionUri The extension URI for resource resolution.
+   * @returns The created or revealed webview panel.
    */
   static createPanel(extensionUri: Uri): WebviewPanel {
     if (JSONProvider.currentProvider) {
@@ -146,17 +111,9 @@ export class JSONProvider {
   }
 
   /**
-   * The getWebviewOptions method.
-   *
-   * @function getWebviewOptions
-   * @param {Uri} extensionUri - The extension URI
-   * @public
-   * @static
-   * @memberof JSONProvider
-   * @example
-   * const options = JSONProvider.getWebviewOptions(extensionUri);
-   *
-   * @returns {WebviewOptions} - The webview options
+   * Gets the webview options for the JSON provider.
+   * @param extensionUri The extension URI for resource resolution.
+   * @returns The webview options.
    */
   static getWebviewOptions(extensionUri: Uri): WebviewOptions {
     return {
@@ -166,58 +123,45 @@ export class JSONProvider {
   }
 
   /**
-   * The revive method.
-   *
-   * @function revive
-   * @param {WebviewPanel} panel - The webview panel
-   * @param {Uri} extensionUri - The extension URI
-   * @public
-   * @static
-   * @memberof JSONProvider
-   * @example
-   * JSONProvider.revive(panel, extensionUri);
-   *
-   * @returns {void}
+   * Revives the JSON provider.
+   * @param panel The webview panel.
+   * @param extensionUri The extension URI for resource resolution.
    */
   static revive(panel: WebviewPanel, extensionUri: Uri): void {
     JSONProvider.currentProvider = new JSONProvider(panel, extensionUri);
   }
 
   /**
-   * The dispose method.
+   * Disposes resources used by the JSON provider to prevent memory leaks.
+   * This method ensures that all disposables and the webview panel are properly cleaned up.
    *
-   * @function dispose
-   * @public
-   * @memberof JSONProvider
+   * @remarks
+   * Always call this method when the provider is no longer needed to avoid resource leaks.
+   *
    * @example
    * provider.dispose();
-   *
-   * @returns {void}
    */
-  dispose() {
+  dispose(): void {
+    // Remove reference to the current provider
     JSONProvider.currentProvider = undefined;
 
-    this._panel.dispose();
+    // Dispose the webview panel if it exists
+    if (this._panel) {
+      this._panel.dispose();
+    }
 
+    // Dispose all registered disposables safely
     while (this._disposables.length) {
-      const x = this._disposables.pop();
-      if (x) {
-        x.dispose();
+      const disposable = this._disposables.pop();
+      if (disposable && typeof disposable.dispose === 'function') {
+        disposable.dispose();
       }
     }
   }
 
-  // Private methods
   /**
-   * The _update method.
-   *
-   * @function _update
-   * @private
-   * @memberof JSONProvider
-   * @example
-   * provider._update();
-   *
-   * @returns {void}
+   * Updates the webview HTML content for the panel.
+   * Called internally after state or data changes, or when the panel is shown.
    */
   private _update(): void {
     const webview = this._panel.webview;
@@ -226,16 +170,10 @@ export class JSONProvider {
   }
 
   /**
-   * The _getHtmlForWebview method.
-   *
-   * @function _getHtmlForWebview
-   * @param {Webview} webview - The webview
-   * @private
-   * @memberof JSONProvider
-   * @example
-   * const html = provider._getHtmlForWebview(webview);
-   *
-   * @returns {string} - The HTML for the webview
+   * Generates and returns the HTML content for the JSON preview webview panel.
+   * Includes security policies and links to bundled scripts/styles.
+   * @param webview The webview instance to generate HTML for.
+   * @returns HTML string for the webview content.
    */
   private _getHtmlForWebview(webview: Webview): string {
     // Get the local path to main script run in the webview, then convert it to a uri we can use in the webview.

@@ -157,20 +157,20 @@ JSON Flow processes all data locally within your editor. No data is sent externa
 
 Below is a summary of the main commands and context menu options available in JSON Flow. All commands can be accessed via the Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`) or via context menus in the Explorer and Editor.
 
-| Command ID                        | Title                          | Where/How to Access        | Description                                   |
-|-----------------------------------|--------------------------------|---------------------------|-----------------------------------------------|
-| jsonFlow.files.refreshList        | Refresh List                   | Explorer/Palette           | Refreshes the file list in JSON Flow view     |
-| jsonFlow.files.openFile           | Open File                      | Explorer/Palette           | Opens the selected file in the editor         |
-| jsonFlow.files.copyContent        | Copy Content                   | Explorer/Editor/Palette    | Copies the file content                       |
-| jsonFlow.files.copyContentAsJson  | Copy Content as JSON           | Explorer/Editor/Palette    | Copies content as JSON                        |
-| jsonFlow.files.getFileProperties  | Get File Properties            | Explorer/Palette           | Shows metadata and structure                  |
-| jsonFlow.files.convertToJson      | Convert to JSON                | Explorer/Editor/Palette    | Converts file to JSON                         |
-| jsonFlow.files.convertToType      | Convert to Type or Structure   | Explorer/Editor/Palette    | Generates types from JSON                     |
-| jsonFlow.files.convertPartialToType| Convert Partial to Type        | Editor/Palette             | Generates types from selected block           |
-| jsonFlow.files.convertPartialToJson| Convert Partial to JSON        | Editor/Palette             | Converts selected block to JSON               |
-| jsonFlow.files.copyContentPartialAsJson| Copy Partial as JSON        | Editor/Palette             | Copies selected block as JSON                 |
-| jsonFlow.json.showPreview         | Show Preview                   | Explorer/Editor/Palette    | Shows the data as an interactive graph        |
-| jsonFlow.json.showPartialPreview  | Show Partial Preview           | Editor/Palette             | Shows a preview of the selected block         |
+| Command ID                              | Title                        | Where/How to Access     | Description                               |
+| --------------------------------------- | ---------------------------- | ----------------------- | ----------------------------------------- |
+| jsonFlow.files.refreshList              | Refresh List                 | Explorer/Palette        | Refreshes the file list in JSON Flow view |
+| jsonFlow.files.openFile                 | Open File                    | Explorer/Palette        | Opens the selected file in the editor     |
+| jsonFlow.files.copyContent              | Copy Content                 | Explorer/Editor/Palette | Copies the file content                   |
+| jsonFlow.files.copyContentAsJson        | Copy Content as JSON         | Explorer/Editor/Palette | Copies content as JSON                    |
+| jsonFlow.files.getFileProperties        | Get File Properties          | Explorer/Palette        | Shows metadata and structure              |
+| jsonFlow.files.convertToJson            | Convert to JSON              | Explorer/Editor/Palette | Converts file to JSON                     |
+| jsonFlow.files.convertToType            | Convert to Type or Structure | Explorer/Editor/Palette | Generates types from JSON                 |
+| jsonFlow.files.convertPartialToType     | Convert Partial to Type      | Editor/Palette          | Generates types from selected block       |
+| jsonFlow.files.convertPartialToJson     | Convert Partial to JSON      | Editor/Palette          | Converts selected block to JSON           |
+| jsonFlow.files.copyContentPartialAsJson | Copy Partial as JSON         | Editor/Palette          | Copies selected block as JSON             |
+| jsonFlow.json.showPreview               | Show Preview                 | Explorer/Editor/Palette | Shows the data as an interactive graph    |
+| jsonFlow.json.showPartialPreview        | Show Partial Preview         | Editor/Palette          | Shows a preview of the selected block     |
 
 - **Context Menus:** Right-click on a supported file in the Explorer or inside the Editor to access these commands quickly.
 - **Submenus:** JSON Flow groups actions under a dedicated submenu in both Explorer and Editor context menus for convenience.
@@ -261,15 +261,15 @@ For more detailed guidance, see the [Official Documentation](https://github.com/
 
 ### Context Menu Options
 
-| Title  | Purpose |
-| --- | --- |
-| Open File | Open the selected file |
-| Convert to JSON | Convert the selected file to JSON |
+| Title                        | Purpose                                                                                                                                  |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Open File                    | Open the selected file                                                                                                                   |
+| Convert to JSON              | Convert the selected file to JSON                                                                                                        |
 | Convert to Type or Structure | Convert the selected file to a specific type or structure. See [Code Generation from JSON](#code-generation-from-json) for more details. |
-| Copy Content to Clipboard | Copy the content of the selected file to the clipboard |
-| Copy Content as JSON | Copy the content of the selected file as JSON |
-| Get File Properties | Get the properties of the selected file |
-| Show Selection as JSON | Show the Selection in the JSON Flow view |
+| Copy Content to Clipboard    | Copy the content of the selected file to the clipboard                                                                                   |
+| Copy Content as JSON         | Copy the content of the selected file as JSON                                                                                            |
+| Get File Properties          | Get the properties of the selected file                                                                                                  |
+| Show Selection as JSON       | Show the Selection in the JSON Flow view                                                                                                 |
 
 ---
 
