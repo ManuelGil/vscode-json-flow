@@ -11,7 +11,7 @@ import {
 } from 'react-hook-form';
 
 import { cn } from '@webview/lib/utils';
-import { Label } from '@webview/components/ui/label';
+import { Label } from '../atoms';
 
 const Form = FormProvider;
 

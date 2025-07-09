@@ -6,7 +6,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from './tooltip';
+} from '../molecules';
 
 import { cn } from '@webview/lib/utils';
 

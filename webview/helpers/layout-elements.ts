@@ -77,12 +77,31 @@ const { Top, Bottom, Left, Right } = Position;
 
 type NodeType = 'spouse' | 'sibling' | 'normal';
 
+/**
+ * Determines the type of a node (spouse, sibling, or normal) based on its properties.
+ *
+ * @param node - The node object to check.
+ * @returns The node type as a string.
+ *
+ * @example
+ * const type = getNodeType({ isSpouse: true }); // 'spouse'
+ */
 const getNodeType = (node: {
   isSpouse?: boolean;
   isSibling?: boolean;
 }): NodeType =>
   node.isSpouse ? 'spouse' : node.isSibling ? 'sibling' : 'normal';
 
+/**
+ * Returns the source and target handle positions for a node based on direction and type.
+ *
+ * @param direction - The layout direction (TB, LR, etc.).
+ * @param type - The node type ('spouse', 'sibling', 'normal').
+ * @returns An object with source and target handle positions.
+ *
+ * @example
+ * const pos = getPositions('TB', 'normal');
+ */
 const getPositions = (direction: Direction, type: NodeType) => {
   const positions = {
     spouse: {
@@ -119,6 +138,18 @@ const getPositions = (direction: Direction, type: NodeType) => {
   return positions[type][isHorizontal(direction) ? 'horizontal' : 'vertical'];
 };
 
+/**
+ * Creates a React Flow Edge object between two nodes with proper handles and settings.
+ *
+ * @param sourceNode - The source node ID.
+ * @param targetNode - The target node ID.
+ * @param direction - The layout direction.
+ * @param type - The node type for handle positioning.
+ * @returns An Edge object for React Flow.
+ *
+ * @example
+ * const edge = createEdge('a', 'b', 'TB', 'normal');
+ */
 const createEdge = (
   sourceNode: string,
   targetNode: string,
@@ -126,10 +157,10 @@ const createEdge = (
   type: NodeType,
 ): Edge => {
   const { source, target } = getPositions(direction, type);
-  const settings = localStorage.getItem('settings') ? 
-    JSON.parse(localStorage.getItem('settings')!) : 
-    DEFAULT_SETTINGS;
-  
+  const settings = localStorage.getItem('settings')
+    ? JSON.parse(localStorage.getItem('settings')!)
+    : DEFAULT_SETTINGS;
+
   return {
     id: `e${sourceNode}${targetNode}`,
     source: sourceNode,
@@ -141,6 +172,19 @@ const createEdge = (
   };
 };
 
+/**
+ * Creates a React Flow Node object from an EntitreeNode and layout info.
+ *
+ * @param node - The EntitreeNode to convert.
+ * @param direction - The layout direction.
+ * @param type - The node type.
+ * @param rootId - The root node ID.
+ * @param tree - The TreeMap for additional data.
+ * @returns A Node object for React Flow.
+ *
+ * @example
+ * const node = createNode(entitreeNode, 'TB', 'normal', 'root', treeMap);
+ */
 const createNode = (
   node: EntitreeNode,
   direction: Direction,
@@ -174,6 +218,17 @@ const createNode = (
   };
 };
 
+/**
+ * Calculates node and edge layouts for a tree using entitree-flex and returns React Flow compatible arrays.
+ *
+ * @param tree - The tree data as a TreeMap.
+ * @param rootId - The root node ID.
+ * @param direction - The layout direction (default: 'TB').
+ * @returns An object with arrays of nodes and edges.
+ *
+ * @example
+ * const { nodes, edges } = layoutElements(tree, rootId, 'LR');
+ */
 export const layoutElements = (
   tree: TreeMap,
   rootId: string,

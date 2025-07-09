@@ -120,9 +120,9 @@ Exploring complex data structures in code or configuration files can be cumberso
 
 - **src/**: Core extension logic, command registration, and VSCode API integration (`extension.ts`).
   - **src/app/**: Business logic, services, and data transformation modules.
-- **webview/**: React-based UI for interactive graph visualization and file management.
-  - **webview/components/**: Reusable UI components (buttons, dialogs, graph nodes, etc.).
-  - **webview/hooks/** and **webview/helpers/**: Custom React hooks and utility functions.
+- **webview/**: React-based UI for interactive graph visualization and file management, estructurada bajo principios de Atomic Design.
+  - **webview/components/**: Componentes UI organizados como `atoms`, `molecules`, `organisms` y controles personalizados. Cada subcarpeta cuenta con un archivo barrel (`index.ts`) para simplificar importaciones.
+  - **webview/hooks/** y **webview/helpers/**: Hooks personalizados y funciones utilitarias, todos documentados con JSDoc y ejemplos de uso. Exponen barrels para facilitar su consumo en el resto del proyecto.
 - **l10n/**: Localization files for multi-language support.
 - **schemas/**: JSON schemas for configuration validation and autocompletion.
 - **assets/**, **images/**: Icons, screenshots, and static resources.

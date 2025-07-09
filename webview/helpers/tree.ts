@@ -3,6 +3,16 @@ import type { TreeMap, TreeData } from '@webview/types';
 import { layoutElements } from './layout-elements';
 import { getRootId } from './generate-tree';
 
+/**
+ * Recursively collects all descendant node IDs for a given node in a tree.
+ *
+ * @param nodeId - The ID of the node to start from.
+ * @param tree - The tree data as a mapping from IDs to nodes.
+ * @returns An array of descendant node IDs.
+ *
+ * @example
+ * const descendants = getAllDescendants('root', treeData);
+ */
 export function getAllDescendants(
   nodeId: string,
   tree: Record<string, TreeData>,
@@ -22,6 +32,15 @@ export function getAllDescendants(
   return descendants;
 }
 
+/**
+ * Generates an array of React Flow Node objects from a TreeMap.
+ *
+ * @param treeData - The tree data as a TreeMap.
+ * @returns An array of Node objects for use in React Flow.
+ *
+ * @example
+ * const nodes = generateNodes(treeData);
+ */
 export function generateNodes(treeData: TreeMap): Node[] {
   if (!Object.keys(treeData).length) return [];
 

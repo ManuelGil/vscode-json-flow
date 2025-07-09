@@ -6,10 +6,33 @@ interface JsonObject {
 }
 interface JsonArray extends Array<JsonValue> {}
 
+/**
+ * Generates a unique node ID for tree nodes based on a prefix and key.
+ * Useful for creating hierarchical node identifiers in tree structures.
+ *
+ * @param prefix - The parent node's ID or prefix string.
+ * @param key - The key or index to append to the prefix.
+ * @returns The generated node ID string.
+ *
+ * @example
+ * const id = createNodeId('root', 'name'); // 'root-name'
+ */
 function createNodeId(prefix: string, key: string): string {
   return `${prefix}-${key.toLowerCase().replace(/\s+/g, '-')}`;
 }
 
+/**
+ * Recursively generates a tree structure (TreeMap) from a JSON value.
+ * Supports objects, arrays, and primitives, assigning unique IDs and line numbers.
+ *
+ * @param json - The JSON value to convert into a tree.
+ * @param parentId - (Optional) Parent node ID for recursion. Defaults to 'root'.
+ * @param lineNumber - (Optional) Starting line number for the root node. Defaults to 1.
+ * @returns TreeMap representing the hierarchical structure of the input JSON.
+ *
+ * @example
+ * const tree = generateTree({ foo: [1, 2] });
+ */
 export function generateTree(
   json: JsonValue,
   parentId = 'root',
@@ -88,6 +111,15 @@ export function generateTree(
   return tree;
 }
 
+/**
+ * Finds the root node ID in a TreeMap by excluding all referenced children, spouses, and siblings.
+ *
+ * @param treeData - The TreeMap to analyze.
+ * @returns The root node ID string.
+ *
+ * @example
+ * const rootId = getRootId(treeData);
+ */
 export function getRootId(treeData: TreeMap): string {
   const allNodes = new Set(Object.keys(treeData));
 

@@ -1,7 +1,9 @@
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { cn } from '@webview/lib';
-import { Badge, Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui';
+import { Button } from './atoms/Button';
+import { Badge } from './atoms/Badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './molecules/Tooltip';
 import { Eye, EyeOff } from 'lucide-react';
 import type { CustomNodeData } from '@webview/types';
 
