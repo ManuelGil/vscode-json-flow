@@ -132,6 +132,24 @@
 					"scope": "resource",
 					"description": "%jsonFlow.files.excludedFilePatterns%"
 				},
+				"jsonFlow.files.maxSearchRecursionDepth": {
+					"type": "number",
+					"default": 0,
+					"scope": "resource",
+					"description": "%jsonFlow.files.maxSearchRecursionDepth%"
+				},
+				"jsonFlow.files.supportsHiddenFiles": {
+					"type": "boolean",
+					"default": true,
+					"scope": "resource",
+					"description": "%jsonFlow.files.supportsHiddenFiles%"
+				},
+				"jsonFlow.files.preserveGitignoreSettings": {
+					"type": "boolean",
+					"default": false,
+					"scope": "resource",
+					"description": "%jsonFlow.files.preserveGitignoreSettings%"
+				},
 				"jsonFlow.files.includeFilePath": {
 					"type": "boolean",
 					"default": true,
@@ -412,6 +430,7 @@
 		"fast-xml-parser": "^5.2.5",
 		"hcl-parser": "^0.1.1",
 		"html-to-image": "^1.11.13",
+		"ignore": "^7.0.5",
 		"ini": "^5.0.0",
 		"json5": "^2.2.3",
 		"lucide-react": "^0.525.0",

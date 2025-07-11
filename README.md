@@ -112,10 +112,14 @@ Exploring complex data structures in code or configuration files can be cumberso
 
 ### Advanced Configuration
 
-- **Enable/Disable Extension**: `jsonFlow.enable`
-- **Included/Excluded File Patterns**: `jsonFlow.files.includedFilePatterns`, `jsonFlow.files.excludedFilePatterns`
-- **Include File Path in Views**: `jsonFlow.files.includeFilePath`
-- **Graph Layout Orientation**: `jsonFlow.graph.layoutOrientation` (`TB`, `LR`, `BT`, `RL`)
+- **Enable/Disable Extension**: Activa o desactiva la extensión. Clave: `jsonFlow.enable` (`boolean`, valor por defecto: `true`).
+- **Included File Patterns**: Especifica patrones glob para incluir archivos en las operaciones. Clave: `jsonFlow.files.includedFilePatterns` (`array`, valor por defecto: `["json", "jsonc", ...]`).
+- **Excluded File Patterns**: Especifica patrones glob para excluir archivos o carpetas. Clave: `jsonFlow.files.excludedFilePatterns` (`array`, valor por defecto: `["**/node_modules/**", ...]`).
+- **Max Search Recursion Depth**: Limita la profundidad máxima de carpetas al buscar archivos. Clave: `jsonFlow.files.maxSearchRecursionDepth` (`number`, valor por defecto: `0` para ilimitado).
+- **Supports Hidden Files**: Incluye archivos ocultos (como `.env`) en las búsquedas y vistas. Clave: `jsonFlow.files.supportsHiddenFiles` (`boolean`, valor por defecto: `true`).
+- **Preserve Gitignore Settings**: Respeta reglas definidas en `.gitignore` al buscar o listar archivos. Clave: `jsonFlow.files.preserveGitignoreSettings` (`boolean`, valor por defecto: `false`).
+- **Include File Path in Views**: Muestra la ruta completa del archivo en las vistas. Clave: `jsonFlow.files.includeFilePath` (`boolean`, valor por defecto: `true`).
+- **Graph Layout Orientation**: Define la orientación del grafo en visualizaciones. Clave: `jsonFlow.graph.layoutOrientation` (`string`, opciones: `TB`, `LR`, `BT`, `RL`; valor por defecto: `TB`).
 
 ### Architecture Overview
 
@@ -298,6 +302,9 @@ JSON Flow can be customized to fit your workflow. Add or edit the following sett
     "**/build/**",
     "**/vendor/**"
   ],
+  "jsonFlow.files.maxSearchRecursionDepth": 0, // 0 means unlimited depth
+  "jsonFlow.files.supportsHiddenFiles": true,
+  "jsonFlow.files.preserveGitignoreSettings": false,
   "jsonFlow.files.includeFilePath": true,
   "jsonFlow.graph.layoutOrientation": "TB"
 }
@@ -307,6 +314,9 @@ JSON Flow can be customized to fit your workflow. Add or edit the following sett
 - `jsonFlow.files.includedFilePatterns` (`array`, default: `[ ... ]`): File extensions managed by JSON Flow.
 - `jsonFlow.files.excludedFilePatterns` (`array`, default: `[ ... ]`): Glob patterns for files/folders to ignore.
 - `jsonFlow.files.includeFilePath` (`boolean`, default: `true`): Display file paths in the explorer view.
+- `jsonFlow.files.maxSearchRecursionDepth` (`number`, default: `0`): Controls the maximum depth for recursive file searches. A value of `0` disables the limit.
+- `jsonFlow.files.supportsHiddenFiles` (`boolean`, default: `true`): Determines if hidden files (e.g., `.env`) are included in search results and file views.
+- `jsonFlow.files.preserveGitignoreSettings` (`boolean`, default: `false`): Toggles whether to respect rules defined in `.gitignore` files during file searches.
 - `jsonFlow.graph.layoutOrientation` (`string`, default: `"TB"`): Orientation of the graph. Options: `TB` (top-bottom), `LR` (left-right), `BT` (bottom-top), `RL` (right-left`).
 
 After editing, restart your editor to apply changes.

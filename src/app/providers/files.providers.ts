@@ -76,6 +76,13 @@ export class FilesProvider implements TreeDataProvider<NodeModel> {
   // -----------------------------------------------------------------
 
   /**
+   * Internal cache for grouped file nodes.
+   */
+  private _cachedNodes: NodeModel[] | undefined = undefined;
+  private _cachePromise: Promise<NodeModel[] | undefined> | undefined =
+    undefined;
+
+  /**
    * Returns the tree item representation for the given file node.
    * @param element The node for which to return the tree item.
    */
@@ -91,14 +98,30 @@ export class FilesProvider implements TreeDataProvider<NodeModel> {
     if (element) {
       return element.children;
     }
-
-    return this.getListFiles();
+    // Usar el cache si existe
+    if (this._cachedNodes) {
+      return this._cachedNodes;
+    }
+    // Si hay una promesa pendiente, esperarla
+    if (this._cachePromise) {
+      return this._cachePromise;
+    }
+    // Si no hay cache, cargar y guardar
+    this._cachePromise = this.getListFilesInternal().then((nodes) => {
+      this._cachedNodes = nodes;
+      this._cachePromise = undefined;
+      return nodes;
+    });
+    return this._cachePromise;
   }
 
   /**
    * Refreshes the file tree view, causing it to be re-rendered in the explorer.
    */
   refresh(): void {
+    // Limpiar cache al refrescar
+    this._cachedNodes = undefined;
+    this._cachePromise = undefined;
     this._onDidChangeTreeData.fire();
   }
 
@@ -107,7 +130,7 @@ export class FilesProvider implements TreeDataProvider<NodeModel> {
    * Only NodeModel instances are used to ensure type consistency.
    * @returns Promise resolving to an array of grouped NodeModel nodes or undefined if none.
    */
-  private async getListFiles(): Promise<NodeModel[] | undefined> {
+  private async getListFilesInternal(): Promise<NodeModel[] | undefined> {
     const { includedFilePatterns } = this.controller.config;
     const files = await this.controller.getFiles();
 

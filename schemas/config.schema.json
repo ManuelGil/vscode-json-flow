@@ -40,6 +40,24 @@
 			"scope": "resource",
 			"description": "Glob patterns to exclude from the package. The default is node_modules, dist, out, build, and any hidden files."
 		},
+		"jsonFlow.files.maxSearchRecursionDepth": {
+			"type": "number",
+			"default": 0,
+			"scope": "resource",
+			"description": "Maximum recursion depth for file search. The default is 0, which means no limit."
+		},
+		"jsonFlow.files.supportsHiddenFiles": {
+			"type": "boolean",
+			"default": true,
+			"scope": "resource",
+			"description": "Supports hidden files. The default is true."
+		},
+		"jsonFlow.files.preserveGitignoreSettings": {
+			"type": "boolean",
+			"default": false,
+			"scope": "resource",
+			"description": "Supports gitignore files. The default is false."
+		},
 		"jsonFlow.files.includeFilePath": {
 			"type": "boolean",
 			"default": true,

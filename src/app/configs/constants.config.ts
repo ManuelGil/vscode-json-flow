@@ -52,6 +52,15 @@ export const DEFAULT_EXCLUDE_PATTERNS: string[] = [
   '**/vendor/**',
 ];
 
+/** Default recursion depth for file search (0 = unlimited). */
+export const DEFAULT_MAX_SEARCH_RECURSION_DEPTH: number = 0;
+
+/** Default for supporting hidden files. */
+export const DEFAULT_SUPPORTS_HIDDEN_FILES: boolean = true;
+
+/** Default for preserving .gitignore settings. */
+export const DEFAULT_PRESERVE_GITIGNORE_SETTINGS: boolean = false;
+
 /** Default for showing file path in results. */
 export const IS_INCLUDE_FILE_PATH_DEFAULT: boolean = true;
 

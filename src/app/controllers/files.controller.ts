@@ -1,4 +1,7 @@
 import fg from 'fast-glob';
+import { existsSync, readFileSync } from 'fs';
+import ignore from 'ignore';
+import { join, relative } from 'path';
 import { env, l10n, Range, ThemeIcon, Uri, window, workspace } from 'vscode';
 
 import { EXTENSION_ID, ExtensionConfig } from '../configs';
@@ -38,8 +41,14 @@ export class FilesController {
 
     folders = workspace.workspaceFolders.map((folder) => folder.uri.fsPath);
 
-    const { includedFilePatterns, excludedFilePatterns, includeFilePath } =
-      this.config;
+    const {
+      includedFilePatterns,
+      excludedFilePatterns,
+      maxSearchRecursionDepth,
+      supportsHiddenFiles,
+      preserveGitignoreSettings,
+      includeFilePath,
+    } = this.config;
 
     const fileExtensionPattern = `**/*.{${includedFilePatterns.join(',')}}`;
     const fileExclusionPatterns = Array.isArray(excludedFilePatterns)
@@ -51,6 +60,9 @@ export class FilesController {
         folder,
         [fileExtensionPattern],
         fileExclusionPatterns,
+        maxSearchRecursionDepth,
+        supportsHiddenFiles,
+        preserveGitignoreSettings,
       );
 
       files.push(...result);
@@ -255,38 +267,88 @@ export class FilesController {
   }
 
   /**
-   * Finds files in the workspace based on the given include and exclude patterns.
-   * @param baseDir The base directory.
-   * @param include The include patterns.
-   * @param exclude The exclude patterns.
-   * @param allowRecursion Toggle recursive search.
-   * @returns The promise with the files.
+   * Searches for files in a directory matching specified patterns with optimized performance
+   *
+   * @param {string} baseDir - Absolute path to the base directory to search in
+   * @param {string[]} includeFilePatterns - Glob patterns for files to include (e.g. ['**\/*.ts'])
+   * @param {string[]} excludedPatterns - Glob patterns for files or directories to exclude
+   * @param {boolean} disableRecursive - When true, limits search to the immediate directory
+   * @param {number} deep - Maximum depth for recursive search (0 = unlimited)
+   * @param {boolean} includeDotfiles - When true, includes files and directories starting with a dot
+   * @param {boolean} enableGitignoreDetection - When true, respects rules in .gitignore files
+   * @returns {Promise<Uri[]>} Array of VS Code Uri objects for matched files
+   * @throws {Error} If the directory access fails or pattern matching encounters errors
+   * @private
+   * @async
+   * @memberof FilesController
+   * @example
+   * // Example usage:
+   * // const tsFiles = await this.findFiles('/path/to/dir', ['**\/*.ts'], ['**\/node_modules/**']);
    */
   private async findFiles(
     baseDir: string,
-    include: string[], // Include patterns
-    exclude: string[], // Exclude patterns
-    allowRecursion: boolean = true, // Toggle recursive search
+    includeFilePatterns: string[],
+    excludedPatterns: string[] = [],
+    deep: number = 0,
+    includeDotfiles: boolean = true,
+    enableGitignoreDetection: boolean = false,
+    disableRecursive: boolean = false,
   ): Promise<Uri[]> {
-    // Configure fast-glob options
-    const options = {
-      cwd: baseDir, // Set base directory for searching
-      absolute: true, // Ensure paths are absolute
-      onlyFiles: true, // Match only files, not directories
-      dot: true, // Include files and directories starting with a dot
-      deep: allowRecursion ? undefined : 1, // Toggle recursion
-      ignore: exclude, // Exclude patterns
-    };
-
     try {
+      // Check if any include patterns were provided
+      if (!includeFilePatterns.length) {
+        return [];
+      }
+
+      // If we need to respect .gitignore, we need to load it
+      let gitignore;
+
+      if (enableGitignoreDetection) {
+        const gitignorePath = join(baseDir, '.gitignore');
+        // Load .gitignore if it exists
+        if (existsSync(gitignorePath)) {
+          gitignore = ignore().add(readFileSync(gitignorePath, 'utf8'));
+        }
+      }
+
+      // Configure fast-glob options with optimizations for large projects
+      const options = {
+        cwd: baseDir, // Set the base directory for searching
+        absolute: true, // Return absolute paths for files found
+        onlyFiles: true, // Match only files, not directories
+        dot: includeDotfiles, // Include the files and directories starting with a dot
+        deep: disableRecursive ? 1 : deep === 0 ? undefined : deep, // Set the recursion depth
+        ignore: excludedPatterns, // Set the patterns to ignore files and directories
+        followSymbolicLinks: false, // Don't follow symlinks for better performance
+        cache: true, // Enable cache for better performance in large projects
+        stats: false, // Don't return stats objects for better performance
+        throwErrorOnBrokenSymbolicLink: false, // Don't throw on broken symlinks
+        objectMode: false, // Use string mode for better performance
+      };
+
       // Use fast-glob to find matching files
-      const filePaths = await fg(include, options);
+      let foundFilePaths = await fg(includeFilePatterns, options);
+
+      // Apply gitignore filtering if needed
+      if (gitignore) {
+        foundFilePaths = foundFilePaths.filter(
+          (filePath) => !gitignore.ignores(relative(baseDir, filePath)),
+        );
+      }
 
       // Convert file paths to VS Code Uri objects
-      return filePaths.sort().map((filePath) => Uri.file(filePath));
+      return foundFilePaths.sort().map((filePath) => Uri.file(filePath));
     } catch (error) {
-      const message = l10n.t('Error while finding files: {0}', [error]);
+      const errorDetails =
+        error instanceof Error
+          ? { message: error.message, stack: error.stack }
+          : { message: String(error) };
+
+      const message = l10n.t('Error finding files: {0}', [
+        errorDetails.message,
+      ]);
       window.showErrorMessage(message);
+
       return [];
     }
   }

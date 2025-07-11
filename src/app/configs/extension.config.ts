@@ -3,6 +3,9 @@ import { WorkspaceConfiguration } from 'vscode';
 import {
   DEFAULT_EXCLUDE_PATTERNS,
   DEFAULT_INCLUDE_PATTERNS,
+  DEFAULT_MAX_SEARCH_RECURSION_DEPTH,
+  DEFAULT_PRESERVE_GITIGNORE_SETTINGS,
+  DEFAULT_SUPPORTS_HIDDEN_FILES,
   IS_INCLUDE_FILE_PATH_DEFAULT,
   LAYOUT_DIRECTION,
 } from './constants.config';
@@ -29,6 +32,21 @@ export class ExtensionConfig {
    * Glob patterns for files to exclude from the extension's file operations.
    */
   excludedFilePatterns: string[];
+
+  /**
+   * Maximum recursion depth for file search (0 = unlimited).
+   */
+  maxSearchRecursionDepth: number;
+
+  /**
+   * Whether to include hidden files in search operations.
+   */
+  supportsHiddenFiles: boolean;
+
+  /**
+   * Whether to respect .gitignore settings during file search.
+   */
+  preserveGitignoreSettings: boolean;
 
   /**
    * Whether to show the file path in the search results.
@@ -59,6 +77,18 @@ export class ExtensionConfig {
       'files.excludedFilePatterns',
       DEFAULT_EXCLUDE_PATTERNS,
     );
+    this.maxSearchRecursionDepth = config.get<number>(
+      'files.maxSearchRecursionDepth',
+      DEFAULT_MAX_SEARCH_RECURSION_DEPTH,
+    );
+    this.supportsHiddenFiles = config.get<boolean>(
+      'files.supportsHiddenFiles',
+      DEFAULT_SUPPORTS_HIDDEN_FILES,
+    );
+    this.preserveGitignoreSettings = config.get<boolean>(
+      'files.preserveGitignoreSettings',
+      DEFAULT_PRESERVE_GITIGNORE_SETTINGS,
+    );
     this.includeFilePath = config.get<boolean>(
       'files.includeFilePath',
       IS_INCLUDE_FILE_PATH_DEFAULT,
@@ -85,6 +115,18 @@ export class ExtensionConfig {
     this.excludedFilePatterns = config.get<string[]>(
       'files.excludedFilePatterns',
       this.excludedFilePatterns,
+    );
+    this.maxSearchRecursionDepth = config.get<number>(
+      'files.maxSearchRecursionDepth',
+      this.maxSearchRecursionDepth,
+    );
+    this.supportsHiddenFiles = config.get<boolean>(
+      'files.supportsHiddenFiles',
+      this.supportsHiddenFiles,
+    );
+    this.preserveGitignoreSettings = config.get<boolean>(
+      'files.preserveGitignoreSettings',
+      this.preserveGitignoreSettings,
     );
     this.includeFilePath = config.get<boolean>(
       'files.includeFilePath',

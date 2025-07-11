@@ -149,12 +149,12 @@ export function useFlowController({
       return { nodes: [], edges: [] };
     }
     try {
-      return layoutElements(treeData, treeRootId, directionRef.current);
+      return layoutElements(treeData, treeRootId, currentDirection);
     } catch (error) {
       console.error('Error calculating layout:', error);
       return { nodes: [], edges: [] };
     }
-  }, [treeData, treeRootId, isValidTreeData]);
+  }, [treeData, treeRootId, isValidTreeData, currentDirection]);
 
   // Keep stable reference to toggleNodeChildren function
   const toggleNodeChildrenRef = useRef<(nodeId: string) => void>(() => {
@@ -199,7 +199,6 @@ export function useFlowController({
 
       // Update edges
       setEdges(layout.edges);
-      setCurrentDirection(directionRef.current);
     } catch (error) {
       console.error('Error updating visible elements:', error);
       setNodes([]);
