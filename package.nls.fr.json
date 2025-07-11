@@ -4,7 +4,7 @@
 	"jsonFlow.files.excludedFilePatterns": "Modèles glob à exclure du package. Par défaut : node_modules, dist, out, build et fichiers cachés.",
 	"jsonFlow.files.maxSearchRecursionDepth": "Profondeur maximale de récursion pour la recherche de fichiers. Par défaut : 0.",
 	"jsonFlow.files.supportsHiddenFiles": "Supporte les fichiers cachés. Par défaut : true.",
-	"jsonFlow.files.preserveGitignoreSettings": "Supporte les fichiers gitignore. Par défaut : false.",
+	"jsonFlow.files.preserveGitignoreSettings": "Préserver les paramètres de .gitignore. Par défaut : true.",
 	"jsonFlow.files.includeFilePath": "Afficher le chemin du fichier à côté du nom dans la liste des fichiers générés.",
 	"jsonFlow.graph.layoutOrientation": "Orientation du graphique. TB pour haut-bas, LR pour gauche-droite.",
 	"jsonFlow.files.refreshList": "Actualiser la liste",
