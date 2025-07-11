@@ -42,7 +42,7 @@ export function CustomControls({
   onSettingsChange,
 }: CustomControlsProps) {
   return (
-    <Panel className="flex justify-between gap-2" position="top-right">
+    <Panel className="flex justify-between gap-2" position="top-center">
       {/* Tooltip molecule integration for RotateLayout */}
       <TooltipProvider>
         <Tooltip>
