@@ -42,7 +42,32 @@ export interface CustomNodeData {
 }
 
 /**
- * Full tree node with extended metadata.
+ * Represents a node in the tree structure.
+ *
+ * @property id - Unique identifier for the node.
+ * @property name - Display name of the node.
+ * @property parentId - ID of the parent node, if any.
+ * @property children - Optional array of child node IDs.
+ * @property siblings - Optional array of sibling node IDs.
+ * @property spouses - Optional array of spouse node IDs.
+ * @property isSpouse - Whether this node is a spouse.
+ * @property isSibling - Whether this node is a sibling.
+ * @property data - Optional additional data for the node.
+ * @property line - Optional line number in the source JSON.
+ *
+ * @example
+ * const node: TreeNode = {
+ *   id: '1',
+ *   name: 'Root',
+ *   type: 'person',
+ *   children: ['2', '3'],
+ *   siblings: [],
+ *   spouses: [],
+ *   isSpouse: false,
+ *   isSibling: false,
+ *   data: { foo: 'bar' },
+ *   line: 10
+ * };
  */
 export interface TreeNode {
   id: string;
@@ -65,7 +90,7 @@ export interface TreeNode {
 }
 
 /**
- * Map of tree nodes by ID.
+ * Map of tree nodes by ID. Each key is a node ID and the value is a TreeNode.
  */
 export type TreeMap = Record<string, TreeNode>;
 
@@ -114,3 +139,38 @@ export type NodeColors = {
  * Alias for serialized JSON strings.
  */
 export type JsonString = string;
+
+/**
+ * Base type for JSON values
+ * Replaces generic 'any' with more specific type information
+ */
+export type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonArray
+  | JsonObject;
+
+/**
+ * Type for JSON objects
+ */
+export interface JsonObject {
+  [key: string]: JsonValue;
+}
+
+/**
+ * Type for JSON arrays
+ */
+export type JsonArray = JsonValue[];
+
+/**
+ * Interface for a node in the JSON tree
+ * Used for rendering in the flow visualization
+ */
+export interface JsonNode {
+  key: string;
+  value: JsonValue;
+  type: 'object' | 'array' | 'string' | 'number' | 'boolean' | 'null';
+}
+

@@ -4,9 +4,26 @@ import * as React from 'react';
 
 import { cn } from '@webview/lib/utils';
 
+/**
+ * RadioGroup component collection
+ * Built on top of Radix UI's RadioGroup primitives
+ * Provides accessible radio button functionality
+ */
+
+/**
+ * Props for RadioGroup component
+ */
+type RadioGroupProps = React.ComponentPropsWithoutRef<
+  typeof RadioGroupPrimitive.Root
+>;
+
+/**
+ * Container for radio button options
+ * Manages selection state and keyboard navigation
+ */
 const RadioGroup = React.forwardRef<
   React.ElementRef<typeof RadioGroupPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Root>
+  RadioGroupProps
 >(({ className, ...props }, ref) => {
   return (
     <RadioGroupPrimitive.Root
@@ -18,9 +35,20 @@ const RadioGroup = React.forwardRef<
 });
 RadioGroup.displayName = RadioGroupPrimitive.Root.displayName;
 
+/**
+ * Props for RadioGroupItem component
+ */
+type RadioGroupItemProps = React.ComponentPropsWithoutRef<
+  typeof RadioGroupPrimitive.Item
+>;
+
+/**
+ * Individual radio button item
+ * Should be used within a RadioGroup
+ */
 const RadioGroupItem = React.forwardRef<
   React.ElementRef<typeof RadioGroupPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Item>
+  RadioGroupItemProps
 >(({ className, ...props }, ref) => {
   return (
     <RadioGroupPrimitive.Item

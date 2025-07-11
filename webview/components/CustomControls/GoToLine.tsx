@@ -2,12 +2,13 @@ import { useReactFlow } from '@xyflow/react';
 import { Search } from 'lucide-react';
 import { useState } from 'react';
 
-import { Button, Input } from '@webview/components/atoms';
 import {
+  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from '@webview/components/molecules/DropdownMenu';
+  Input,
+} from '@webview/components';
 
 export function GoToLine() {
   const [line, setLine] = useState<number | undefined>();

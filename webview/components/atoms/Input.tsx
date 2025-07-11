@@ -2,7 +2,16 @@ import * as React from 'react';
 
 import { cn } from '@webview/lib/utils';
 
-const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<'input'>>(
+/**
+ * Props for the Input component
+ */
+type InputProps = React.ComponentProps<'input'>;
+
+/**
+ * Input component with consistent styling and forwarded ref
+ * Used for user input in forms and interactive elements
+ */
+const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, ...props }, ref) => {
     return (
       <input

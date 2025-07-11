@@ -26,7 +26,7 @@ export function parseCsv(content: string): object[] {
         {} as Record<string, string>,
       );
     });
-  } catch (err) {
-    throwError('Failed to parse CSV', err);
+  } catch (error) {
+    throwError('Failed to parse CSV', error);
   }
 }

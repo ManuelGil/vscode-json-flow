@@ -3,13 +3,29 @@ import * as React from 'react';
 
 import { cn } from '@webview/lib/utils';
 
+/**
+ * Popover component collection
+ * Built on top of Radix UI's Popover primitives
+ * Provides accessible floating content panels
+ */
 const Popover = PopoverPrimitive.Root;
 
 const PopoverTrigger = PopoverPrimitive.Trigger;
 
+/**
+ * Props for PopoverContent component
+ */
+type PopoverContentProps = React.ComponentPropsWithoutRef<
+  typeof PopoverPrimitive.Content
+>;
+
+/**
+ * Content component for Popover
+ * Renders the floating popover panel
+ */
 const PopoverContent = React.forwardRef<
   React.ElementRef<typeof PopoverPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>
+  PopoverContentProps
 >(({ className, align = 'center', sideOffset = 4, ...props }, ref) => (
   <PopoverPrimitive.Portal>
     <PopoverPrimitive.Content

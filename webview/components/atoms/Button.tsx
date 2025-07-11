@@ -2,14 +2,19 @@ import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 
-import { cn } from '@webview/lib/utils';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@webview/components/molecules/Tooltip';
+} from '@webview/components';
+import { cn } from '@webview/lib/utils';
 
+/**
+ * Button style variants configuration
+ * Defines appearance variations including variant (default, destructive, etc)
+ * and size options (default, sm, lg, icon)
+ */
 const buttonVariants = cva(
   'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
   {
@@ -39,14 +44,23 @@ const buttonVariants = cva(
   },
 );
 
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
-  asChild?: boolean;
-  tooltip?: string;
-  tooltipSide?: 'top' | 'right' | 'bottom' | 'left';
-}
+/**
+ * Props for the Button component
+ */
+export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> &
+  VariantProps<typeof buttonVariants> & {
+    /** Whether to render the component as its child */
+    asChild?: boolean;
+    /** Optional tooltip text to display on hover */
+    tooltip?: string;
+    /** Position of the tooltip relative to the button */
+    tooltipSide?: 'top' | 'right' | 'bottom' | 'left';
+  };
 
+/**
+ * Button component with support for variants, tooltips and forwarded refs
+ * Can be rendered as a child component when asChild is true
+ */
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, tooltip, ...props }, ref) => {
     const Comp = asChild ? Slot : 'button';

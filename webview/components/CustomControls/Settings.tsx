@@ -5,8 +5,9 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { Button, Switch } from '@webview/components/atoms';
 import {
+  Button,
+  Switch,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -25,8 +26,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@webview/components/organisms';
-import { useTheme } from '@webview/components/ThemeProvider';
+  useTheme,
+} from '@webview/components';
 import { type Color, colorClasses, colors } from '@webview/themes/colors';
 import { EDGE_TYPE_NAMES, EdgeType } from '@webview/types';
 

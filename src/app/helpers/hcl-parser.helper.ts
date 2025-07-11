@@ -16,7 +16,7 @@ import { throwError } from './error-handler.helper';
 export function parseHcl(content: string): object {
   try {
     return hcl.parse(content);
-  } catch (err) {
-    throwError('Failed to parse HCL', err);
+  } catch (error) {
+    throwError('Failed to parse HCL', error);
   }
 }

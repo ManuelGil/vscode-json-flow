@@ -3,8 +3,8 @@ import { Position } from '@xyflow/react';
 import { layoutFromMap } from 'entitree-flex';
 
 import { DEFAULT_SETTINGS } from '@webview/components/CustomControls/Settings';
+import { isHorizontal, isReversed } from '@webview/helpers';
 import { EdgeType, type Direction, type TreeMap } from '@webview/types';
-import { isHorizontal, isReversed } from './direction';
 
 const NODE_HEIGHT = 36;
 const NODE_WIDTH = 160;
@@ -79,6 +79,7 @@ type NodeType = 'spouse' | 'sibling' | 'normal';
 
 /**
  * Determines the type of a node (spouse, sibling, or normal) based on its properties.
+ * Used to assign correct handle positions and styles in the flow layout.
  *
  * @param node - The node object to check.
  * @returns The node type as a string.
@@ -94,6 +95,7 @@ const getNodeType = (node: {
 
 /**
  * Returns the source and target handle positions for a node based on direction and type.
+ * Handles all supported layout directions and node types.
  *
  * @param direction - The layout direction (TB, LR, etc.).
  * @param type - The node type ('spouse', 'sibling', 'normal').
@@ -140,6 +142,7 @@ const getPositions = (direction: Direction, type: NodeType) => {
 
 /**
  * Creates a React Flow Edge object between two nodes with proper handles and settings.
+ * Used to render edges in the flow graph with correct animation and handle positions.
  *
  * @param sourceNode - The source node ID.
  * @param targetNode - The target node ID.
@@ -174,6 +177,7 @@ const createEdge = (
 
 /**
  * Creates a React Flow Node object from an EntitreeNode and layout info.
+ * Used for rendering nodes with correct position, type, and custom data.
  *
  * @param node - The EntitreeNode to convert.
  * @param direction - The layout direction.
@@ -220,6 +224,7 @@ const createNode = (
 
 /**
  * Calculates node and edge layouts for a tree using entitree-flex and returns React Flow compatible arrays.
+ * Handles errors gracefully and logs them to the console.
  *
  * @param tree - The tree data as a TreeMap.
  * @param rootId - The root node ID.
@@ -234,6 +239,7 @@ export const layoutElements = (
   rootId: string,
   direction: Direction = 'TB',
 ): { nodes: Node[]; edges: Edge[] } => {
+  // Early validation
   if (!tree || !rootId || Object.keys(tree).length === 0) {
     return { nodes: [], edges: [] };
   }
@@ -253,14 +259,12 @@ export const layoutElements = (
     );
 
     if (!entitreeNodes || !Array.isArray(entitreeNodes)) {
-      console.error('Invalid nodes from layoutFromMap:', entitreeNodes);
       return { nodes: [], edges: [] };
     }
 
     const edges = (entitreeEdges || [])
       .map((edge) => {
         if (!edge?.source?.id || !edge?.target?.id) {
-          console.error('Invalid edge:', edge);
           return null;
         }
         const type = getNodeType(edge.target);
@@ -275,7 +279,6 @@ export const layoutElements = (
           typeof node.x === 'undefined' ||
           typeof node.y === 'undefined'
         ) {
-          console.error('Invalid node:', node);
           return null;
         }
         const type = getNodeType(node);

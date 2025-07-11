@@ -10,8 +10,8 @@ import {
   useFormContext,
 } from 'react-hook-form';
 
+import { Label } from '@webview/components';
 import { cn } from '@webview/lib/utils';
-import { Label } from '@webview/components/atoms/Label';
 
 const Form = FormProvider;
 

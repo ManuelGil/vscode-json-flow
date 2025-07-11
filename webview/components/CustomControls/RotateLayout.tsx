@@ -5,17 +5,34 @@ import {
   AlignVerticalJustifyStart,
 } from 'lucide-react';
 
-import { Button } from '@webview/components/atoms';
+import { Button } from '@webview/components';
 
-interface RotateLayoutProps {
-  currentDirection: 'TB' | 'LR' | 'BT' | 'RL';
+/**
+ * Direction types for the RotateLayout component.
+ */
+type Direction = 'TB' | 'LR' | 'BT' | 'RL';
+
+/**
+ * Props for the RotateLayout component.
+ */
+type RotateLayoutProps = {
+  /**
+   * The current direction of the layout.
+   */
+  currentDirection: Direction;
+  /**
+   * Handler for the rotate button click event.
+   */
   onRotate: () => void;
-}
+};
 
 export function RotateLayout({
   currentDirection,
   onRotate,
 }: RotateLayoutProps) {
+  /**
+   * Returns the icon for the current direction.
+   */
   const getDirectionIcon = () => {
     switch (currentDirection) {
       case 'TB':

@@ -1,8 +1,8 @@
 import type { Node } from '@xyflow/react';
 
-import type { TreeMap, TreeData } from '@webview/types';
-import { layoutElements } from './layout-elements';
-import { getRootId } from './generate-tree';
+import { getRootId } from '@webview/helpers';
+import type { TreeData, TreeMap } from '@webview/types';
+import { layoutElements } from './layoutService';
 
 /**
  * Recursively collects all descendant node IDs for a given node in a tree.
@@ -43,7 +43,9 @@ export function getAllDescendants(
  * const nodes = generateNodes(treeData);
  */
 export function generateNodes(treeData: TreeMap): Node[] {
-  if (!Object.keys(treeData).length) return [];
+  if (!Object.keys(treeData).length) {
+    return [];
+  }
 
   const rootId = getRootId(treeData);
   const { nodes } = layoutElements(treeData, rootId, 'TB');

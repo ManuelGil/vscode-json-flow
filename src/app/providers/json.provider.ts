@@ -166,9 +166,9 @@ export class JSONProvider {
     if (this._panel) {
       try {
         this._panel.dispose();
-      } catch (e) {
+      } catch (error) {
         // Ignore errors if already disposed
-        console.error('Error disposing webview panel:', e);
+        console.error('Error disposing webview panel:', error);
       }
     }
 
@@ -178,9 +178,9 @@ export class JSONProvider {
       if (disposable && typeof disposable.dispose === 'function') {
         try {
           disposable.dispose();
-        } catch (e) {
+        } catch (error) {
           // Ignore errors if already disposed
-          console.error('Error disposing disposable:', e);
+          console.error('Error disposing disposable:', error);
         }
       }
     }

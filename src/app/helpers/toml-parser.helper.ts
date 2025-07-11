@@ -16,7 +16,7 @@ import { throwError } from './error-handler.helper';
 export function parseToml(content: string): object {
   try {
     return toml.parse(content);
-  } catch (err) {
-    throwError('Failed to parse TOML', err);
+  } catch (error) {
+    throwError('Failed to parse TOML', error);
   }
 }

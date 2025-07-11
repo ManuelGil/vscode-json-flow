@@ -29,7 +29,8 @@ interface CustomNodeProps {
   selected?: boolean;
 }
 
-export const CustomNode = memo<CustomNodeProps>(({ data, selected }) => {
+export const CustomNode = memo<CustomNodeProps>(
+  ({ data, selected }) => {
   const {
     isSpouse,
     isSibling,
@@ -209,5 +210,23 @@ export const CustomNode = memo<CustomNodeProps>(({ data, selected }) => {
         </div>
       </div>
     </TooltipProvider>
+  );
+},
+
+/**
+ * Compare function for memo optimization
+ * Only re-renders when critical properties change
+ * @param prevProps - Previous props
+ * @param nextProps - Next props
+ * @returns boolean indicating if component should skip re-render
+ */
+(prevProps, nextProps) => {
+  // Compare only necessary properties that affect rendering
+  return (
+    prevProps.selected === nextProps.selected &&
+    prevProps.data.id === nextProps.data.id &&
+    prevProps.data.label === nextProps.data.label &&
+    prevProps.data.direction === nextProps.data.direction &&
+    prevProps.data.isCollapsed === nextProps.data.isCollapsed
   );
 });

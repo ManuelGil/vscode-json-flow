@@ -11,15 +11,8 @@ import { HexColorPicker } from 'react-colorful';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { Button, Input, Label } from '@webview/components/atoms';
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-  RadioGroup,
-  RadioGroupItem,
-} from '@webview/components/molecules';
-import {
+  Button,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -33,7 +26,14 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@webview/components/organisms';
+  Input,
+  Label,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  RadioGroup,
+  RadioGroupItem,
+} from '@webview/components';
 
 const downloadSchema = z.object({
   fileName: z.string().min(2).max(50),
@@ -109,10 +109,16 @@ const TAILWIND_COLORS = [
   },
 ] as const;
 
+/**
+ * ImageDownload component for exporting the flow diagram as an image or SVG.
+ * Handles download and clipboard copy, background color selection, and file naming.
+ * All handlers are memoized for performance.
+ */
 export function ImageDownload() {
   const [isCopied, setIsCopied] = useState(false);
   const [isDownloaded, setIsDownloaded] = useState(false);
 
+  // Memoize form initialization to prevent unnecessary recreations
   const downloadForm = useForm<z.infer<typeof downloadSchema>>({
     resolver: zodResolver(downloadSchema),
     defaultValues: {
@@ -124,11 +130,34 @@ export function ImageDownload() {
 
   const { getNodes } = useReactFlow();
 
+  /**
+   * Filter function to exclude certain elements from image export
+   */
+  const filter = useCallback((node: Node) => {
+    const className = (node as HTMLElement).classList?.value || '';
+    // Elements to exclude from the exported image
+    const blacklist = [
+      'react-flow__panel',
+      'react-flow__minimap',
+      'react-flow__controls',
+      'nodrag',
+    ];
+
+    return !blacklist.some((blackItem) => className.includes(blackItem));
+  }, []);
+
+  /**
+   * Main function to handle image export - either to file or clipboard
+   * Memoized with dependencies on getNodes and filter
+   */
   const downloadImage = useCallback(
     async (type?: 'download' | 'clipboard') => {
       const nodes = getNodes();
-      const nodesBounds = getNodesBounds(nodes);
+      // Add small delay to prevent flicker and ensure we get a clean image
+      // This is important for when elements are still animating
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
+      const nodesBounds = getNodesBounds(nodes);
       const width = nodesBounds.width;
       const height = nodesBounds.height;
       const xCenter = nodesBounds.x;
@@ -164,16 +193,7 @@ export function ImageDownload() {
         style: {
           transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`,
         },
-        filter: (node: Node) => {
-          if (!(node instanceof HTMLElement)) {
-            return true;
-          }
-          return (
-            !node.classList?.contains('react-flow__panel') &&
-            !node.classList?.contains('react-flow__minimap') &&
-            !node.classList?.contains('react-flow__controls')
-          );
-        },
+        filter,
       };
 
       if (type === 'clipboard') {
@@ -201,22 +221,26 @@ export function ImageDownload() {
       link.href = dataUrl;
       link.click();
     },
-    [getNodes, downloadForm],
+    [getNodes, downloadForm, filter],
   );
 
   const colorPickerRef = useRef<HTMLInputElement>(null);
 
-  async function onSubmit() {
-    await downloadImage();
+  /**
+   * Submit handler for the download form
+   * Memoized with proper dependency on downloadImage
+   */
+  const onSubmit = useCallback(() => {
+    downloadImage('download');
     setIsDownloaded(true);
     setTimeout(() => setIsDownloaded(false), 2000);
-  }
+  }, [downloadImage]);
 
-  const handleCopy = async () => {
+  const handleCopy = useCallback(async () => {
     await downloadImage('clipboard');
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000);
-  };
+  }, [downloadImage]);
 
   return (
     <Dialog>

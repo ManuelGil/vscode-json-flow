@@ -1,12 +1,12 @@
+import { type Color, colors } from '@webview/themes/colors';
+import type { ColorMode } from '@xyflow/react';
 import {
   createContext,
+  ReactNode,
   useContext,
   useEffect,
   useState,
-  ReactNode,
 } from 'react';
-import type { ColorMode } from '@xyflow/react';
-import { type Color, colors } from '@webview/themes/colors';
 
 type Theme = 'dark' | 'light' | 'system';
 
@@ -37,6 +37,15 @@ const initialState: ThemeProviderState = {
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 
+/**
+ * ThemeProvider component for context and color mode management.
+ * @param children - React children
+ * @param defaultTheme - Default theme
+ * @param defaultColor - Default color
+ * @param modeStorageKey - Storage key for theme
+ * @param colorStorageKey - Storage key for color
+ * @param onColorModeChange - Handler for color mode change
+ */
 export function ThemeProvider({
   children,
   defaultTheme = 'system',
@@ -54,9 +63,8 @@ export function ThemeProvider({
   );
   const [colorMode, setColorMode] = useState<ColorMode>('light');
 
-  const root = window.document.documentElement;
-
   useEffect(() => {
+    const root = window.document.documentElement;
     root.classList.remove('light', 'dark');
 
     let newColorMode: ColorMode = 'light';
@@ -74,9 +82,13 @@ export function ThemeProvider({
 
     setColorMode(newColorMode);
     onColorModeChange?.(newColorMode);
+    return () => {
+      root.classList.remove('light', 'dark');
+    };
   }, [theme, onColorModeChange]);
 
   useEffect(() => {
+    const root = window.document.documentElement;
     colors.forEach((c) => root.classList.remove(c));
     root.classList.add(color);
   }, [color]);

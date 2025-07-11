@@ -16,7 +16,7 @@ import { throwError } from './error-handler.helper';
 export function parseEnv(content: string): object {
   try {
     return dotenv.parse(content);
-  } catch (err) {
-    throwError('Failed to parse ENV', err);
+  } catch (error) {
+    throwError('Failed to parse ENV', error);
   }
 }

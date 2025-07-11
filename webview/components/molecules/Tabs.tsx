@@ -3,11 +3,26 @@ import * as React from 'react';
 
 import { cn } from '@webview/lib/utils';
 
+/**
+ * Tabs component collection
+ * Built on top of Radix UI's Tabs primitives
+ * Provides accessible tabbed interface functionality
+ */
+
 const Tabs = TabsPrimitive.Root;
 
+/**
+ * Props for TabsList component
+ */
+type TabsListProps = React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>;
+
+/**
+ * Container for tab triggers/buttons
+ * Used for housing the interactive tab buttons
+ */
 const TabsList = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.List>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
+  TabsListProps
 >(({ className, ...props }, ref) => (
   <TabsPrimitive.List
     ref={ref}
@@ -20,9 +35,20 @@ const TabsList = React.forwardRef<
 ));
 TabsList.displayName = TabsPrimitive.List.displayName;
 
+/**
+ * Props for TabsTrigger component
+ */
+type TabsTriggerProps = React.ComponentPropsWithoutRef<
+  typeof TabsPrimitive.Trigger
+>;
+
+/**
+ * Interactive tab button
+ * Controls which tab content panel is shown
+ */
 const TabsTrigger = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
+  TabsTriggerProps
 >(({ className, ...props }, ref) => (
   <TabsPrimitive.Trigger
     ref={ref}
@@ -35,9 +61,20 @@ const TabsTrigger = React.forwardRef<
 ));
 TabsTrigger.displayName = TabsPrimitive.Trigger.displayName;
 
+/**
+ * Props for TabsContent component
+ */
+type TabsContentProps = React.ComponentPropsWithoutRef<
+  typeof TabsPrimitive.Content
+>;
+
+/**
+ * Content panel for tabs
+ * Displays content associated with the selected tab
+ */
 const TabsContent = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>
+  TabsContentProps
 >(({ className, ...props }, ref) => (
   <TabsPrimitive.Content
     ref={ref}

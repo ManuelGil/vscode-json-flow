@@ -3,15 +3,32 @@ import * as React from 'react';
 
 import { cn } from '@webview/lib/utils';
 
+/**
+ * Tooltip component collection
+ * Built on top of Radix UI's Tooltip primitives
+ * Provides accessible tooltip functionality
+ */
+
 const TooltipProvider = TooltipPrimitive.Provider;
 
 const Tooltip = TooltipPrimitive.Root;
 
 const TooltipTrigger = TooltipPrimitive.Trigger;
 
+/**
+ * Props for TooltipContent component
+ */
+type TooltipContentProps = React.ComponentPropsWithoutRef<
+  typeof TooltipPrimitive.Content
+>;
+
+/**
+ * Content component for tooltips
+ * Displays the actual tooltip content when trigger is hovered/focused
+ */
 const TooltipContent = React.forwardRef<
   React.ElementRef<typeof TooltipPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content>
+  TooltipContentProps
 >(({ className, sideOffset = 4, ...props }, ref) => (
   <TooltipPrimitive.Content
     ref={ref}

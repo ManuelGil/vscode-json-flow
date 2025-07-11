@@ -29,7 +29,7 @@ export function parseTsv(content: string): object[] {
         {} as Record<string, string>,
       );
     });
-  } catch (err) {
-    throwError('Failed to parse TSV', err);
+  } catch (error) {
+    throwError('Failed to parse TSV', error);
   }
 }

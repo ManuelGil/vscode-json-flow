@@ -4,6 +4,12 @@ import * as React from 'react';
 
 import { cn } from '@webview/lib/utils';
 
+/**
+ * DropdownMenu component collection
+ * Built on top of Radix UI's DropdownMenu primitives
+ * Provides accessible dropdown menu functionality
+ */
+
 const DropdownMenu = DropdownMenuPrimitive.Root;
 
 const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
@@ -16,11 +22,22 @@ const DropdownMenuSub = DropdownMenuPrimitive.Sub;
 
 const DropdownMenuRadioGroup = DropdownMenuPrimitive.RadioGroup;
 
+/**
+ * Props for DropdownMenuSubTrigger component
+ */
+type DropdownMenuSubTriggerProps = React.ComponentPropsWithoutRef<
+  typeof DropdownMenuPrimitive.SubTrigger
+> & {
+  /** Whether to add left padding */
+  inset?: boolean;
+};
+
+/**
+ * Trigger for nested dropdown menus
+ */
 const DropdownMenuSubTrigger = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.SubTrigger>,
-  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.SubTrigger> & {
-    inset?: boolean;
-  }
+  DropdownMenuSubTriggerProps
 >(({ className, inset, children, ...props }, ref) => (
   <DropdownMenuPrimitive.SubTrigger
     ref={ref}
@@ -38,9 +55,19 @@ const DropdownMenuSubTrigger = React.forwardRef<
 DropdownMenuSubTrigger.displayName =
   DropdownMenuPrimitive.SubTrigger.displayName;
 
+/**
+ * Props for DropdownMenuSubContent component
+ */
+type DropdownMenuSubContentProps = React.ComponentPropsWithoutRef<
+  typeof DropdownMenuPrimitive.SubContent
+>;
+
+/**
+ * Content component for nested dropdown submenus
+ */
 const DropdownMenuSubContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.SubContent>,
-  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.SubContent>
+  DropdownMenuSubContentProps
 >(({ className, ...props }, ref) => (
   <DropdownMenuPrimitive.SubContent
     ref={ref}
@@ -72,11 +99,22 @@ const DropdownMenuContent = React.forwardRef<
 ));
 DropdownMenuContent.displayName = DropdownMenuPrimitive.Content.displayName;
 
+/**
+ * Props for DropdownMenuItem component
+ */
+type DropdownMenuItemProps = React.ComponentPropsWithoutRef<
+  typeof DropdownMenuPrimitive.Item
+> & {
+  /** Whether to add left padding */
+  inset?: boolean;
+};
+
+/**
+ * Standard menu item in a dropdown
+ */
 const DropdownMenuItem = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Item> & {
-    inset?: boolean;
-  }
+  DropdownMenuItemProps
 >(({ className, inset, ...props }, ref) => (
   <DropdownMenuPrimitive.Item
     ref={ref}
@@ -166,10 +204,18 @@ const DropdownMenuSeparator = React.forwardRef<
 ));
 DropdownMenuSeparator.displayName = DropdownMenuPrimitive.Separator.displayName;
 
+/**
+ * Props for DropdownMenuShortcut component
+ */
+type DropdownMenuShortcutProps = React.HTMLAttributes<HTMLSpanElement>;
+
+/**
+ * Displays keyboard shortcuts in dropdown menu items
+ */
 const DropdownMenuShortcut = ({
   className,
   ...props
-}: React.HTMLAttributes<HTMLSpanElement>) => {
+}: DropdownMenuShortcutProps) => {
   return (
     <span
       className={cn('ml-auto text-xs tracking-widest opacity-60', className)}
