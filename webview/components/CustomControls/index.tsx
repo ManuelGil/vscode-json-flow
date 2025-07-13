@@ -1,13 +1,13 @@
 import { Panel } from '@xyflow/react';
 
 import type { Direction } from '@webview/types';
-import { Button } from '../atoms/Button';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '../molecules/Tooltip';
+import { GoToSearch } from './GoToSearch';
 import { ImageDownload } from './ImageDownload';
 import { InteractivityToggle } from './InteractivityToggle';
 import { ModeToggle } from './ModeToggle';
@@ -64,7 +64,7 @@ export function CustomControls({
       />
       <ImageDownload />
       <ModeToggle />
-      {/* <GoToLine /> */}
+      <GoToSearch />
       <Settings onSettingsChange={onSettingsChange} />
     </Panel>
   );

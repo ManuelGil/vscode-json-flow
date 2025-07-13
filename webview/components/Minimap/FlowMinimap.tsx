@@ -35,15 +35,14 @@ interface FlowMinimapProps {
  * Renders a small overview of the entire graph
  */
 export function FlowMinimap({
-  nodeContentVisibility = false,
   maskOpacity = 0.6,
+  width = 300,
+  height = 200,
 }: FlowMinimapProps): React.ReactNode {
   // Memo the minimap style to prevent rerenders
   const minimapStyle = useMemo(
     () => ({
-      backgroundColor: '#f5f5f5',
-      border: '1px solid #ddd',
-      borderRadius: '4px',
+      borderRadius: '5px',
     }),
     [],
   );
@@ -51,14 +50,18 @@ export function FlowMinimap({
   // Memo node colors for minimap
   const nodeColor = useMemo(
     () => (node: any) => {
-      switch (node.type) {
-        case 'arrayNode':
-          return '#c8e6c9'; // Light green for arrays
-        case 'objectNode':
-          return '#bbdefb'; // Light blue for objects
-        default:
-          return '#e1bee7'; // Light purple for values
-      }
+      // Return color based on node type or state
+      return node.selected ? 'lightblue' : 'lightgray';
+    },
+    [],
+  );
+
+  // Memo node className function to apply styles conditionally
+  const nodeClassName = useMemo(
+    () => (node: any) => {
+      return node.selected
+        ? 'stroke-primary'
+        : 'stroke-card';
     },
     [],
   );
@@ -66,20 +69,17 @@ export function FlowMinimap({
   return (
     <MiniMap
       nodeColor={nodeColor}
-      nodeStrokeWidth={3}
+      nodeStrokeWidth={5}
       zoomable
       pannable
-      // maskOpacity and dimensions combined in style object
+      nodeClassName={nodeClassName}
+      className="border-collapse border-2 border-border bg-background"
       style={{
         ...minimapStyle,
         opacity: maskOpacity,
+        width,
+        height,
       }}
-      // nodeContentVisibility is not a standard prop, using maskColor instead
-      maskColor={
-        nodeContentVisibility
-          ? `rgba(255, 255, 255, 0.2)`
-          : `rgba(255, 255, 255, 0.8)`
-      }
     />
   );
 }
