@@ -1,5 +1,3 @@
-// Servicio aislado para manejar la comunicación con VSCode
-
 type VscodeMessage = {
   command: string;
   [key: string]: any;

@@ -220,7 +220,7 @@ export class FilesController {
     let fileType = languageId;
     let text = editor.document.getText(selectionRange);
 
-    // Normalización centralizada
+    // Centralized normalization
     const { normalized, detectedType } = normalizeToJsonString(text, fileType);
     fileType = detectedType;
     text = normalized;

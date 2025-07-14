@@ -177,7 +177,8 @@ export const FlowCanvas = memo(function FlowCanvas() {
     [selectedNode, clearSelection],
   );
 
-  // Handler para doble clic en nodo
+  // Handler for double-clicking nodes to select them
+  // Uses useCallback to ensure stable reference
   const onNodeDoubleClick = useCallback(
     (event: any, node: any) => {
       event.preventDefault();

@@ -11,7 +11,7 @@
 
 ## Introduction
 
-**JSON Flow** is a professional extension designed for Visual Studio Code and all VSCode-based editors (including VSCodium, WindSurf, Cursor, and others). It enables interactive visualization, conversion, and management of structured data files such as JSON, YAML, XML, CSV, and more. By leveraging a node-based graph interface and advanced data transformation tools, JSON Flow streamlines the process of exploring, converting, and generating code from complex data structures. This extension is tailored for developers, data engineers, and analysts seeking clarity and productivity in their daily workflows.
+**JSON Flow** is a robust and feature-rich extension for Visual Studio Code and all editors based on the VSCode platform (including VSCodium, WindSurf, Cursor, and others). It enables interactive visualization, conversion, and management of structured data files such as JSON, YAML, XML, CSV, and more. Leveraging a node-based graph interface and advanced data transformation tools, JSON Flow streamlines the process of exploring, converting, and generating code from complex data structures. This extension is tailored for developers, data engineers, and analysts seeking enhanced clarity, productivity, and efficiency in their daily workflows.
 
 <p align="center">
   <video controls width="600">
@@ -46,13 +46,15 @@ Exploring complex data structures in code or configuration files can be cumberso
     - [Supported Formats](#supported-formats)
     - [Advanced Configuration](#advanced-configuration)
     - [Architecture Overview](#architecture-overview)
+      - [High-Level Architecture](#high-level-architecture)
+      - [Project Structure](#project-structure)
       - [Design Philosophy](#design-philosophy)
     - [Typical Workflow](#typical-workflow)
   - [Requirements \& Limitations](#requirements--limitations)
   - [Security \& Privacy](#security--privacy)
   - [Commands \& Menus](#commands--menus)
   - [Frequently Asked Questions (FAQ)](#frequently-asked-questions-faq)
-    - [Stack Tecnológico](#stack-tecnológico)
+    - [Technology Stack](#technology-stack)
     - [Main Commands \& Views](#main-commands--views)
     - [Enhanced JSON Management](#enhanced-json-management)
     - [Supported File Formats](#supported-file-formats)
@@ -64,8 +66,11 @@ Exploring complex data structures in code or configuration files can be cumberso
   - [Code Generation from JSON](#code-generation-from-json)
     - [Example](#example)
   - [Installation](#installation)
+    - [Prerequisites](#prerequisites)
+    - [Installation Steps](#installation-steps)
   - [Usage Guidelines](#usage-guidelines)
   - [Troubleshooting](#troubleshooting)
+  - [Internationalization (i18n)](#internationalization-i18n)
   - [Additional Resources](#additional-resources)
   - [Contributing](#contributing)
   - [Code of Conduct](#code-of-conduct)
@@ -108,36 +113,58 @@ Exploring complex data structures in code or configuration files can be cumberso
 - **CSV / TSV**
 - **HCL**
 
----
-
 ### Advanced Configuration
 
-- **Enable/Disable Extension**: Activa o desactiva la extensión. Clave: `jsonFlow.enable` (`boolean`, valor por defecto: `true`).
-- **Included File Patterns**: Especifica patrones glob para incluir archivos en las operaciones. Clave: `jsonFlow.files.includedFilePatterns` (`array`, valor por defecto: `["json", "jsonc", ...]`).
-- **Excluded File Patterns**: Especifica patrones glob para excluir archivos o carpetas. Clave: `jsonFlow.files.excludedFilePatterns` (`array`, valor por defecto: `["**/node_modules/**", ...]`).
-- **Max Search Recursion Depth**: Limita la profundidad máxima de carpetas al buscar archivos. Clave: `jsonFlow.files.maxSearchRecursionDepth` (`number`, valor por defecto: `0` para ilimitado).
-- **Supports Hidden Files**: Incluye archivos ocultos (como `.env`) en las búsquedas y vistas. Clave: `jsonFlow.files.supportsHiddenFiles` (`boolean`, valor por defecto: `true`).
-- **Preserve Gitignore Settings**: Respeta reglas definidas en `.gitignore` al buscar o listar archivos. Clave: `jsonFlow.files.preserveGitignoreSettings` (`boolean`, valor por defecto: `false`).
-- **Include File Path in Views**: Muestra la ruta completa del archivo en las vistas. Clave: `jsonFlow.files.includeFilePath` (`boolean`, valor por defecto: `true`).
-- **Graph Layout Orientation**: Define la orientación del grafo en visualizaciones. Clave: `jsonFlow.graph.layoutOrientation` (`string`, opciones: `TB`, `LR`, `BT`, `RL`; valor por defecto: `TB`).
+- **Enable/Disable Extension**: Activate or deactivate the extension. Key: `jsonFlow.enable` (`boolean`, default value: `true`).
+- **Included File Patterns**: Specify glob patterns to include files in operations. Key: `jsonFlow.files.includedFilePatterns` (`array`, default value: `["json", "jsonc", ...]`).
+- **Excluded File Patterns**: Specify glob patterns to exclude files or folders. Key: `jsonFlow.files.excludedFilePatterns` (`array`, default value: `["**/node_modules/**", ...]`).
+- **Max Search Recursion Depth**: Limits the maximum folder depth when searching for files. Key: `jsonFlow.files.maxSearchRecursionDepth` (`number`, default value: `0` for unlimited).
+- **Supports Hidden Files**: Includes hidden files (such as `.env`) in searches and views. Key: `jsonFlow.files.supportsHiddenFiles` (`boolean`, default value: `true`).
+- **Preserve Gitignore Settings**: Respects rules defined in `.gitignore` when searching or listing files. Key: `jsonFlow.files.preserveGitignoreSettings` (`boolean`, default value: `false`).
+- **Include File Path in Views**: Displays the full file path in views. Key: `jsonFlow.files.includeFilePath` (`boolean`, default value: `true`).
+- **Graph Layout Orientation**: Defines the orientation of the graph in visualizations. Key: `jsonFlow.graph.layoutOrientation` (`string`, options: `TB`, `LR`, `BT`, `RL`; default value: `TB`).
 
 ### Architecture Overview
 
-- **src/app/helpers/**: Modular parsing helpers for each supported format (JSON, YAML, TOML, INI, ENV, XML, HCL, CSV, TSV) in archivos individuales. Centralized error handling (`error-handler.helper.ts`). Barrel file (`parsers/index.ts`) para imports limpios.
-- **src/app/models/**: Data models como `NodeModel`, documentados y alineados con SOLID.
-- **src/app/interfaces/**: Interfaces como `TreeNode` y `Tree`, documentadas con JSDoc.
-- **src/app/providers/**: Providers desacoplados y documentados para archivos, feedback y vistas JSON, siguiendo principios SOLID.
-- **src/app/controllers/**: Lógica de negocio separada de la UI y providers.
-- **src/app/configs/**: Configuración y constantes centralizadas.
-- **webview/**: UI Reactiva (Atomic Design), hooks y providers para el webview.
-- **Barrel Files**: Uso de `index.ts` para imports consistentes y limpios en helpers y otros módulos.
+#### High-Level Architecture
+
+JSON Flow is organized into two main parts: the **Extension Backend** and the **Webview Frontend**.
+
+- **Extension Backend** (runs in VSCode):
+  - Handles activation, file parsing, and data transformation.
+  - Converts various data formats (JSON, YAML, XML, etc.) into a unified structure.
+  - Prepares the data and sends it to the frontend for visualization.
+
+- **Webview Frontend** (interactive UI):
+  - Receives structured data from the backend via a secure messaging channel.
+  - Renders the interactive graph and UI using React and XYFlow.
+  - Handles user interactions (zoom, pan, expand/collapse, export, etc.) and sends relevant actions back to the backend if needed.
+
+**How it works:**
+1. When you open a supported file, the backend parses and processes the data.
+2. The backend sends the processed data to the frontend webview.
+3. The frontend displays the data as an interactive graph, allowing you to explore and manipulate it visually.
+4. User actions in the UI (such as conversion or export) are communicated back to the backend when necessary.
+
+This separation ensures that all data processing is secure and local, while the user interface remains fast and highly interactive.
+
+#### Project Structure
+
+- **src/app/helpers/**: Modular parsing helpers for each supported format (JSON, YAML, TOML, INI, ENV, XML, HCL, CSV, TSV) in individual files. Centralized error handling (`error-handler.helper.ts`). Barrel file (`parsers/index.ts`) for clean imports.
+- **src/app/models/**: Data models such as `NodeModel`, documented and aligned with SOLID principles.
+- **src/app/interfaces/**: Interfaces such as `TreeNode` and `Tree`, documented with JSDoc.
+- **src/app/providers/**: Decoupled and documented providers for files, feedback, and JSON views, following SOLID principles.
+- **src/app/controllers/**: Business logic separated from the UI and providers.
+- **src/app/configs/**: Centralized configuration and constants.
+- **webview/**: Reactive UI (Atomic Design), hooks, and providers for the webview.
+- **Barrel Files**: Use of `index.ts` for consistent and clean imports in helpers and other modules.
 
 #### Design Philosophy
 
-- **Atomic Design**: Componentes UI organizados por nivel de atomicidad.
-- **SOLID Principles**: Providers y helpers desacoplados y fácilmente testeables.
-- **Centralized Error Handling**: Todos los helpers usan un único punto de entrada para errores.
-- **JSDoc Everywhere**: Documentación clara y relevante en inglés en todos los módulos y funciones públicas.
+- **Atomic Design**: UI components organized by level of atomicity.
+- **SOLID Principles**: Providers and helpers are decoupled and easily testable.
+- **Centralized Error Handling**: All helpers use a single entry point for errors.
+- **JSDoc Everywhere**: Clear and relevant English documentation in all modules and public functions.
 
 ### Typical Workflow
 
@@ -151,17 +178,17 @@ Exploring complex data structures in code or configuration files can be cumberso
 
 ## Requirements & Limitations
 
-- **Editor Compatibility:** Works with Visual Studio Code and all VSCode-based editors (including VSCodium, WindSurf, Cursor, and others).
-- **VS Code Version:** Requires Visual Studio Code 1.88.0 or later (or compatible base version).
-- **Operating Systems:** Windows, macOS, and Linux are supported.
-- **File Size:** For optimal performance, files up to ~2MB are recommended for visualization. Larger files may impact responsiveness.
-- **Known Limitations:** Some deeply nested or highly complex data structures may render slowly or partially.
+- **Editor Compatibility:** Compatible with Visual Studio Code and all VSCode-based editors (including VSCodium, WindSurf, Cursor, and others).
+- **Minimum VS Code Version:** Requires Visual Studio Code 1.88.0 or later (or a compatible base version).
+- **Supported Operating Systems:** Windows, macOS, and Linux.
+- **Performance Recommendation:** For optimal performance, it is recommended to visualize files up to approximately 2MB in size. Larger files may affect responsiveness.
+- **Limitations:** Extremely large or deeply nested data structures may render slowly or partially. Please refer to the Troubleshooting section for known issues and workarounds.
 
 ---
 
 ## Security & Privacy
 
-JSON Flow processes all data locally within your editor. No data is sent externally or collected for analytics. The extension does not access your files or network beyond the operations you explicitly perform.
+JSON Flow processes all data locally within your editor environment. No data is transmitted externally or collected for analytics purposes. The extension does not access your files or network beyond the explicit operations you perform. For further details regarding privacy and security, please consult the extension's privacy policy or contact the maintainer.
 
 ---
 
@@ -193,6 +220,18 @@ For a full list of commands and their descriptions, see the [package.json](./pac
 
 ## Frequently Asked Questions (FAQ)
 
+**Q: How do I change the language of the extension?**
+A: JSON Flow follows your VS Code display language. If your language is supported, the UI will update automatically. See the Internationalization section below.
+
+**Q: Where can I report bugs or request features?**
+A: Please use the [GitHub Issues page](https://github.com/ManuelGil/vscode-json-flow/issues).
+
+**Q: Is there support for custom node types or plugins?**
+A: Plugin support is planned for future releases. See the Roadmap for details.
+
+**Q: How can I contribute translations?**
+A: See the Internationalization section for instructions on adding new languages.
+
 **Q: Does JSON Flow support custom JSON schemas?**
 A: Yes, you can add JSON schemas in the `schemas/` directory or reference external schemas for validation and autocompletion.
 
@@ -205,9 +244,7 @@ A: JSON Flow follows your VS Code display language. If your language is supporte
 **Q: Where can I report bugs or request features?**
 A: Please use the [GitHub Issues page](https://github.com/ManuelGil/vscode-json-flow/issues).
 
----
-
-### Stack Tecnológico
+### Technology Stack
 
 - **Frontend/UI**: React, XYFlow, Radix UI, TailwindCSS, Lucide React
 - **Parsing & Conversion**: YAML, TOML, INI, fast-xml-parser, JSON5, dotenv, hcl-parser, quicktype-core
@@ -217,8 +254,6 @@ A: Please use the [GitHub Issues page](https://github.com/ManuelGil/vscode-json-
 
 - **Commands**: Refresh list, open file, copy content (as JSON), show preview (full/partial), convert between formats, get file properties, generate code, etc.
 - **Views**: Dedicated explorer with files and feedback, context menus in explorer/editor, batch operations
-
----
 
 ### Enhanced JSON Management
 
@@ -268,8 +303,6 @@ For more detailed guidance, see the [Official Documentation](https://github.com/
 
 ![JSON Flow Demo](https://raw.githubusercontent.com/ManuelGil/vscode-json-flow/main/images/json-flow-1.gif)
 ![JSON Flow Menu](https://raw.githubusercontent.com/ManuelGil/vscode-json-flow/main/images/json-flow-2.gif)
-
----
 
 ### Context Menu Options
 
@@ -358,11 +391,20 @@ export interface Person {
 
 ## Installation
 
+### Prerequisites
+
+- Visual Studio Code 1.88.0 or later (or compatible base editor)
+- Internet connection for installation from the Marketplace
+
+### Installation Steps
+
 1. Open your VSCode-based editor (e.g., VSCode, VSCodium, WindSurf, Cursor).
-2. Go to the **Extensions** view (`Ctrl+Shift+X` on Windows/Linux or `⌘+Shift+X` on macOS).
+2. Navigate to the **Extensions** view (`Ctrl+Shift+X` on Windows/Linux or `⌘+Shift+X` on macOS).
 3. Search for **"JSON Flow"** (author: Manuel Gil).
 4. Click **Install**.
-5. (Optional) Clone or download the repository and open the folder in VSCode to test the latest development version.
+5. (Optional) To test the latest development version, clone or download this repository and open the folder in VSCode. Use `npm install && npm run package` to build a VSIX package for local installation.
+
+---
 
 ## Usage Guidelines
 
@@ -380,6 +422,18 @@ For assistance with common issues or error diagnostics, please refer to the foll
 - [GitHub Issues](https://github.com/ManuelGil/vscode-json-flow/issues)
 
 If your issue is not addressed, you are encouraged to open a new issue on GitHub with a detailed description and reproduction steps.
+
+---
+
+## Internationalization (i18n)
+
+All user-facing strings are externalized in the `l10n` directory and `package.nls.*.json` files. To add a new language:
+
+1. Duplicate `package.nls.json` and rename it to `package.nls.<lang>.json` (e.g., `package.nls.de.json` for German).
+2. Translate the values while keeping the keys unchanged.
+3. Submit a pull request with your translation file.
+
+The extension will automatically use the appropriate language file based on your VS Code display language settings.
 
 ---
 
@@ -478,6 +532,8 @@ See the list of [contributors](https://github.com/ManuelGil/vscode-json-flow/con
 - **[Mustache Template Engine - Snippets & Autocomplete](https://marketplace.visualstudio.com/items?itemName=imgildev.vscode-mustache-snippets)**
   Snippets and autocomplete support for Mustache templates, making HTML templating faster and more reliable.
 
+---
+
 ## Recommended Browser Extension
 
 For developers who work with `.vsix` files for offline installations or distribution, the complementary [**One-Click VSIX**](https://chromewebstore.google.com/detail/imojppdbcecfpeafjagncfplelddhigc?utm_source=item-share-cb) extension is recommended, available for both Chrome and Firefox.
@@ -487,6 +543,8 @@ For developers who work with `.vsix` files for offline installations or distribu
 - [Get One-Click VSIX for Chrome &rarr;](https://chromewebstore.google.com/detail/imojppdbcecfpeafjagncfplelddhigc?utm_source=item-share-cb)
 - [Get One-Click VSIX for Firefox &rarr;](https://addons.mozilla.org/es-ES/firefox/addon/one-click-vsix/)
 
+---
+
 ## License
 
-JSON Flow is licensed under the **MIT License**. See the [LICENSE](https://github.com/ManuelGil/vscode-json-flow/blob/main/LICENSE) file for details.
+JSON Flow is licensed under the **MIT License**. For full license details, please refer to the [LICENSE](https://github.com/ManuelGil/vscode-json-flow/blob/main/LICENSE) file included in this repository.

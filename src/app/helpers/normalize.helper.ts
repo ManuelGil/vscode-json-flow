@@ -1,6 +1,6 @@
 /**
- * Helper para normalizar fragmentos de JS/TS a JSON string y detectar el tipo de archivo.
- * Devuelve el texto normalizado y el tipo detectado.
+ * Helper to normalize text to a JSON string format.
+ * Converts JavaScript/TypeScript-like syntax to valid JSON.
  */
 export function normalizeToJsonString(
   text: string,

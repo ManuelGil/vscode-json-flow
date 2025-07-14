@@ -24,11 +24,26 @@ const colors = {
   icon: 'text-muted-foreground',
 };
 
+/**
+ * Props for the {@link CustomNode} component.
+ *
+ * @property data - The data object describing the node's properties and state.
+ * @property selected - Indicates whether the node is currently selected.
+ */
 interface CustomNodeProps {
   data: CustomNodeData;
   selected?: boolean;
 }
 
+/**
+ * CustomNode is a memoized React component representing a single node in the flow graph.
+ * It visualizes node properties, handles connection points, and provides controls for collapsing/expanding children.
+ * Tooltip and badge elements are used for enhanced user experience.
+ *
+ * @param data - The node's data object containing display and state properties.
+ * @param selected - Indicates if the node is currently selected in the graph.
+ * @returns The rendered node as a React element.
+ */
 export const CustomNode = memo<CustomNodeProps>(
   ({ data, selected }) => {
   const {
@@ -214,14 +229,14 @@ export const CustomNode = memo<CustomNodeProps>(
 },
 
 /**
- * Compare function for memo optimization
- * Only re-renders when critical properties change
- * @param prevProps - Previous props
- * @param nextProps - Next props
- * @returns boolean indicating if component should skip re-render
+ * Memoization comparison function for CustomNode.
+ * Only triggers a re-render when critical properties change, optimizing performance for large graphs.
+ *
+ * @param prevProps - The previous props of the component.
+ * @param nextProps - The next props of the component.
+ * @returns True if the component should skip re-rendering, false otherwise.
  */
 (prevProps, nextProps) => {
-  // Compare only necessary properties that affect rendering
   return (
     prevProps.selected === nextProps.selected &&
     prevProps.data.id === nextProps.data.id &&

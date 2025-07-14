@@ -98,20 +98,21 @@ export class FilesProvider implements TreeDataProvider<NodeModel> {
     if (element) {
       return element.children;
     }
-    // Usar el cache si existe
+
     if (this._cachedNodes) {
       return this._cachedNodes;
     }
-    // Si hay una promesa pendiente, esperarla
+
     if (this._cachePromise) {
       return this._cachePromise;
     }
-    // Si no hay cache, cargar y guardar
+
     this._cachePromise = this.getListFilesInternal().then((nodes) => {
       this._cachedNodes = nodes;
       this._cachePromise = undefined;
       return nodes;
     });
+
     return this._cachePromise;
   }
 
@@ -119,7 +120,6 @@ export class FilesProvider implements TreeDataProvider<NodeModel> {
    * Refreshes the file tree view, causing it to be re-rendered in the explorer.
    */
   refresh(): void {
-    // Limpiar cache al refrescar
     this._cachedNodes = undefined;
     this._cachePromise = undefined;
     this._onDidChangeTreeData.fire();

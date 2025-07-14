@@ -11,8 +11,10 @@ import {
 } from '@webview/components';
 
 /**
- * GoToSearch component for focusing the first node containing a search term.
- * The search is case-insensitive and matches the first node whose label or data includes the term.
+ * GoToSearch component provides a search interface to focus the first node whose label or data includes a search term.
+ * The search is case-insensitive and operates on all visible nodes in the graph.
+ *
+ * @returns A dropdown menu with a search input for node navigation.
  */
 export function GoToSearch() {
   const [search, setSearch] = useState<string>('');
@@ -20,9 +22,10 @@ export function GoToSearch() {
   const { getNodes, setCenter } = useReactFlow();
 
   /**
-   * Focuses the first node containing the search term (case-insensitive).
-   * If found, centers the viewport on that node.
-   * @param term - The search term to look for in node labels/data.
+   * Focuses the first node containing the provided search term (case-insensitive).
+   * If a matching node is found, the viewport is centered on that node with an animated zoom.
+   *
+   * @param term - The search term to look for in node labels or data.
    */
   const focusNodeWithTerm = (term: string) => {
     const nodes = getNodes();
@@ -48,6 +51,11 @@ export function GoToSearch() {
     setCenter(centerX, centerY, { zoom: 1.5, duration: 800 });
   };
 
+  /**
+   * Handles changes in the search input field. Debounces the search and triggers node focusing if the input is at least two characters.
+   *
+   * @param e - The change event from the input field.
+   */
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearch(value);

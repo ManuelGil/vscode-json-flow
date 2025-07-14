@@ -1,7 +1,4 @@
 /**
- * Representa un nodo simple del árbol, usado para relaciones básicas.
- */
-/**
  * Basic tree node with relationship references by ID.
  */
 export interface TreeData {
@@ -18,9 +15,6 @@ export interface TreeData {
  */
 export type Direction = 'TB' | 'LR' | 'BT' | 'RL';
 
-/**
- * Datos extendidos para nodos personalizados usados en React Flow.
- */
 /**
  * Extended node data for React Flow nodes. All relationships are by ID.
  * No UI handlers or functions should be included.

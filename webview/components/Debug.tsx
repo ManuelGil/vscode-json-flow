@@ -1,11 +1,21 @@
 /**
- * Debug component for development mode.
- * Shows relevant information about the current flow state.
+ * Debug component for development and diagnostic purposes.
+ * Displays comprehensive information about the current flow state, including node, edge, and tree data statistics.
+ * Intended for use in development mode to assist with troubleshooting and state inspection.
  */
 import type { Direction, TreeMap } from '@webview/types';
 import { Edge, Node } from '@xyflow/react';
 import { useMemo, useState } from 'react';
 
+/**
+ * Props for the {@link Debug} component.
+ *
+ * @property nodes - The list of nodes currently present in the graph.
+ * @property edges - The list of edges currently present in the graph.
+ * @property treeData - The full tree data structure backing the graph.
+ * @property collapsedNodes - The set of collapsed node IDs.
+ * @property direction - The current layout direction of the graph.
+ */
 interface DebugProps {
   nodes: Node[];
   edges: Edge[];
@@ -14,6 +24,17 @@ interface DebugProps {
   direction: Direction;
 }
 
+/**
+ * Renders a debug panel displaying detailed information about the current flow state.
+ * This includes node and edge counts, collapsed node information, and the full tree data.
+ *
+ * @param nodes - The list of nodes in the graph.
+ * @param edges - The list of edges in the graph.
+ * @param treeData - The underlying tree data structure.
+ * @param collapsedNodes - The set of currently collapsed node IDs.
+ * @param direction - The current layout direction.
+ * @returns The rendered debug panel as a React element.
+ */
 export default function Debug({
   nodes,
   edges,
@@ -61,7 +82,15 @@ export default function Debug({
   );
 }
 
-// Recursive JSON tree viewer for objects/arrays
+/**
+ * Recursive JSON tree viewer for objects and arrays.
+ * Expands/collapses nested structures for easier inspection.
+ *
+ * @param value - The value to display (object, array, or primitive).
+ * @param level - The current nesting level (used for indentation and default expansion).
+ * @param name - Optional property name to display.
+ * @returns The rendered tree node as a React element.
+ */
 function JsonTree({
   value,
   level,

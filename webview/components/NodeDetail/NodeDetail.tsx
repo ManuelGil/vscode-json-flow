@@ -2,22 +2,23 @@ import type { Node } from '@xyflow/react';
 import { memo } from 'react';
 
 /**
- * Props for the NodeDetail component
+ * Props for the {@link NodeDetail} component.
+ *
+ * @property node - The selected node object, or null if no node is selected.
+ * @property onClose - Optional handler for closing the node details panel.
  */
 interface NodeDetailProps {
-  /** The selected node object (or null if none selected) */
   node: Node | null;
-  /** Handler for closing the node details panel */
   onClose?: () => void;
 }
 
 /**
- * Component that displays detailed information about a selected node in the flow.
- * Shows properties like ID, type, data, parent relationships, and more.
- * Optimized with React.memo to prevent unnecessary re-renders when parent components change.
+ * NodeDetail is a memoized React component that displays detailed information about a selected node in the flow graph.
+ * It presents properties such as ID, type, data, parent relationships, and targets. The component is optimized with React.memo to avoid unnecessary re-renders.
  *
- * @param props - Component props (node and optional onClose handler)
- * @returns Rendered component or null if no node is selected
+ * @param node - The selected node object (or null if none is selected).
+ * @param onClose - Optional handler for closing the node details panel.
+ * @returns The rendered details panel, or a placeholder if no node is selected.
  */
 export const NodeDetail = memo(({ node, onClose }: NodeDetailProps) => {
   // Early return when no node is selected
