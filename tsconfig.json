@@ -1,9 +1,9 @@
 {
 	"compilerOptions": {
 		"module": "NodeNext",
-		"target": "ES2021",
+		"target": "ES2022",
 		"outDir": "out",
-		"lib": ["ES2021", "DOM"],
+		"lib": ["ES2022", "DOM"],
 		"sourceMap": true,
 		"rootDir": "src",
 		/* Linting */

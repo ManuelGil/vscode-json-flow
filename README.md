@@ -141,6 +141,7 @@ JSON Flow is organized into two main parts: the **Extension Backend** and the **
   - Handles user interactions (zoom, pan, expand/collapse, export, etc.) and sends relevant actions back to the backend if needed.
 
 **How it works:**
+
 1. When you open a supported file, the backend parses and processes the data.
 2. The backend sends the processed data to the frontend webview.
 3. The frontend displays the data as an interactive graph, allowing you to explore and manipulate it visually.
@@ -297,11 +298,10 @@ For more detailed guidance, see the [Official Documentation](https://github.com/
 
 ## Usage
 
-- **Launching the Graph View**: Access the graph via the Activity Bar icon or the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) using the command `Show Preview`.
+- **Launching the Graph View**: Access the graph via the Activity Bar icon.
 - **Interactivity**: Click on nodes to expand or collapse details. Use the zoom controls to focus on specific areas of your data.
 - **Export**: Export your graph as PNG, SVG, or other image formats with customizable background options.
 
-![JSON Flow Demo](https://raw.githubusercontent.com/ManuelGil/vscode-json-flow/main/images/json-flow-1.gif)
 ![JSON Flow Menu](https://raw.githubusercontent.com/ManuelGil/vscode-json-flow/main/images/json-flow-2.gif)
 
 ### Context Menu Options

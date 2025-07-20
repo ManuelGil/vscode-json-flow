@@ -36,8 +36,8 @@ interface FlowMinimapProps {
  */
 export function FlowMinimap({
   maskOpacity = 0.6,
-  width = 300,
-  height = 200,
+  width = 200,
+  height = 150,
 }: FlowMinimapProps): React.ReactNode {
   // Memo the minimap style to prevent rerenders
   const minimapStyle = useMemo(

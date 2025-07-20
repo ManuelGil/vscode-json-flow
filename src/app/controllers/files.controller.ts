@@ -74,9 +74,7 @@ export class FilesController {
       files.sort((a, b) => a.path.localeCompare(b.path));
 
       for (const file of files) {
-        const document = await workspace.openTextDocument(file);
-
-        const path = workspace.asRelativePath(document.fileName);
+        const path = workspace.asRelativePath(file.fsPath);
         let filename = path.split('/').pop();
 
         if (filename && includeFilePath) {
@@ -92,10 +90,10 @@ export class FilesController {
             {
               command: `${EXTENSION_ID}.json.showPreview`,
               title: 'Open Preview',
-              arguments: [document.uri],
+              arguments: [file],
             },
-            document.uri,
-            document.fileName,
+            file,
+            file.fsPath,
           ),
         );
       }

@@ -1,3 +1,4 @@
+import { PromisePool } from '@supercharge/promise-pool';
 import {
   Event,
   EventEmitter,
@@ -130,23 +131,26 @@ export class FilesProvider implements TreeDataProvider<NodeModel> {
    * Only NodeModel instances are used to ensure type consistency.
    * @returns Promise resolving to an array of grouped NodeModel nodes or undefined if none.
    */
-  private async getListFilesInternal(): Promise<NodeModel[] | undefined> {
+  private async getListFilesInternal(): Promise<NodeModel[]> {
     const { includedFilePatterns } = this.controller.config;
     const files = await this.controller.getFiles();
 
     if (!files) {
-      return;
+      return [];
     }
 
-    const nodes: NodeModel[] = [];
+    const { results, errors } = await PromisePool.for(includedFilePatterns)
+      .withConcurrency(3)
+      .process(async (fileType) => {
+        const children = files.filter((file) =>
+          file.label.toString().includes(`.${fileType}`),
+        );
 
-    for (const fileType of includedFilePatterns) {
-      const children = files.filter((file) =>
-        file.label.toString().includes(`.${fileType}`),
-      );
+        if (children.length === 0) {
+          return undefined;
+        }
 
-      if (children.length !== 0) {
-        const node = new NodeModel(
+        return new NodeModel(
           `${fileType}: ${children.length}`,
           new ThemeIcon('folder-opened'),
           undefined,
@@ -154,15 +158,12 @@ export class FilesProvider implements TreeDataProvider<NodeModel> {
           fileType,
           children,
         );
+      });
 
-        nodes.push(node);
-      }
+    if (errors.length > 0) {
+      console.error('Errors processing file types:', errors);
     }
 
-    if (nodes.length === 0) {
-      return;
-    }
-
-    return nodes;
+    return results.filter((node): node is NodeModel => node !== undefined);
   }
 }
