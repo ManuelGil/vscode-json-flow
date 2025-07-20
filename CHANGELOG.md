@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+* fix: adjust default dimensions for FlowMinimap component for better layout ([b155008](https://github.com/ManuelGil/vscode-json-flow/commit/b155008))
+* docs: update comments and documentation for clarity and consistency across components and controllers ([4d4926f](https://github.com/ManuelGil/vscode-json-flow/commit/4d4926f))
 * feat: add GoToSearch component for node search functionality in CustomControls ([130c602](https://github.com/ManuelGil/vscode-json-flow/commit/130c602))
 * fix: update .gitignore settings description to reflect true default value in localization files ([c41ec4e](https://github.com/ManuelGil/vscode-json-flow/commit/c41ec4e))
 * fix: update panel position in CustomControls component for better layout ([bbfbf62](https://github.com/ManuelGil/vscode-json-flow/commit/bbfbf62))
@@ -154,7 +156,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * build: add webview path ([960fb18](https://github.com/ManuelGil/vscode-json-flow/commit/960fb18))
 * fix: :rotating_light: fix compilation settings ([1ccbfa5](https://github.com/ManuelGil/vscode-json-flow/commit/1ccbfa5))
 
-[unreleased]: https://github.com/ManuelGil/vscode-json-flow/compare/v1.13.0...HEAD
+[unreleased]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/ManuelGil/vscode-json-flow/compare/v1.13.0...v2.0.0
 [1.13.0]: https://github.com/ManuelGil/vscode-json-flow/compare/v1.12.0...v1.13.0
 [1.12.0]: https://github.com/ManuelGil/vscode-json-flow/compare/v1.11.0...v1.12.0
 [1.11.0]: https://github.com/ManuelGil/vscode-json-flow/compare/v1.10.0...v1.11.0

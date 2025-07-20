@@ -7,6 +7,10 @@
 [![GitHub Repo Stars](https://img.shields.io/github/stars/ManuelGil/vscode-json-flow?style=for-the-badge&logo=github)](https://github.com/ManuelGil/vscode-json-flow)
 [![GitHub License](https://img.shields.io/github/license/ManuelGil/vscode-json-flow?style=for-the-badge&logo=github)](https://github.com/ManuelGil/vscode-json-flow/blob/main/LICENSE)
 
+<p align="center">
+  <a href="https://www.producthunt.com/products/json-flow?embed=true&utm_source=badge-featured&utm_medium=badge&utm_source=badge-json&#0045;flow&#0045;v2&#0045;0" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=995342&theme=light&t=1753030627923" alt="JSON&#0032;Flow&#0032;v2&#0046;0 - Transform&#0032;JSON&#0032;to&#0032;interactive&#0032;node&#0032;graphs&#0032;in&#0032;VSCode | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
+</p>
+
 ---
 
 ## Introduction
@@ -47,6 +51,7 @@ Exploring complex data structures in code or configuration files can be cumberso
     - [Advanced Configuration](#advanced-configuration)
     - [Architecture Overview](#architecture-overview)
       - [High-Level Architecture](#high-level-architecture)
+      - [Architecture Diagram](#architecture-diagram)
       - [Project Structure](#project-structure)
       - [Design Philosophy](#design-philosophy)
     - [Typical Workflow](#typical-workflow)
@@ -86,7 +91,7 @@ Exploring complex data structures in code or configuration files can be cumberso
 
 ### Interactive Data Visualization
 
-- **Node‑Based Graphs**: Render complex, nested structures as interactive graphs using XYFlow and React.
+- **Node-Based Graphs**: Render complex, nested structures as interactive graphs using XYFlow and React.
 - **Dynamic Exploration**: Zoom, pan, expand/collapse nodes, and inspect properties in real time.
 
 ### File Conversion & Management
@@ -126,6 +131,8 @@ Exploring complex data structures in code or configuration files can be cumberso
 
 ### Architecture Overview
 
+JSON Flow is designed with a clear separation of concerns, ensuring that data processing and visualization are handled efficiently and securely. The architecture is modular, allowing for easy maintenance and extensibility.
+
 #### High-Level Architecture
 
 JSON Flow is organized into two main parts: the **Extension Backend** and the **Webview Frontend**.
@@ -148,6 +155,32 @@ JSON Flow is organized into two main parts: the **Extension Backend** and the **
 4. User actions in the UI (such as conversion or export) are communicated back to the backend when necessary.
 
 This separation ensures that all data processing is secure and local, while the user interface remains fast and highly interactive.
+
+#### Architecture Diagram
+
+```mermaid
+flowchart TB
+  subgraph VSCode Extension (Backend)
+    Parser[Data Parser]
+    Transformer[Format Transformer]
+    API[Messaging API]
+  end
+
+  subgraph Webview (Frontend)
+    UI[React + XYFlow]
+    Controls[Zoom/Pan Controls]
+  end
+
+  Parser --> Transformer --> API --> UI
+  UI --> Controls
+  Controls --> API
+```
+
+- **Parser**: Parses various data formats (JSON, YAML, XML, etc.).
+- **Transformer**: Converts parsed data into a unified structure.
+- **API**: Handles secure communication between the backend and frontend.
+- **UI**: Renders the interactive graph and handles user interactions.
+- **Controls**: Provides zoom, pan, and other controls for the graph.
 
 #### Project Structure
 
@@ -221,9 +254,6 @@ For a full list of commands and their descriptions, see the [package.json](./pac
 
 ## Frequently Asked Questions (FAQ)
 
-**Q: How do I change the language of the extension?**
-A: JSON Flow follows your VS Code display language. If your language is supported, the UI will update automatically. See the Internationalization section below.
-
 **Q: Where can I report bugs or request features?**
 A: Please use the [GitHub Issues page](https://github.com/ManuelGil/vscode-json-flow/issues).
 
@@ -238,9 +268,6 @@ A: Yes, you can add JSON schemas in the `schemas/` directory or reference extern
 
 **Q: Can I export the graph visualization?**
 A: Yes, use the export options in the graph view to save as PNG, SVG, or other formats.
-
-**Q: How do I change the language of the extension?**
-A: JSON Flow follows your VS Code display language. If your language is supported, the UI will update automatically.
 
 **Q: Where can I report bugs or request features?**
 A: Please use the [GitHub Issues page](https://github.com/ManuelGil/vscode-json-flow/issues).
@@ -361,8 +388,8 @@ After editing, restart your editor to apply changes.
 Leverage quicktype integration to generate type definitions or schemas from JSON.
 
 1. Open a JSON file and select a JSON block or the entire document.
-2. Right‑click and choose **Convert to Type or Structure**.
-3. Select the target language (TypeScript, Go, Rust, Java, Python, C#, Swift, Kotlin, Dart, C++, PHP, Ruby, Scala, Elm, JSON Schema, Flow, Prop‑Types, Haskell, JavaScript, and more).
+2. Right-click and choose **Convert to Type or Structure**.
+3. Select the target language (TypeScript, Go, Rust, Java, Python, C#, Swift, Kotlin, Dart, C++, PHP, Ruby, Scala, Elm, JSON Schema, Flow, Prop-Types, Haskell, JavaScript, and more).
 4. Provide a type name and review the generated code in a new editor tab.
 
 ### Example
