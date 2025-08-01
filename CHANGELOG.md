@@ -5,6 +5,8 @@ All notable changes to the "JSON Flow" extension will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
 ## [2.0.0] - 2025-07-20
 
 * fix: adjust default dimensions for FlowMinimap component for better layout ([b155008](https://github.com/ManuelGil/vscode-json-flow/commit/b155008))
@@ -157,6 +159,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * fix: :rotating_light: fix compilation settings ([1ccbfa5](https://github.com/ManuelGil/vscode-json-flow/commit/1ccbfa5))
 
 [unreleased]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.0.0...HEAD
+[2.0.1]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/ManuelGil/vscode-json-flow/compare/v1.13.0...v2.0.0
 [1.13.0]: https://github.com/ManuelGil/vscode-json-flow/compare/v1.12.0...v1.13.0
 [1.12.0]: https://github.com/ManuelGil/vscode-json-flow/compare/v1.11.0...v1.12.0

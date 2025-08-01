@@ -78,7 +78,7 @@
 		"yaml",
 		"yml"
 	],
-	"homepage": "https://github.com/ManuelGil/vscode-json-flow",
+	"homepage": "https://json-flow.com",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/ManuelGil/vscode-json-flow"

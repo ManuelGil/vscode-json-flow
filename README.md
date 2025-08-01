@@ -7,22 +7,13 @@
 [![GitHub Repo Stars](https://img.shields.io/github/stars/ManuelGil/vscode-json-flow?style=for-the-badge&logo=github)](https://github.com/ManuelGil/vscode-json-flow)
 [![GitHub License](https://img.shields.io/github/license/ManuelGil/vscode-json-flow?style=for-the-badge&logo=github)](https://github.com/ManuelGil/vscode-json-flow/blob/main/LICENSE)
 
-<p align="center">
-  <a href="https://www.producthunt.com/products/json-flow?embed=true&utm_source=badge-featured&utm_medium=badge&utm_source=badge-json&#0045;flow&#0045;v2&#0045;0" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=995342&theme=light&t=1753030627923" alt="JSON&#0032;Flow&#0032;v2&#0046;0 - Transform&#0032;JSON&#0032;to&#0032;interactive&#0032;node&#0032;graphs&#0032;in&#0032;VSCode | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
-</p>
-
 ---
 
 ## Introduction
 
 **JSON Flow** is a robust and feature-rich extension for Visual Studio Code and all editors based on the VSCode platform (including VSCodium, WindSurf, Cursor, and others). It enables interactive visualization, conversion, and management of structured data files such as JSON, YAML, XML, CSV, and more. Leveraging a node-based graph interface and advanced data transformation tools, JSON Flow streamlines the process of exploring, converting, and generating code from complex data structures. This extension is tailored for developers, data engineers, and analysts seeking enhanced clarity, productivity, and efficiency in their daily workflows.
 
-<p align="center">
-  <video controls width="600">
-    <source src="https://res.cloudinary.com/dhwxnbnaj/video/upload/JSON%20Flow/json-flow_envzol.mp4" type="video/mp4">
-   Your browser does not support the video tag.
-  </video>
-</p>
+![JSON Flow Demo](https://raw.githubusercontent.com/ManuelGil/vscode-json-flow/main/images/json-flow-1.gif)
 
 ---
 
@@ -160,15 +151,17 @@ This separation ensures that all data processing is secure and local, while the 
 
 ```mermaid
 flowchart TB
-  subgraph VSCode Extension (Backend)
-    Parser[Data Parser]
-    Transformer[Format Transformer]
-    API[Messaging API]
+  %% Backend
+  subgraph BE["VSCode Extension (Backend)"]
+    Parser["Data Parser"]
+    Transformer["Format Transformer"]
+    API["Messaging API"]
   end
 
-  subgraph Webview (Frontend)
-    UI[React + XYFlow]
-    Controls[Zoom/Pan Controls]
+  %% Frontend
+  subgraph FE["Webview (Frontend)"]
+    UI["React + XYFlow"]
+    Controls["Zoom/Pan Controls"]
   end
 
   Parser --> Transformer --> API --> UI
@@ -268,9 +261,6 @@ A: Yes, you can add JSON schemas in the `schemas/` directory or reference extern
 
 **Q: Can I export the graph visualization?**
 A: Yes, use the export options in the graph view to save as PNG, SVG, or other formats.
-
-**Q: Where can I report bugs or request features?**
-A: Please use the [GitHub Issues page](https://github.com/ManuelGil/vscode-json-flow/issues).
 
 ### Technology Stack
 
