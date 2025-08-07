@@ -2,7 +2,7 @@
 	"name": "vscode-json-flow",
 	"displayName": "JSON Flow",
 	"description": "Transform JSON and structured data into interactive graphs in VSCode and all VSCode-based editors (VSCodium, WindSurf, Cursor, and more) - Free & Open Source",
-	"version": "2.0.1",
+	"version": "2.1.0",
 	"icon": "icon.png",
 	"license": "MIT",
 	"publisher": "imgildev",

@@ -5,7 +5,7 @@ All notable changes to the "JSON Flow" extension will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.1.0] - 2025-08-07
 
 * feat: add command to fetch JSON data from a URL and update README ([4998cbe](https://github.com/ManuelGil/vscode-json-flow/commit/4998cbe))
 * docs: :globe_with_meridians: update localization files for JSON Flow extension ([680dace](https://github.com/ManuelGil/vscode-json-flow/commit/680dace))
