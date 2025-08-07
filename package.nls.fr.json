@@ -19,6 +19,7 @@
 	"jsonFlow.files.getFileProperties": "Obtenir les propriétés du fichier",
 	"jsonFlow.json.showPreview": "Afficher l'aperçu JSON",
 	"jsonFlow.json.showPartialPreview": "Afficher la sélection comme JSON",
+	"jsonFlow.json.fetchJsonData": "Récupérer les données JSON depuis l'URL",
 	"jsonFlow.filesView": "Liste des fichiers",
 	"jsonFlow.feedbackView": "Aide et commentaires",
 	"viewsWelcome.jsonFlow.filesView": "Pour capturer correctement des fichiers, incluez le type de fichier dans la configuration de l'espace de travail.\n[Ouvrir la configuration de l'espace de travail](command:workbench.action.openWorkspaceSettingsFile)\nPour plus d'informations sur l'utilisation de JSON Flow [consultez la documentation](https://github.com/ManuelGil/vscode-json-flow)."
