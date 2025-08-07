@@ -208,46 +208,60 @@ export async function activate(context: vscode.ExtensionContext) {
     VSCodeMarketplaceClient.getLatestVersion(
       EXTENSION_USER_PUBLISHER,
       EXTENSION_NAME,
-    ).then((latestVersion) => {
-      // Check if the latest version is different from the current version
-      if (latestVersion !== currentVersion) {
-        const actions: vscode.MessageItem[] = [
-          {
-            title: vscode.l10n.t('Update Now'),
-          },
-          {
-            title: vscode.l10n.t('Dismiss'),
-          },
-        ];
+    )
+      .then((latestVersion: string) => {
+        // Check if the latest version is different from the current version
+        if (latestVersion > currentVersion) {
+          const actions: vscode.MessageItem[] = [
+            {
+              title: vscode.l10n.t('Update Now'),
+            },
+            {
+              title: vscode.l10n.t('Dismiss'),
+            },
+          ];
 
+          const message = vscode.l10n.t(
+            'A new version of {0} is available. Update to version {1} now',
+            [EXTENSION_DISPLAY_NAME, latestVersion],
+          );
+          vscode.window
+            .showInformationMessage(message, ...actions)
+            .then((option) => {
+              if (!option) {
+                return;
+              }
+
+              // Handle the actions
+              switch (option?.title) {
+                case actions[0].title:
+                  vscode.env.openExternal(
+                    vscode.Uri.parse(
+                      `https://marketplace.visualstudio.com/items?itemName=${EXTENSION_USER_PUBLISHER}.${EXTENSION_NAME}`,
+                    ),
+                  );
+                  break;
+              }
+            });
+        }
+      })
+      .catch((error: unknown) => {
+        if (error instanceof Error) {
+          console.error('Error checking for updates:', error.message);
+        } else {
+          console.error(
+            'An unknown error occurred while checking for updates:',
+            error,
+          );
+        }
         const message = vscode.l10n.t(
-          'A new version of {0} is available. Update to version {1} now',
-          [EXTENSION_DISPLAY_NAME, latestVersion],
+          'Failed to check for new version of the extension',
         );
-        vscode.window
-          .showInformationMessage(message, ...actions)
-          .then(async (option) => {
-            if (!option) {
-              return;
-            }
-
-            // Handle the actions
-            switch (option?.title) {
-              case actions[0].title:
-                await vscode.commands.executeCommand(
-                  'workbench.extensions.action.install.anotherVersion',
-                  `${EXTENSION_USER_PUBLISHER}.${EXTENSION_NAME}`,
-                );
-                break;
-
-              default:
-                break;
-            }
-          });
-      }
-    });
+        vscode.window.showErrorMessage(message);
+      });
   } catch (error) {
-    console.error('Error retrieving extension version:', error);
+    // Only log fatal errors that occur during the update check process
+    console.error('Fatal error while checking for extension updates:', error);
   }
 
   // -----------------------------------------------------------------
@@ -429,9 +443,28 @@ export async function activate(context: vscode.ExtensionContext) {
     },
   );
 
+  // Register the command to fetch JSON data from a URL
+  const disposableFetchJsonData = vscode.commands.registerCommand(
+    `${EXTENSION_ID}.json.fetchJsonData`,
+    async () => {
+      // Check if the extension is enabled
+      if (!config.enable) {
+        const message = vscode.l10n.t(
+          '{0} is disabled in settings. Enable it to use its features',
+          [EXTENSION_NAME],
+        );
+        vscode.window.showErrorMessage(message);
+        return;
+      }
+
+      jsonController.fetchJsonData();
+    },
+  );
+
   context.subscriptions.push(
     disposableShowPreview,
     disposableShowPartialPreview,
+    disposableFetchJsonData,
   );
 
   // -----------------------------------------------------------------

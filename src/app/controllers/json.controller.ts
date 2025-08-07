@@ -1,4 +1,12 @@
-import { ExtensionContext, l10n, Range, Uri, window, workspace } from 'vscode';
+import {
+  ExtensionContext,
+  l10n,
+  ProgressLocation,
+  Range,
+  Uri,
+  window,
+  workspace,
+} from 'vscode';
 
 import { ExtensionConfig } from '../configs';
 import { FileType, isFileTypeSupported, parseJSONContent } from '../helpers';
@@ -42,9 +50,9 @@ export class JsonController {
    * Shows error messages for invalid files or parsing errors.
    * @param uri The file URI to preview.
    */
-  showPreview(uri: Uri): void {
-    // Open the text document
-    workspace.openTextDocument(uri.fsPath).then((document) => {
+  async showPreview(uri: Uri): Promise<void> {
+    try {
+      const document = await workspace.openTextDocument(uri.fsPath);
       const { graphLayoutOrientation } = this.config;
       // Get the language ID and file name
       const { languageId, fileName } = document;
@@ -54,8 +62,7 @@ export class JsonController {
 
       if (!isFileTypeSupported(fileType)) {
         const fileExtension = fileName.split('.').pop();
-
-        fileType = fileExtension;
+        fileType = isFileTypeSupported(fileExtension) ? fileExtension : 'json';
       }
 
       // Parse JSON content
@@ -66,28 +73,25 @@ export class JsonController {
 
       // Check if the JSON content is null
       if (parsedJsonData === null) {
+        window.showErrorMessage(l10n.t('Could not parse JSON for preview'));
         return;
       }
 
-      // Derive the file name for the preview panel title
-      const displayName = fileName.split(/[\\/]/).pop() || 'JSON Flow';
+      this.showJsonPanel(
+        parsedJsonData,
+        fileName,
+        graphLayoutOrientation,
+        uri.fsPath,
+      );
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      console.error('Error opening JSON preview:', errorMessage);
 
-      // Initialize the webview panel
-      const panel = JSONProvider.createPanel(this.context.extensionUri);
-
-      panel.title = displayName;
-
-      // Post the message to the webview with a delay
-      setTimeout(() => {
-        panel.webview.postMessage({
-          command: 'update',
-          data: parsedJsonData,
-          orientation: graphLayoutOrientation,
-          path: uri.fsPath,
-          fileName,
-        });
-      }, this._processingDelay);
-    });
+      window.showErrorMessage(
+        l10n.t('Failed to open JSON preview: {0}', errorMessage),
+      );
+    }
   }
 
   /**
@@ -101,8 +105,7 @@ export class JsonController {
 
     // Check if there is an active editor
     if (!editor) {
-      const message = l10n.t('No active editor!');
-      window.showErrorMessage(message);
+      window.showErrorMessage(l10n.t('No active editor!'));
       return;
     }
 
@@ -110,8 +113,7 @@ export class JsonController {
     const selection = editor.selection;
 
     if (selection.isEmpty) {
-      const message = l10n.t('No selection!');
-      window.showErrorMessage(message);
+      window.showErrorMessage(l10n.t('No selection!'));
       return;
     }
 
@@ -128,8 +130,7 @@ export class JsonController {
 
     let fileType = languageId;
     let text = editor.document.getText(selectionRange);
-
-    // Centralized normalization
+    // Normalize JSON string and detect type
     const { normalized, detectedType } = normalizeToJsonString(text, fileType);
     fileType = detectedType;
     text = normalized;
@@ -144,24 +145,122 @@ export class JsonController {
 
     // Check if the JSON content is null
     if (parsedJsonData === null) {
+      window.showErrorMessage(l10n.t('Could not parse selected JSON'));
       return;
     }
 
-    // Derive the file name for the preview panel title
-    const displayName = fileName.split(/[\\/]/).pop() || 'JSON Flow';
+    this.showJsonPanel(
+      parsedJsonData,
+      fileName,
+      graphLayoutOrientation,
+      uri.fsPath,
+    );
+  }
 
-    // Initialize the webview panel
+  /**
+   * Fetches JSON data from a REST API and displays it in a webview panel.
+   * Prompts the user for the API URL and handles errors during fetching.
+   */
+  async fetchJsonData(): Promise<void> {
+    const url = await window.showInputBox({
+      prompt: 'Enter the REST API URL (GET)',
+      placeHolder: 'https://api.example.com/data',
+      validateInput: (text) => {
+        if (!text.trim()) {
+          return 'URL cannot be empty';
+        }
+
+        try {
+          new URL(text);
+          return null;
+        } catch {
+          return 'Invalid URL format';
+        }
+      },
+    });
+
+    if (!url) {
+      window.showWarningMessage(l10n.t('Operation cancelled: No URL provided'));
+      return;
+    }
+
+    await window.withProgress(
+      {
+        location: ProgressLocation.Notification,
+        title: 'Fetching JSON...',
+        cancellable: false,
+      },
+      async () => {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10_000);
+
+        try {
+          const response = await fetch(url, {
+            method: 'GET',
+            headers: { accept: 'application/json' },
+            signal: controller.signal,
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status} ${response.statusText}`);
+          }
+
+          const contentType = response.headers.get('Content-Type') || '';
+          const data = contentType.includes('application/json')
+            ? await response.json()
+            : await response.text();
+
+          const parsedJsonData = parseJSONContent(
+            typeof data === 'string' ? data : JSON.stringify(data),
+            'json',
+          );
+
+          // Check if the JSON content is null
+          if (parsedJsonData === null) {
+            window.showErrorMessage(l10n.t('Could not parse fetched JSON'));
+            return;
+          }
+
+          // Use a generic file name and orientation for the panel
+          this.showJsonPanel(
+            parsedJsonData,
+            'Fetched Data',
+            this.config.graphLayoutOrientation,
+          );
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          window.showErrorMessage(`Error fetching JSON: ${msg}`);
+        } finally {
+          clearTimeout(timeout);
+        }
+      },
+    );
+  }
+
+  /**
+   * Helper to create and update the JSON preview panel in a modular way.
+   * @param data The parsed JSON data to display.
+   * @param fileName The name of the file for panel title.
+   * @param orientation The orientation for the graph layout.
+   * @param path The file path (optional).
+   */
+  private showJsonPanel(
+    data: unknown,
+    fileName: string,
+    orientation: string,
+    path?: string,
+  ): void {
+    const displayName = fileName.split(/[\\/]/).pop() || 'JSON Flow';
     const panel = JSONProvider.createPanel(this.context.extensionUri);
 
     panel.title = displayName;
 
-    // Post the message to the webview with a delay
     setTimeout(() => {
       panel.webview.postMessage({
         command: 'update',
-        data: parsedJsonData,
-        orientation: graphLayoutOrientation,
-        path: uri.fsPath,
+        data,
+        orientation,
+        path,
         fileName,
       });
     }, this._processingDelay);

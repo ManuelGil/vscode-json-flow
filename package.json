@@ -213,6 +213,11 @@
 				"category": "JSON Flow"
 			},
 			{
+				"command": "jsonFlow.json.fetchJsonData",
+				"title": "%jsonFlow.json.fetchJsonData%",
+				"category": "JSON Flow"
+			},
+			{
 				"command": "jsonFlow.files.convertToJson",
 				"title": "%jsonFlow.files.convertToJson%",
 				"category": "JSON Flow"
@@ -458,6 +463,7 @@
 		"@types/node": "^24.0.10",
 		"@types/react": "^19.1.8",
 		"@types/react-dom": "^19.1.6",
+		"@types/uuid": "^10.0.0",
 		"@types/vscode": "^1.88.0",
 		"@vitejs/plugin-react": "^4.6.0",
 		"@vscode/l10n-dev": "^0.0.35",

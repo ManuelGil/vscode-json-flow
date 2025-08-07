@@ -237,6 +237,7 @@ Below is a summary of the main commands and context menu options available in JS
 | jsonFlow.files.copyContentPartialAsJson | Copy Partial as JSON         | Editor/Palette          | Copies selected block as JSON             |
 | jsonFlow.json.showPreview               | Show Preview                 | Explorer/Editor/Palette | Shows the data as an interactive graph    |
 | jsonFlow.json.showPartialPreview        | Show Partial Preview         | Editor/Palette          | Shows a preview of the selected block     |
+| jsonFlow.json.fetchJsonData             | Fetch JSON Data from URL     | Editor/Palette          | Fetches JSON data from a specified URL    |
 
 - **Context Menus:** Right-click on a supported file in the Explorer or inside the Editor to access these commands quickly.
 - **Submenus:** JSON Flow groups actions under a dedicated submenu in both Explorer and Editor context menus for convenience.

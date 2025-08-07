@@ -90,3 +90,10 @@
 body {
 	padding: 0;
 }
+
+@layer utilities {
+	/* Stronger specificity and !important for font color utility */
+	html .text-card-foreground {
+		color: hsl(var(--card-foreground)) !important;
+	}
+}

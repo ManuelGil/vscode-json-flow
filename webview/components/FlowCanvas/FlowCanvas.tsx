@@ -1,6 +1,13 @@
 import type { Connection, Edge } from '@xyflow/react';
 import { addEdge, Background, ReactFlow, useViewport } from '@xyflow/react';
-import { memo, useCallback, useMemo, useReducer, useState } from 'react';
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useState,
+} from 'react';
 
 import {
   CustomControls,
@@ -12,7 +19,11 @@ import { DEFAULT_SETTINGS } from '@webview/components/CustomControls/Settings';
 import { flowReducer } from '@webview/context/FlowContext';
 import { generateTree, getRootId } from '@webview/helpers/generateTree';
 import { sampleJsonData } from '@webview/helpers/mockData';
-import { useFlowController, useVscodeSync } from '@webview/hooks';
+import {
+  useFlowController,
+  useLayoutWorker,
+  useVscodeSync,
+} from '@webview/hooks';
 import { useFlowSettings } from '@webview/hooks/useFlowSettings';
 import { useTreeDataValidator } from '@webview/hooks/useTreeDataValidator';
 import { useVscodeMessageHandler } from '@webview/hooks/useVscodeMessageHandler';
@@ -187,17 +198,77 @@ export const FlowCanvas = memo(function FlowCanvas() {
     [onNodeClick],
   );
 
+  // Initialize Web Worker for data processing if needed
+  const {
+    processData: processWithWorker,
+    isProcessing: isWorkerProcessing,
+    progress: workerProgress,
+    error: workerError,
+    nodes: workerNodes,
+    edges: workerEdges,
+    processingStats,
+  } = useLayoutWorker();
+
+  // Use Web Worker for large datasets (adjust threshold as needed)
+  useEffect(() => {
+    const jsonData = flowData.data;
+
+    // Only process data if it's valid and large enough to benefit from worker
+    if (jsonData && isValidTree) {
+      // Check if data is complex/large enough to benefit from worker processing
+      // This is a simple heuristic - adjust as needed
+      const isLargeDataset = JSON.stringify(jsonData).length > 100000; // ~100KB threshold
+
+      if (isLargeDataset) {
+        console.log('Processing large dataset with Web Worker');
+        processWithWorker(jsonData, {
+          direction: flowData.orientation === 'TB' ? 'vertical' : 'horizontal',
+          optimizeForLargeData: true,
+          maxNodesToProcess: 1000, // Limit for very large datasets
+        });
+      }
+    }
+  }, [flowData.data, flowData.orientation, isValidTree, processWithWorker]);
+
   // Early return for loading state or invalid data
   // Defensive: Never let ReactFlow render with invalid or empty nodes/edges/treeData
   if (!isValidTree || !Array.isArray(nodes) || !Array.isArray(edges)) {
     return <Loading text="Waiting for valid data..." />;
   }
 
+  // Show worker progress if active
+  if (isWorkerProcessing) {
+    return (
+      <div className="flex h-screen w-screen flex-col items-center justify-center">
+        <Loading text={`Optimizing layout (${workerProgress}%)...`} />
+        <div className="mt-4 h-2 w-64 rounded-full bg-gray-200">
+          <div
+            className="h-full rounded-full bg-blue-600 transition-all duration-300"
+            style={{ width: `${workerProgress}%` }}
+          ></div>
+        </div>
+        <p className="mt-2 text-sm text-gray-500">
+          Processing large dataset with optimizations...
+        </p>
+      </div>
+    );
+  }
+
+  // Show worker error if any
+  if (workerError) {
+    console.error('Worker error:', workerError);
+    // Continue with normal rendering, worker failed but we still have the regular data
+  }
+
+  // Use worker-processed nodes/edges if available, otherwise use standard ones
+  const finalNodes = workerNodes || nodes;
+  const finalEdges = workerEdges || edges;
+
   return (
     <div className="h-screen w-screen">
       <ReactFlow
-        nodes={nodes}
-        edges={edges}
+        nodes={finalNodes}
+        edges={finalEdges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
@@ -208,6 +279,31 @@ export const FlowCanvas = memo(function FlowCanvas() {
         <FlowMinimap />
         <Background {...backgroundProps} />
       </ReactFlow>
+      {/* Worker stats if processed with worker */}
+      {isDev && processingStats && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 10,
+            left: 10,
+            zIndex: 50,
+            padding: '5px',
+            background: 'rgba(255,255,255,0.8)',
+            borderRadius: '4px',
+            fontSize: '12px',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          }}
+        >
+          <p>
+            <strong>Worker stats:</strong> {processingStats.nodesCount} nodes
+            processed in {Math.round(processingStats.time)}ms
+          </p>
+          <p>
+            <small>Web Worker enabled for large datasets</small>
+          </p>
+        </div>
+      )}
+
       {/* Debug panel in development mode */}
       {isDev && isValidTree && (
         <div style={{ position: 'absolute', bottom: 0, right: 0, zIndex: 50 }}>
