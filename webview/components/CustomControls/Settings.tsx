@@ -1,13 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { BackgroundVariant } from '@xyflow/react';
-import { Settings as SettingsIcon } from 'lucide-react';
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-
 import {
   Button,
-  Switch,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -26,10 +19,16 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Switch,
   useTheme,
 } from '@webview/components';
 import { type Color, colorClasses, colors } from '@webview/themes/colors';
 import { EDGE_TYPE_NAMES, EdgeType } from '@webview/types';
+import { BackgroundVariant } from '@xyflow/react';
+import { Settings as SettingsIcon } from 'lucide-react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 interface Settings {
   edgeType: EdgeType;

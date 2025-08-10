@@ -1,6 +1,5 @@
-import * as React from 'react';
-
 import { cn } from '@webview/lib/utils';
+import * as React from 'react';
 
 /**
  * Props for the Input component

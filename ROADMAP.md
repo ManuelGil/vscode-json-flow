@@ -78,7 +78,7 @@ JSON Flow aims to be the preferred solution for developers and analysts working 
 
 ### 5. Community Engagement and Feedback
 
-- **Objective**: Foster collaboration and gather user feedback to shape the extension’s evolution.
+- **Objective**: Foster collaboration and gather user feedback to shape the extension's evolution.
 - **Details**:
   - Use GitHub Issue Tracker for feature suggestions and bug reporting.
   - Regularly prioritize and implement features based on user votes and feedback.
@@ -90,13 +90,13 @@ JSON Flow aims to be the preferred solution for developers and analysts working 
 
 ## Release Schedule
 
-JSON Flow follows a flexible update cycle, with new features and enhancements released approximately every 4-6 months. While exact dates may vary, major updates will be announced on our GitHub page and through the extension’s landing page.
+JSON Flow follows a flexible update cycle, with new features and enhancements released approximately every 4-6 months. While exact dates may vary, major updates will be announced on our GitHub page and through the extension's landing page.
 
 ---
 
 ## Contribution and Feedback
 
-We welcome everyone to participate in shaping the future of JSON Flow. Here’s how you can get involved:
+We welcome everyone to participate in shaping the future of JSON Flow. Here's how you can get involved:
 
 - **Feature Suggestions**: Share your ideas for new features or improvements via GitHub Issue Tracker.
 - **Bug Reporting**: Help us identify and resolve issues by submitting detailed bug reports.
@@ -110,7 +110,7 @@ While JSON Flow continues to evolve, there are some challenges that we are activ
 
 - **Performance with Large Files**: Visualizing very large or deeply nested datasets can sometimes be slow. Although the recursive approach used for tree generation is essential for certain features, we are exploring optimizations to improve speed and memory usage.
 
-If you encounter issues or have ideas for improvement, please don’t hesitate to reach out via our GitHub repository.
+If you encounter issues or have ideas for improvement, please don't hesitate to reach out via our GitHub repository.
 
 ---
 

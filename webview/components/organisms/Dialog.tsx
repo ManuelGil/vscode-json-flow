@@ -1,10 +1,7 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { X } from 'lucide-react';
-// SUGGESTION: Use this Dialog organism as a replacement for custom modals in settings or confirmations.
-// This will improve consistency with Atomic Design and maintainability.
-import * as React from 'react';
-
 import { cn } from '@webview/lib/utils';
+import { X } from 'lucide-react';
+import * as React from 'react';
 
 const Dialog = DialogPrimitive.Root;
 

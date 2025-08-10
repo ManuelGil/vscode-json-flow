@@ -1,5 +1,3 @@
-import { Moon, Sun } from 'lucide-react';
-
 import {
   Button,
   DropdownMenu,
@@ -8,6 +6,7 @@ import {
   DropdownMenuTrigger,
   useTheme,
 } from '@webview/components';
+import { Moon, Sun } from 'lucide-react';
 
 export function ModeToggle() {
   const { setTheme } = useTheme();

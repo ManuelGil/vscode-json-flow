@@ -7,10 +7,18 @@ export default defineConfig({
   plugins: [react()],
   build: {
     minify: true,
+    cssCodeSplit: false,
     rollupOptions: {
       output: {
         entryFileNames: 'main.js',
-        assetFileNames: 'main.css',
+        // Ensure only CSS is named deterministically; other assets keep their own names
+        assetFileNames: (assetInfo) => {
+          const ext = path.extname(assetInfo.name || '');
+          if (ext === '.css') {
+            return 'main.css';
+          }
+          return 'assets/[name][extname]';
+        },
       },
     },
   },

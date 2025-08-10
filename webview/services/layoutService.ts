@@ -1,10 +1,10 @@
+import { DEFAULT_SETTINGS } from '@webview/components/CustomControls/Settings';
+import { isHorizontal, isReversed } from '@webview/helpers';
+import { type Direction, EdgeType, type TreeMap } from '@webview/types';
+import * as logger from '@webview/utils/logger';
 import type { Edge, Node } from '@xyflow/react';
 import { Position } from '@xyflow/react';
 import { layoutFromMap } from 'entitree-flex';
-
-import { DEFAULT_SETTINGS } from '@webview/components/CustomControls/Settings';
-import { isHorizontal, isReversed } from '@webview/helpers';
-import { EdgeType, type Direction, type TreeMap } from '@webview/types';
 
 const NODE_HEIGHT = 36;
 const NODE_WIDTH = 160;
@@ -224,7 +224,7 @@ const createNode = (
 
 /**
  * Calculates node and edge layouts for a tree using entitree-flex and returns React Flow compatible arrays.
- * Handles errors gracefully and logs them to the console.
+ * Handles errors gracefully and logs them via the dev-only logger.
  *
  * @param tree - The tree data as a TreeMap.
  * @param rootId - The root node ID.
@@ -239,7 +239,6 @@ export const layoutElements = (
   rootId: string,
   direction: Direction = 'TB',
 ): { nodes: Node[]; edges: Edge[] } => {
-  // Early validation
   if (!tree || !rootId || Object.keys(tree).length === 0) {
     return { nodes: [], edges: [] };
   }
@@ -288,7 +287,7 @@ export const layoutElements = (
 
     return { nodes, edges };
   } catch (error) {
-    console.error('Error in layoutElements:', error);
+    logger.error('Error in layoutElements:', error);
     return { nodes: [], edges: [] };
   }
 };

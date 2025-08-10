@@ -1,6 +1,5 @@
-import { Panel } from '@xyflow/react';
-
 import type { Direction } from '@webview/types';
+import { Panel } from '@xyflow/react';
 import {
   Tooltip,
   TooltipContent,

@@ -230,8 +230,8 @@ export class JSONProvider {
     -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'none'; font-src ${webview.cspSource}; style-src ${webview.cspSource};
-      img-src data:; script-src 'nonce-${nonce}';"
+      content="default-src 'none'; font-src ${webview.cspSource} data:; style-src ${webview.cspSource} 'unsafe-inline';
+      img-src ${webview.cspSource} data:; script-src 'nonce-${nonce}' ${webview.cspSource}; worker-src ${webview.cspSource} blob:;"
     />
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -242,7 +242,7 @@ export class JSONProvider {
   </head>
   <body>
     <div id="root"></div>
-    <script nonce="${nonce}" src="${scriptUri}" defer></script>
+    <script type="module" nonce="${nonce}" src="${scriptUri}"></script>
     <script nonce="${nonce}">
       window.addEventListener('contextmenu', (e) => {
         e.preventDefault();

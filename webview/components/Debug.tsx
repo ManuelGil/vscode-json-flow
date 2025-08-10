@@ -3,6 +3,7 @@
  * Displays comprehensive information about the current flow state, including node, edge, and tree data statistics.
  * Intended for use in development mode to assist with troubleshooting and state inspection.
  */
+
 import type { Direction, TreeMap } from '@webview/types';
 import { Edge, Node } from '@xyflow/react';
 import { useMemo, useState } from 'react';
@@ -64,8 +65,8 @@ export default function Debug({
         bottom: 10,
         left: 10,
         zIndex: 9999,
-        background: 'rgba(34, 34, 34, 0.9)',
-        color: '#fff',
+        background: 'hsl(var(--popover) / 0.9)',
+        color: 'hsl(var(--popover-foreground))',
         padding: '1rem',
         fontSize: '0.85rem',
         fontFamily: 'monospace',
@@ -73,7 +74,7 @@ export default function Debug({
         overflow: 'auto',
         borderRadius: 8,
         margin: 8,
-        border: '1px solid #444',
+        border: '1px solid hsl(var(--border))',
         backdropFilter: 'blur(5px)',
       }}
     >
@@ -107,9 +108,9 @@ function JsonTree({
     const entries = Object.entries(value);
     return (
       <div style={{ marginLeft: 16 * level }}>
-        {name && <span style={{ color: '#8ec07c' }}>{name}: </span>}
+        {name && <span style={{ color: 'hsl(var(--primary))' }}>{name}: </span>}
         <span
-          style={{ cursor: 'pointer', color: '#fabd2f' }}
+          style={{ cursor: 'pointer', color: 'hsl(var(--secondary-foreground))' }}
           onClick={() => setOpen((o) => !o)}
         >
           {open ? (isArray ? '[ ' : '{ ') : isArray ? '[...]' : '{...}'}
@@ -117,7 +118,7 @@ function JsonTree({
         {open && (
           <div>
             {entries.length === 0 && (
-              <span style={{ color: '#bbb' }}>
+              <span style={{ color: 'hsl(var(--muted-foreground))' }}>
                 {isArray ? 'empty array' : 'empty object'}
               </span>
             )}
@@ -138,9 +139,14 @@ function JsonTree({
   // Render primitives
   return (
     <div style={{ marginLeft: 16 * level }}>
-      {name && <span style={{ color: '#8ec07c' }}>{name}: </span>}
+      {name && <span style={{ color: 'hsl(var(--primary))' }}>{name}: </span>}
       <span
-        style={{ color: typeof value === 'string' ? '#b8bb26' : '#83a598' }}
+        style={{
+          color:
+            typeof value === 'string'
+              ? 'hsl(var(--primary))'
+              : 'hsl(var(--foreground))',
+        }}
       >
         {JSON.stringify(value)}
       </span>

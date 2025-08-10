@@ -1,17 +1,23 @@
-type VscodeMessage = {
-  command: string;
-  [key: string]: any;
-};
+import type { IncomingVscodeMessage } from './types';
 
-type VscodeMessageHandler = (message: VscodeMessage) => void;
+type VscodeMessageHandler = (message: IncomingVscodeMessage) => void;
 
 class VscodeSyncService {
   private handlers: Set<VscodeMessageHandler> = new Set();
   private isListening = false;
 
   private handleMessage = (event: MessageEvent) => {
-    const message = event.data;
-    this.handlers.forEach(handler => handler(message));
+    const message = event.data as unknown;
+    if (
+      message &&
+      typeof message === 'object' &&
+      'command' in message &&
+      (message as { command: unknown }).command !== undefined
+    ) {
+      this.handlers.forEach((handler) =>
+        handler(message as IncomingVscodeMessage),
+      );
+    }
   };
 
   subscribe(handler: VscodeMessageHandler) {

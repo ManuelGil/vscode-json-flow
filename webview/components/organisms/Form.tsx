@@ -1,5 +1,7 @@
 import * as LabelPrimitive from '@radix-ui/react-label';
 import { Slot } from '@radix-ui/react-slot';
+import { Label } from '@webview/components';
+import { cn } from '@webview/lib/utils';
 import * as React from 'react';
 import {
   Controller,
@@ -9,9 +11,6 @@ import {
   FormProvider,
   useFormContext,
 } from 'react-hook-form';
-
-import { Label } from '@webview/components';
-import { cn } from '@webview/lib/utils';
 
 const Form = FormProvider;
 

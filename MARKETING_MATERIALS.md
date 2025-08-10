@@ -53,7 +53,7 @@ JSON Flow is a Visual Studio Code extension designed to revolutionize how develo
 
 ### Unique Selling Points
 
-- No need for external tools—everything works directly inside VS Code.
+- No need for external tools, everything works directly inside VS Code.
 - Completely free and open source, built for the developer community.
 - Lightweight and fast, ideal for handling both small and large JSON files.
 

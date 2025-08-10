@@ -1,10 +1,4 @@
-import type { TreeMap } from '@webview/types';
-
-export type JsonValue = string | number | boolean | null | JsonObject | JsonArray;
-interface JsonObject {
-  [key: string]: JsonValue;
-}
-interface JsonArray extends Array<JsonValue> {}
+import type { JsonValue, TreeMap } from '@webview/types';
 
 /**
  * Generates a unique node ID for tree nodes based on a prefix and key.

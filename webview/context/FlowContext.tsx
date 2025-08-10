@@ -1,10 +1,9 @@
+import { generateTree } from '@webview/helpers/generateTree';
+import type { Direction, JsonValue, TreeMap } from '@webview/types';
 import React, { createContext, Dispatch, useContext, useReducer } from 'react';
 
-import { generateTree } from '@webview/helpers/generateTree';
-import type { Direction, TreeMap } from '@webview/types';
-
 export interface FlowState {
-  data: any;
+  data: JsonValue | null;
   treeData: TreeMap | null;
   orientation: Direction;
   path: string;
@@ -17,7 +16,7 @@ export type FlowAction =
   | {
       type: 'UPDATE';
       payload: {
-        data: any;
+        data: JsonValue;
         orientation: Direction;
         path: string;
         fileName: string;
@@ -92,14 +91,23 @@ export function useFlowDispatch(): Dispatch<FlowAction> {
  * @param children - React children to wrap.
  * @param initialState - Optional initial state for the flow.
  */
-export function FlowProvider({ children, initialState }: { children: React.ReactNode, initialState?: FlowState }) {
-  const [state, dispatch] = useReducer(flowReducer, initialState ?? {
-    data: null,
-    treeData: null,
-    orientation: 'TB',
-    path: '',
-    fileName: '',
-  });
+export function FlowProvider({
+  children,
+  initialState,
+}: {
+  children: React.ReactNode;
+  initialState?: FlowState;
+}) {
+  const [state, dispatch] = useReducer(
+    flowReducer,
+    initialState ?? {
+      data: null,
+      treeData: null,
+      orientation: 'TB',
+      path: '',
+      fileName: '',
+    },
+  );
 
   return (
     <FlowStateContext.Provider value={state}>

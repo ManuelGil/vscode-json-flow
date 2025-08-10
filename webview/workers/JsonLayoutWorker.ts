@@ -6,12 +6,23 @@
 
 /// <reference lib="webworker" />
 
+import type { JsonValue } from '@webview/types';
 // Define types for messages
+import type { Edge, Node } from '@xyflow/react';
+
+type WorkerNodeData = {
+  label: string;
+  type: 'object' | 'array' | 'string' | 'number' | 'boolean' | 'null';
+  childrenCount?: number;
+  depth: number;
+  value?: JsonValue;
+};
+
 type WorkerRequestMessage =
   | {
       type: 'PROCESS_JSON';
       payload: {
-        jsonData: any;
+        jsonData: JsonValue | string;
         options?: {
           // Various options for layout calculations
           spacing?: number;
@@ -46,10 +57,10 @@ type JsonLayoutOptions = {
 };
 
 function processJsonData(
-  jsonData: any,
+  jsonData: JsonValue | string,
   requestId: string,
   options: JsonLayoutOptions = {},
-): { nodes: any[]; edges: any[]; processingTime: number } {
+): { nodes: Node<WorkerNodeData>[]; edges: Edge[]; processingTime: number } {
   if (!jsonData) {
     throw new Error('Invalid JSON data provided');
   }
@@ -84,11 +95,11 @@ function processJsonData(
 
     // Step 1: Parse and validate JSON (if needed)
     updateProgress(0);
-    let parsedData = jsonData;
+    let parsedData: JsonValue = jsonData as JsonValue;
     if (typeof jsonData === 'string') {
       try {
-        parsedData = JSON.parse(jsonData);
-      } catch (e) {
+        parsedData = JSON.parse(jsonData) as JsonValue;
+      } catch {
         throw new Error('Invalid JSON format');
       }
     }
@@ -96,13 +107,13 @@ function processJsonData(
     updateProgress(currentStep);
 
     // Step 2: Generate nodes with positions
-    const nodes: any[] = [];
-    const edges: any[] = [];
+    const nodes: Node<WorkerNodeData>[] = [];
+    const edges: Edge[] = [];
 
     // This is where the actual heavy computation happens
     // Transform JSON data structure into React Flow nodes
     const processNode = (
-      data: any,
+      data: JsonValue,
       parentId: string | null = null,
       depth = 0,
       index = 0,
@@ -195,7 +206,7 @@ function processJsonData(
           ),
           data: {
             label: parentId ? `${index}: ${data}` : `${data}`,
-            type: typeof data,
+            type: typeof data as WorkerNodeData['type'],
             value: data,
             depth,
           },
@@ -243,27 +254,23 @@ function processJsonData(
  */
 function calculatePosition(
   depth: number,
-  index: any,
+  index: number | string,
   direction: 'horizontal' | 'vertical',
 ): { x: number; y: number } {
   const spacing = 200; // Base spacing between nodes
+
+  const idx = typeof index === 'number' ? index : parseInt(index) || 0;
 
   if (direction === 'horizontal') {
     // Horizontal tree layout (left to right)
     return {
       x: depth * spacing,
-      y:
-        typeof index === 'number'
-          ? index * spacing
-          : parseInt(index) * spacing || 0,
+      y: idx * spacing,
     };
   } else {
     // Vertical tree layout (top to bottom)
     return {
-      x:
-        typeof index === 'number'
-          ? index * spacing
-          : parseInt(index) * spacing || 0,
+      x: idx * spacing,
       y: depth * spacing,
     };
   }
@@ -274,8 +281,8 @@ function calculatePosition(
  * while preserving important structural information
  */
 function optimizeForLargeDataset(
-  nodes: any[],
-  edges: any[],
+  nodes: Node<WorkerNodeData>[],
+  edges: Edge[],
   maxNodes: number,
 ): void {
   if (nodes.length <= maxNodes) {
@@ -333,7 +340,7 @@ self.onmessage = (event: MessageEvent<WorkerRequestMessage>) => {
 
         // Process the JSON data
         try {
-          const { nodes, edges } = processJsonData(
+          const { nodes, edges, processingTime } = processJsonData(
             jsonData,
             requestId,
             options,
@@ -346,7 +353,7 @@ self.onmessage = (event: MessageEvent<WorkerRequestMessage>) => {
               nodes,
               edges,
               requestId,
-              processingTime: Math.round(performance.now()),
+              processingTime: processingTime,
               nodesCount: nodes.length,
             },
           });

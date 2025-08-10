@@ -1,36 +1,47 @@
-// NOTE: This service is implemented to provide batching and validation for outgoing VSCode messages.
-// It is currently NOT fully integrated in the main flow. For best practices, migrate all outgoing
-// vscode.postMessage calls to use vscodeMessenger.batchPostMessage for batching and validation.
+import { throwError } from '@webview/helpers';
 import { z } from 'zod';
 
-import { throwError } from '@webview/helpers';
 import { getVscodeApi } from '../getVscodeApi';
 
+/** Schema for config updates */
 const configMessageSchema = z.object({
   command: z.literal('updateConfig'),
   orientation: z.enum(['TB', 'RL', 'BT', 'LR']).optional(),
 });
 
+/** Schema for state update from webview to extension */
+const updateStateSchema = z.object({
+  command: z.literal('updateState'),
+  data: z.unknown().optional(),
+  fileName: z.string().optional(),
+  path: z.string().optional(),
+  orientation: z.enum(['TB', 'RL', 'BT', 'LR']).optional(),
+});
+
+/** Union of all webview-to-extension messages */
 const messageSchema = z.discriminatedUnion('command', [
   configMessageSchema,
-  z.object({ command: z.literal('clear') }),
-  z.object({
-    command: z.literal('update'),
-    data: z.any(),
-    fileName: z.string().optional(),
-    path: z.string().optional(),
-    orientation: z.enum(['TB', 'RL', 'BT', 'LR']).optional(),
-  }),
+  updateStateSchema,
+  z.object({ command: z.literal('openSettings') }),
 ]);
 
 export type VSCodeMessage = z.infer<typeof messageSchema>;
+export type OutgoingVscodeMessage = VSCodeMessage;
 
+/**
+ * Internal queue to debounce/batch messages by command key.
+ * Each command keeps only the last payload within the time window.
+ */
 const messageQueue = new Map<
-  string,
-  { timerId: ReturnType<typeof setTimeout>; payload: Record<string, any> }
+  VSCodeMessage['command'],
+  { timerId: ReturnType<typeof setTimeout>; payload: Record<string, unknown> }
 >();
 const MESSAGE_DELAY = 200;
 
+/**
+ * Validates message against the schema and sends it via VSCode API.
+ * Returns true if the message is valid and was posted.
+ */
 function validateAndSendMessage(message: unknown): boolean {
   try {
     const validMessage = messageSchema.parse(message);
@@ -44,7 +55,14 @@ function validateAndSendMessage(message: unknown): boolean {
 }
 
 export const vscodeMessenger = {
-  batchPostMessage(command: string, payload: Record<string, any>) {
+  /**
+   * Batch messages by command to avoid posting a burst of updates.
+   * Only the last payload within the debounce window is sent.
+   */
+  batchPostMessage(
+    command: VSCodeMessage['command'],
+    payload: Record<string, unknown>,
+  ) {
     if (messageQueue.has(command)) {
       clearTimeout(messageQueue.get(command)!.timerId);
     }
@@ -55,7 +73,10 @@ export const vscodeMessenger = {
     }, MESSAGE_DELAY);
     messageQueue.set(command, { timerId, payload });
   },
-  sendMessage(message: VSCodeMessage) {
+  /**
+   * Send a message immediately (no batching).
+   */
+  sendMessage(message: OutgoingVscodeMessage) {
     return validateAndSendMessage(message);
   },
   cleanup() {

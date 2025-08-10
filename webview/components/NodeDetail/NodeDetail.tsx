@@ -29,6 +29,9 @@ export const NodeDetail = memo(({ node, onClose }: NodeDetailProps) => {
       </aside>
     );
   }
+  // Safely extract optional targetPosition if present on node
+  const targetPosition = (node as unknown as { targetPosition?: unknown })
+    .targetPosition;
 
   return (
     <aside className="min-w-[280px] max-w-[420px] rounded-xl border bg-gradient-to-br from-background to-muted p-6 shadow-lg">
@@ -79,15 +82,14 @@ export const NodeDetail = memo(({ node, onClose }: NodeDetailProps) => {
           </div>
         </section>
       )}
-      {Array.isArray((node as any).targetPosition) &&
-        (node as any).targetPosition.length > 0 && (
-          <section className="mb-3">
-            <div className="mb-1 text-sm text-muted-foreground">Targets</div>
-            <div className="rounded border border-muted bg-card px-2 py-1 font-mono text-base">
-              {(node as any).targetPosition.join(', ')}
-            </div>
-          </section>
-        )}
+      {Array.isArray(targetPosition) && targetPosition.length > 0 && (
+        <section className="mb-3">
+          <div className="mb-1 text-sm text-muted-foreground">Targets</div>
+          <div className="rounded border border-muted bg-card px-2 py-1 font-mono text-base">
+            {targetPosition.join(', ')}
+          </div>
+        </section>
+      )}
       {/* Add more node attributes or actions as needed */}
     </aside>
   );

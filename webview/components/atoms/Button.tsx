@@ -1,7 +1,4 @@
 import { Slot } from '@radix-ui/react-slot';
-import { cva, type VariantProps } from 'class-variance-authority';
-import * as React from 'react';
-
 import {
   Tooltip,
   TooltipContent,
@@ -9,6 +6,8 @@ import {
   TooltipTrigger,
 } from '@webview/components';
 import { cn } from '@webview/lib/utils';
+import { cva, type VariantProps } from 'class-variance-authority';
+import * as React from 'react';
 
 /**
  * Button style variants configuration

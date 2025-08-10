@@ -36,7 +36,25 @@ export interface VscodeState {
 /**
  * VSCode configuration update payload
  */
+/**
+ * VSCode configuration update payload
+ * Only known configuration keys should be included here to avoid drift.
+ */
 export interface VscodeConfigUpdate {
   orientation?: Direction;
-  [key: string]: unknown;
 }
+
+/**
+ * Incoming messages sent from the VSCode extension host to the webview.
+ */
+export type IncomingVscodeMessage =
+  | {
+      command: 'update';
+      data?: JsonValue;
+      orientation?: Direction;
+      path?: string;
+      fileName?: string;
+    }
+  | {
+      command: 'clear';
+    };

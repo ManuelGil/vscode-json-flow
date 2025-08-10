@@ -2,7 +2,15 @@
  * VSCode API singleton instance
  * We only want to call acquireVsCodeApi() once as per VS Code recommendations
  */
-let vscodeInstance: any = null;
+import * as logger from '@webview/utils/logger';
+
+interface VsCodeApi {
+  postMessage: (message: unknown) => void;
+  setState: (newState: unknown) => void;
+  getState: () => unknown;
+}
+
+let vscodeInstance: VsCodeApi | null = null;
 
 /**
  * Gets the VSCode API instance, implementing the singleton pattern
@@ -11,42 +19,31 @@ let vscodeInstance: any = null;
  */
 export function getVscodeApi() {
   if (import.meta.env.DEV) {
-    // Return a mock API in development mode
     return {
-      postMessage: (_msg: any) => {
-        // Optionally log or ignore
-        if (window?.console) {
-          console.info('[MOCK VSCode] postMessage:', _msg);
-        }
+      postMessage: (_msg: unknown) => {
+        logger.info('[MOCK VSCode] postMessage:', _msg);
       },
-      setState: (_state: any) => {
-        if (window?.console) {
-          console.info('[MOCK VSCode] setState:', _state);
-        }
+      setState: (_state: unknown) => {
+        logger.info('[MOCK VSCode] setState:', _state);
       },
       getState: () => {
-        if (window?.console) {
-          console.info('[MOCK VSCode] getState');
-        }
+        logger.info('[MOCK VSCode] getState');
         return undefined;
       },
     };
   }
 
-  // Return cached instance if it exists
   if (vscodeInstance) {
     return vscodeInstance;
   }
 
-  // Create new instance if available
   if (typeof window !== 'undefined') {
     // @ts-ignore
     // biome-ignore lint/correctness/noUndeclaredVariables: acquireVsCodeApi is a global function provided by VS Code
-    vscodeInstance = acquireVsCodeApi();
+    vscodeInstance = acquireVsCodeApi() as VsCodeApi;
     return vscodeInstance;
   }
 
-  // Throw error if API is not available
   throw new Error(
     'VSCode API not available. Run inside VSCode or use mock mode.',
   );

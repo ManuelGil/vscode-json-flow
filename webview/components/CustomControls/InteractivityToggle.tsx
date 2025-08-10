@@ -1,6 +1,5 @@
-import { Lock, Unlock } from 'lucide-react';
-
 import { Button } from '@webview/components';
+import { Lock, Unlock } from 'lucide-react';
 
 /**
  * Props for the InteractivityToggle component.

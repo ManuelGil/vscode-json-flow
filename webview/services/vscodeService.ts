@@ -4,7 +4,7 @@
  * Centralizes all communication with VSCode extension host.
  * Provides methods for state management, message posting, and validation.
  */
-import { Direction } from '../types';
+import type { VscodeConfigUpdate } from './types';
 import { vscodeMessenger } from './vscodeMessenger';
 import { vscodeStateService } from './vscodeStateService';
 
@@ -15,8 +15,11 @@ export const vscodeService = {
   /**
    * Updates configuration in VSCode
    */
-  updateConfig(config: { orientation?: Direction; [key: string]: any }) {
-    vscodeMessenger.batchPostMessage('updateConfig', config);
+  updateConfig(config: VscodeConfigUpdate) {
+    vscodeMessenger.batchPostMessage(
+      'updateConfig',
+      config as Record<string, unknown>,
+    );
   },
 
   /**
@@ -28,6 +31,10 @@ export const vscodeService = {
    * Gets current state from VSCode webview
    */
   getState: vscodeStateService.getState,
+  /**
+   * Gets current state from VSCode with safe defaults filled in
+   */
+  getStateOrDefaults: vscodeStateService.getStateOrDefaults,
 
   /**
    * Sends a direct message to VSCode (use only for immediate communications)

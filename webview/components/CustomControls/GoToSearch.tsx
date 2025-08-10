@@ -1,7 +1,3 @@
-import { useReactFlow } from '@xyflow/react';
-import { Search } from 'lucide-react';
-import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react';
-
 import {
   Button,
   DropdownMenu,
@@ -10,6 +6,9 @@ import {
   Input,
 } from '@webview/components';
 import { useDebouncedValue } from '@webview/hooks/useDebouncedValue';
+import { useReactFlow } from '@xyflow/react';
+import { Search } from 'lucide-react';
+import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react';
 
 /**
  * GoToSearch component provides a search interface to focus and navigate between nodes
@@ -20,7 +19,7 @@ import { useDebouncedValue } from '@webview/hooks/useDebouncedValue';
 export function GoToSearch() {
   const [search, setSearch] = useState<string>('');
   const [matches, setMatches] = useState<string[]>([]); // node ids of matches
-  const [currentMatchIdx, setCurrentMatchIdx] = useState<number>(-1); // Iniciar en -1 cuando no hay selección
+  const [currentMatchIdx, setCurrentMatchIdx] = useState<number>(-1); // Start at -1 when there is no selection
   const debouncedSearch = useDebouncedValue<string>(search, 250);
 
   // Safe access to ReactFlow functions

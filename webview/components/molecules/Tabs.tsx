@@ -1,7 +1,6 @@
 import * as TabsPrimitive from '@radix-ui/react-tabs';
-import * as React from 'react';
-
 import { cn } from '@webview/lib/utils';
+import * as React from 'react';
 
 /**
  * Tabs component collection

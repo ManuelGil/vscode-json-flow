@@ -167,4 +167,3 @@ export interface JsonNode {
   value: JsonValue;
   type: 'object' | 'array' | 'string' | 'number' | 'boolean' | 'null';
 }
-

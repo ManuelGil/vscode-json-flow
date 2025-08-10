@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
-
 import { throwError } from '@webview/helpers';
+import { useEffect } from 'react';
 import { useFlowDispatch } from '../context/FlowContext';
+import type { IncomingVscodeMessage } from '../services/types';
 import vscodeSyncService from '../services/vscodeSyncService';
 
 /**
@@ -20,17 +20,21 @@ export function useVscodeSync() {
      *
      * @param message - Message object from VSCode backend.
      */
-    const handler = (message: any) => {
+    const handler = (message: IncomingVscodeMessage) => {
       try {
         switch (message.command) {
           case 'update':
+            if (typeof message.data === 'undefined') {
+              dispatch({ type: 'CLEAR' });
+              break;
+            }
             dispatch({
               type: 'UPDATE',
               payload: {
                 data: message.data,
                 orientation: message.orientation || 'TB',
-                fileName: message.fileName,
-                path: message.path,
+                fileName: message.fileName ?? '',
+                path: message.path ?? '',
               },
             });
             break;

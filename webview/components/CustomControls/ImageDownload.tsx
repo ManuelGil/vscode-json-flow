@@ -1,17 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
-  getNodesBounds,
-  getViewportForBounds,
-  useReactFlow,
-} from '@xyflow/react';
-import { toBlob, toJpeg, toPng, toSvg } from 'html-to-image';
-import { Check, Copy, Download, X } from 'lucide-react';
-import { useCallback, useRef, useState } from 'react';
-import { HexColorPicker } from 'react-colorful';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-
-import {
   Button,
   Dialog,
   DialogContent,
@@ -34,6 +22,17 @@ import {
   RadioGroup,
   RadioGroupItem,
 } from '@webview/components';
+import {
+  getNodesBounds,
+  getViewportForBounds,
+  useReactFlow,
+} from '@xyflow/react';
+import { toBlob, toJpeg, toPng, toSvg } from 'html-to-image';
+import { Check, Copy, Download, X } from 'lucide-react';
+import { useCallback, useRef, useState } from 'react';
+import { HexColorPicker } from 'react-colorful';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 const downloadSchema = z.object({
   fileName: z.string().min(2).max(50),

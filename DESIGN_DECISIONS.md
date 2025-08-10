@@ -89,7 +89,7 @@ This document provides an overview of the key design decisions made during the d
   - Found in `src/test/`, these ensure that core logic operates as expected.
 
 - **Integration Tests:**
-  - Focused on the interaction between the extension and VS Code’s API.
+  - Focused on the interaction between the extension and VS Code's API.
 
 - **Manual Testing:**
   - Performed regularly to validate the user experience in real-world scenarios.

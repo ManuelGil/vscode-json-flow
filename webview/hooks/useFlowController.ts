@@ -2,6 +2,11 @@
  * @file Hooks for state and layout management of the React Flow diagram in the JSON Flow webview.
  * Provides the main useFlowController hook and related types for flow state orchestration.
  */
+
+import { layoutElements } from '@webview/services/layoutService';
+import { getAllDescendants } from '@webview/services/treeService';
+import type { Direction, TreeMap } from '@webview/types';
+import * as logger from '@webview/utils/logger';
 import type { Edge, EdgeChange, Node, NodeChange } from '@xyflow/react';
 import { applyEdgeChanges, applyNodeChanges } from '@xyflow/react';
 import {
@@ -12,10 +17,6 @@ import {
   useRef,
   useState,
 } from 'react';
-
-import { layoutElements } from '@webview/services/layoutService';
-import { getAllDescendants } from '@webview/services/treeService';
-import type { Direction, TreeMap } from '@webview/types';
 
 const directions: Direction[] = ['TB', 'RL', 'BT', 'LR'];
 
@@ -70,14 +71,12 @@ export function useFlowController({
   treeRootId,
   initialDirection = 'TB',
 }: UseFlowControllerProps): UseFlowControllerReturn {
-  // Use refs for values that should persist between renders but not trigger re-renders
   const directionRef = useRef<Direction>(initialDirection);
   const [currentDirection, setCurrentDirection] =
     useState<Direction>(initialDirection);
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
 
-  // Use useReducer instead of useState for more predictable state transitions
   type CollapsedNodesAction =
     | { type: 'COLLAPSE_NODES'; payload: { nodeIds: string[] } }
     | { type: 'EXPAND_NODES'; payload: { nodeIds: string[] } }
@@ -116,12 +115,10 @@ export function useFlowController({
     new Set<string>(),
   );
 
-  // Validate treeData once to avoid repeated validation
   const isValidTreeData = useMemo(() => {
     return !!treeData && !!treeRootId && Object.keys(treeData).length > 0;
   }, [treeData, treeRootId]);
 
-  // Memoize all descendants for each node for efficient collapse/expand logic
   const descendantsCache = useMemo(() => {
     const cache = new Map<string, string[]>();
     if (isValidTreeData) {
@@ -132,7 +129,6 @@ export function useFlowController({
     return cache;
   }, [treeData, isValidTreeData]);
 
-  // Memoize immediate children for each node
   const immediateChildrenCache = useMemo(() => {
     const cache = new Map<string, string[]>();
     if (isValidTreeData) {
@@ -143,7 +139,6 @@ export function useFlowController({
     return cache;
   }, [treeData, isValidTreeData]);
 
-  // Calculate layout once and memoize
   const layout = useMemo(() => {
     if (!isValidTreeData) {
       return { nodes: [], edges: [] };
@@ -151,15 +146,13 @@ export function useFlowController({
     try {
       return layoutElements(treeData, treeRootId, currentDirection);
     } catch (error) {
-      console.error('Error calculating layout:', error);
+      logger.error('Error calculating layout:', error);
       return { nodes: [], edges: [] };
     }
   }, [treeData, treeRootId, isValidTreeData, currentDirection]);
 
-  // Keep stable reference to toggleNodeChildren function
   const toggleNodeChildrenRef = useRef<(nodeId: string) => void>(() => {
-    // Initial empty implementation - will be updated with real function
-    console.warn('toggleNodeChildren called before initialization');
+    logger.warn('toggleNodeChildren called before initialization');
   });
 
   /**
@@ -174,12 +167,10 @@ export function useFlowController({
         return;
       }
 
-      // Filter out collapsed nodes
       const visibleNodes = layout.nodes.filter(
         (node) => !collapsedNodes.has(node.id),
       );
 
-      // Update nodes with current data and callbacks
       setNodes(
         visibleNodes.map((node) => ({
           ...node,
@@ -197,16 +188,14 @@ export function useFlowController({
         })),
       );
 
-      // Update edges
       setEdges(layout.edges);
     } catch (error) {
-      console.error('Error updating visible elements:', error);
+      logger.error('Error updating visible elements:', error);
       setNodes([]);
       setEdges([]);
     }
   }, [layout, collapsedNodes, descendantsCache]);
 
-  // Effect to update visible elements when layout or collapsedNodes change
   useEffect(() => {
     updateVisibleElements();
     setCurrentDirection(directionRef.current);
@@ -223,7 +212,6 @@ export function useFlowController({
         type: 'RESET',
         payload: {} as Record<string, never>,
       });
-      // Clean up any other potential memory issues
     };
   }, []);
 
@@ -260,31 +248,25 @@ export function useFlowController({
       const descendants = descendantsCache.get(nodeId) || [];
       const immediateChildren = immediateChildrenCache.get(nodeId) || [];
 
-      // Check if any immediate child is currently visible
       const anyImmediateChildVisible = immediateChildren.some(
         (id) => !collapsedNodes.has(id),
       );
 
       if (anyImmediateChildVisible) {
-        // Collapse all descendants
         dispatchCollapsedNodesAction({
           type: 'COLLAPSE_NODES',
           payload: { nodeIds: descendants },
         });
       } else {
-        // Expand immediate children
         dispatchCollapsedNodesAction({
           type: 'EXPAND_NODES',
           payload: { nodeIds: immediateChildren },
         });
       }
-
-      // No need to explicitly recalculate layout - the effect will handle it
     },
     [descendantsCache, immediateChildrenCache, collapsedNodes, treeData],
   );
 
-  // Update the ref with the latest callback to avoid stale closure issues
   useEffect(() => {
     toggleNodeChildrenRef.current = toggleNodeChildren;
   }, [toggleNodeChildren]);
@@ -300,21 +282,16 @@ export function useFlowController({
           return;
         }
 
-        // Force update directionRef
         directionRef.current = newDirection;
 
-        // Force layout recalculation by setting state
         setCurrentDirection(newDirection);
 
-        // Manually recalculate the layout with new direction
         const newLayout = layoutElements(treeData, treeRootId, newDirection);
 
-        // Update nodes filtering out collapsed ones
         const visibleNodes = newLayout.nodes.filter(
           (node) => !collapsedNodes.has(node.id),
         );
 
-        // Update nodes with current data and callbacks
         setNodes(
           visibleNodes.map((node) => ({
             ...node,
@@ -332,10 +309,9 @@ export function useFlowController({
           })),
         );
 
-        // Update edges
         setEdges(newLayout.edges);
       } catch (error) {
-        console.error('Error forcing layout update:', error);
+        logger.error('Error forcing layout update:', error);
       }
     },
     [treeData, treeRootId, isValidTreeData, collapsedNodes, descendantsCache],
@@ -350,7 +326,6 @@ export function useFlowController({
     const nextIndex = (currentIndex + 1) % directions.length;
     const nextDirection = directions[nextIndex];
 
-    // Force a layout update with the new direction
     forceLayoutUpdate(nextDirection);
 
     return nextDirection;

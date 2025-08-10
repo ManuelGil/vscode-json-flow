@@ -1,10 +1,9 @@
-import { Edge, MarkerType } from '@xyflow/react';
-import { useCallback } from 'react';
-
 import { DEFAULT_SETTINGS } from '@webview/components/CustomControls/Settings';
 import { useDebounce } from '@webview/hooks/useDebounce';
 import { vscodeService } from '@webview/services/vscodeService';
-import type { Direction, EdgeType, TreeMap } from '@webview/types';
+import type { Direction, EdgeType, JsonValue, TreeMap } from '@webview/types';
+import { Edge, MarkerType } from '@xyflow/react';
+import { useCallback } from 'react';
 
 // Settings interface matches the one in CustomControls/Settings.tsx
 interface Settings {
@@ -19,7 +18,7 @@ interface Settings {
  * Flow data structure with tree data and layout information
  */
 type FlowData = {
-  data: Record<string, unknown> | null;
+  data: JsonValue | null;
   treeData: TreeMap | null;
   orientation: Direction;
   path: string;
@@ -44,14 +43,20 @@ export function useFlowSettings(
    * Handles layout direction change and updates VSCode state
    * Uses debounce to prevent excessive state updates
    */
-  const updateVscodeOrientation = useCallback((newDirection: Direction) => {
-    vscodeService.saveState({
-      ...vscodeService.getState(),
-      orientation: newDirection,
-    });
-    // Also update VSCode configuration
-    vscodeService.updateConfig({ orientation: newDirection });
-  }, []);
+  const updateVscodeOrientation = useCallback(
+    (newDirection: Direction) => {
+      const current = vscodeService.getState();
+      vscodeService.saveState({
+        data: flowData.data ?? null,
+        orientation: newDirection,
+        path: current?.path ?? flowData.path,
+        fileName: current?.fileName ?? flowData.fileName,
+      });
+      // Also update VSCode configuration
+      vscodeService.updateConfig({ orientation: newDirection });
+    },
+    [flowData.data, flowData.path, flowData.fileName],
+  );
 
   // Debounced version of the VSCode state update function
   const debouncedUpdateOrientation = useDebounce(updateVscodeOrientation, 300, [

@@ -1,7 +1,3 @@
-import { useNodes, useReactFlow, useViewport } from '@xyflow/react';
-import { ChevronDown, Focus, Maximize, ZoomIn, ZoomOut } from 'lucide-react';
-import { useCallback } from 'react';
-
 import {
   Button,
   DropdownMenu,
@@ -11,6 +7,9 @@ import {
   DropdownMenuTrigger,
   Input,
 } from '@webview/components';
+import { useNodes, useReactFlow, useViewport } from '@xyflow/react';
+import { ChevronDown, Focus, Maximize, ZoomIn, ZoomOut } from 'lucide-react';
+import { useCallback } from 'react';
 
 /**
  * ZoomControl component for managing zoom and focus in the flow diagram.

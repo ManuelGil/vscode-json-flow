@@ -1,5 +1,5 @@
-import '@xyflow/react/dist/style.css';
 import { ReactFlowProvider } from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
 
 import { ThemeProvider } from '@webview/components';
 import { FlowCanvas } from '@webview/components/FlowCanvas/FlowCanvas';

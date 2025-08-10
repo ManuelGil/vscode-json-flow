@@ -1,9 +1,8 @@
+import { cn } from '@webview/lib';
+import type { CustomNodeData } from '@webview/types';
 import { Handle, Position } from '@xyflow/react';
 import { Eye, EyeOff } from 'lucide-react';
 import { memo } from 'react';
-
-import { cn } from '@webview/lib';
-import type { CustomNodeData } from '@webview/types';
 import { Badge } from './atoms/Badge';
 import { Button } from './atoms/Button';
 import { useNodeColors } from './CustomNode/useNodeColors';
@@ -239,5 +238,5 @@ export const CustomNode = memo<CustomNodeProps>(
       prevProps.data.isCollapsed === nextProps.data.isCollapsed &&
       prevProps.data.children?.length === nextProps.data.children?.length
     );
-  }
+  },
 );

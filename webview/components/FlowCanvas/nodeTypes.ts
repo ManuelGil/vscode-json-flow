@@ -1,9 +1,9 @@
 /**
  * Node type definitions for React Flow
  */
-import type { NodeTypes } from '@xyflow/react';
 
 import { CustomNode } from '@webview/components';
+import type { NodeTypes } from '@xyflow/react';
 
 /**
  * Node types mapping for React Flow.

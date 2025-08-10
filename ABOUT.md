@@ -35,7 +35,7 @@ To become the leading open-source solution for JSON management and visualization
 
 JSON Flow has been actively developed since its early days. The project began under the name **JSON Manager** with an early beta release (version 1.0.0-beta) on November 6, 2024. This beta was made available on the Visual Studio Code Marketplace as version **1.0.0** as a preview. Soon after, a rapid update removed the preview flag, marking the official launch as **1.0.1**.
 
-From this point on, JSON Flow has steadily evolved. Early updates focused on enhancing core functionalities—such as improved file type support, refined JSON parsing, and the introduction of interactive graph visualizations. Subsequent releases have further refined these features, streamlined configuration options, and enhanced performance and stability.
+From this point on, JSON Flow has steadily evolved. Early updates focused on enhancing core functionalities, such as improved file type support, refined JSON parsing, and the introduction of interactive graph visualizations. Subsequent releases have further refined these features, streamlined configuration options, and enhanced performance and stability.
 
 This continuous evolution reflects our commitment to providing a powerful yet user-friendly tool for managing and visualizing JSON data directly within Visual Studio Code.
 

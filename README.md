@@ -468,7 +468,7 @@ If your question or issue is not addressed, please open a new issue on GitHub wi
 
 ## Contributing
 
-JSON Flow is an open-source project and welcomes contributions from the community. Here’s how you can get involved:
+JSON Flow is an open-source project and welcomes contributions from the community. Here's how you can get involved:
 
 1. **Fork** the [GitHub repository](https://github.com/ManuelGil/vscode-json-flow).
 2. **Create a new branch** for your feature or fix:

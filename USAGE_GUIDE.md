@@ -29,7 +29,7 @@ Welcome to the **JSON Flow** usage guide! This document provides a clear, step-b
 2. **Activate JSON Flow**:
    - **Via the Activity Bar**: Click on the JSON Flow icon in the Activity Bar.
    - **Via the Command Palette**: Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on macOS) and select **JSON Flow: Show Preview**.
-3. **View the Graph**: JSON Flow will generate an interactive, node-based graph that represents your file’s data structure.
+3. **View the Graph**: JSON Flow will generate an interactive, node-based graph that represents your file's data structure.
 
 > **Note:** Make sure your file is correctly formatted to avoid errors during visualization.
 
