@@ -23,6 +23,10 @@ const messageSchema = z.discriminatedUnion('command', [
   configMessageSchema,
   updateStateSchema,
   z.object({ command: z.literal('openSettings') }),
+  z.object({
+    command: z.literal('graphSelectionChanged'),
+    nodeId: z.string().optional(),
+  }),
 ]);
 
 export type VSCodeMessage = z.infer<typeof messageSchema>;

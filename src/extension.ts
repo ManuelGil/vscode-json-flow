@@ -107,6 +107,15 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.workspace.getConfiguration(EXTENSION_ID, resource?.uri),
   );
 
+  // Ensure split view context is initialized
+  vscode.commands.executeCommand('setContext', 'jsonFlow.splitView', false);
+  // Ensure Live Sync context is initialized
+  vscode.commands.executeCommand(
+    'setContext',
+    'jsonFlow.liveSyncEnabled',
+    false,
+  );
+
   // Watch for changes in the configuration
   vscode.workspace.onDidChangeConfiguration((event) => {
     const workspaceConfig = vscode.workspace.getConfiguration(
@@ -468,6 +477,99 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   // -----------------------------------------------------------------
+  // Register View (Split) commands
+  // -----------------------------------------------------------------
+
+  const disposableEnableSplitView = vscode.commands.registerCommand(
+    `${EXTENSION_ID}.view.enableSplitView`,
+    () => {
+      // Check if the extension is enabled
+      if (!config.enable) {
+        const message = vscode.l10n.t(
+          '{0} is disabled in settings. Enable it to use its features',
+          [EXTENSION_NAME],
+        );
+        vscode.window.showErrorMessage(message);
+        return;
+      }
+
+      const editor = vscode.window.activeTextEditor;
+      if (!editor) {
+        vscode.window.showErrorMessage(vscode.l10n.t('No active editor!'));
+        return;
+      }
+
+      jsonController.showPreview(editor.document.uri, vscode.ViewColumn.Beside);
+    },
+  );
+
+  const disposableDisableSplitView = vscode.commands.registerCommand(
+    `${EXTENSION_ID}.view.disableSplitView`,
+    () => {
+      // Check if the extension is enabled
+      if (!config.enable) {
+        const message = vscode.l10n.t(
+          '{0} is disabled in settings. Enable it to use its features',
+          [EXTENSION_NAME],
+        );
+        vscode.window.showErrorMessage(message);
+        return;
+      }
+
+      // Close the webview panel if open
+      if (JSONProvider.currentProvider) {
+        try {
+          JSONProvider.currentProvider.dispose();
+        } catch {
+          // no-op
+        }
+      }
+    },
+  );
+
+  context.subscriptions.push(
+    disposableEnableSplitView,
+    disposableDisableSplitView,
+  );
+
+  // -----------------------------------------------------------------
+  // Register Live Sync commands (Phase 1 scaffold)
+  // -----------------------------------------------------------------
+
+  const liveSyncEnableCmd = vscode.commands.registerCommand(
+    `${EXTENSION_ID}.view.enableLiveSync`,
+    () => {
+      if (!config.enable) {
+        const message = vscode.l10n.t(
+          '{0} is disabled in settings. Enable it to use its features',
+          [EXTENSION_NAME],
+        );
+        vscode.window.showErrorMessage(message);
+        return;
+      }
+      // Enable live sync globally for the current provider
+      JSONProvider.setLiveSyncEnabled(true);
+    },
+  );
+
+  const liveSyncDisableCmd = vscode.commands.registerCommand(
+    `${EXTENSION_ID}.view.disableLiveSync`,
+    () => {
+      if (!config.enable) {
+        const message = vscode.l10n.t(
+          '{0} is disabled in settings. Enable it to use its features',
+          [EXTENSION_NAME],
+        );
+        vscode.window.showErrorMessage(message);
+        return;
+      }
+      JSONProvider.setLiveSyncEnabled(false);
+    },
+  );
+
+  context.subscriptions.push(liveSyncEnableCmd, liveSyncDisableCmd);
+
+  // -----------------------------------------------------------------
   // Register TransformController
   // -----------------------------------------------------------------
 
@@ -717,6 +819,26 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(filesTreeView, disposableRefreshList);
+
+  // -----------------------------------------------------------------
+  // Live Sync commands and editor listeners
+  // -----------------------------------------------------------------
+  // (Live Sync commands are registered above)
+
+  // Listen to editor selection changes and forward to webview when Live Sync is enabled
+  const selectionListener = vscode.window.onDidChangeTextEditorSelection(
+    (_event) => {
+      if (!JSONProvider.liveSyncEnabled) {
+        return;
+      }
+      // TODO(Phase 1): Map the current selection (event.selections[0]) to a route-by-indices nodeId
+      // using jsonc-parser tolerant parsing and path derivation, then:
+      // JSONProvider.applyGraphSelection(derivedNodeId);
+      // For now, we do nothing until mapping is implemented.
+    },
+  );
+
+  context.subscriptions.push(selectionListener);
 
   // -----------------------------------------------------------------
   // Register FilesProvider and ListMethodsProvider events

@@ -22,5 +22,10 @@ export function useSelectedNode() {
   // Memoized handler to clear selection
   const clearSelection = useCallback(() => setSelectedNode(null), []);
 
-  return { selectedNode, onNodeClick, clearSelection };
+  // Programmatic select (for ApplyGraphSelection from VSCode)
+  const selectNode = useCallback((node: Node | null) => {
+    setSelectedNode(node);
+  }, []);
+
+  return { selectedNode, onNodeClick, clearSelection, selectNode };
 }

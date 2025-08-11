@@ -3,7 +3,7 @@
   /* Subtle track using theme color */
   background-color: hsl(var(--primary) / 0.12);
   /* Compact width for a more eye-catching loader */
-  width: clamp(120px, 35%, 260px);
+  width: 100%;
   overflow: hidden;
   margin: auto;
   border-radius: 9999px; /* pill shape */

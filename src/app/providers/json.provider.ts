@@ -1,4 +1,5 @@
 import {
+  commands,
   Disposable,
   Uri,
   ViewColumn,
@@ -36,6 +37,14 @@ export class JSONProvider {
   static readonly viewType: string = `${EXTENSION_ID}.jsonView`;
 
   /**
+   * Tracks whether the panel is currently shown in split view (i.e., created/revealed with ViewColumn.Beside).
+   */
+  static isSplitView: boolean = false;
+
+  /** Tracks whether Live Sync is enabled */
+  static liveSyncEnabled: boolean = false;
+
+  /**
    * Tracks all disposables for this provider to ensure proper cleanup of resources and event listeners.
    */
   private _disposables: Disposable[] = [];
@@ -65,7 +74,16 @@ export class JSONProvider {
     // Listen for messages from the webview (extend as needed for interactivity).
     this._panel.webview.onDidReceiveMessage(
       (message) => {
-        switch (message.type) {
+        switch (message?.command ?? message?.type) {
+          case 'graphSelectionChanged': {
+            // TODO: Phase 1 – apply selection in the JSON editor based on route-by-indices nodeId
+            // This is a scaffold; mapping from nodeId -> text range will be implemented in Phase 1
+            // For now, we simply acknowledge the message when Live Sync is enabled.
+            if (JSONProvider.liveSyncEnabled) {
+              // placeholder: no-op
+            }
+            break;
+          }
           default:
             break;
         }
@@ -80,6 +98,14 @@ export class JSONProvider {
         if (this._panel.visible) {
           this._update();
         }
+        // Recompute split state based on current view column (non-One implies split)
+        const isSplit = this._panel.viewColumn !== ViewColumn.One;
+        JSONProvider.isSplitView = !!isSplit;
+        commands.executeCommand(
+          'setContext',
+          'jsonFlow.splitView',
+          JSONProvider.isSplitView,
+        );
       },
       null,
       this._disposables,
@@ -96,13 +122,32 @@ export class JSONProvider {
    * @param extensionUri The extension URI for resource resolution.
    * @returns The created or revealed webview panel.
    */
-  static createPanel(extensionUri: Uri): WebviewPanel {
+  static createPanel(
+    extensionUri: Uri,
+    column: ViewColumn = ViewColumn.One,
+  ): WebviewPanel {
     if (JSONProvider.currentProvider) {
       JSONProvider.currentProvider._panel.webview.postMessage({
         command: 'clear',
       });
 
-      JSONProvider.currentProvider._panel.reveal(ViewColumn.One);
+      JSONProvider.currentProvider._panel.reveal(column);
+      JSONProvider.isSplitView = column === ViewColumn.Beside;
+      // Reflect split state in context for menus/UX
+      commands.executeCommand(
+        'setContext',
+        'jsonFlow.splitView',
+        JSONProvider.isSplitView,
+      );
+      // Also reflect current Live Sync state to the webview when revealing
+      try {
+        JSONProvider.postMessageToWebview({
+          command: 'liveSyncState',
+          enabled: JSONProvider.liveSyncEnabled,
+        });
+      } catch {
+        // ignore
+      }
 
       return JSONProvider.currentProvider._panel;
     }
@@ -110,11 +155,26 @@ export class JSONProvider {
     const panel = window.createWebviewPanel(
       JSONProvider.viewType,
       'JSON Flow',
-      ViewColumn.One,
+      column,
       this.getWebviewOptions(extensionUri),
     );
 
     JSONProvider.currentProvider = new JSONProvider(panel, extensionUri);
+    JSONProvider.isSplitView = column === ViewColumn.Beside;
+    commands.executeCommand(
+      'setContext',
+      'jsonFlow.splitView',
+      JSONProvider.isSplitView,
+    );
+    // Send initial Live Sync state
+    try {
+      JSONProvider.postMessageToWebview({
+        command: 'liveSyncState',
+        enabled: JSONProvider.liveSyncEnabled,
+      });
+    } catch {
+      // ignore
+    }
 
     return panel;
   }
@@ -138,6 +198,18 @@ export class JSONProvider {
    */
   static revive(panel: WebviewPanel, extensionUri: Uri): void {
     JSONProvider.currentProvider = new JSONProvider(panel, extensionUri);
+    // Revived panels do not imply split view; reset context to false
+    JSONProvider.isSplitView = false;
+    commands.executeCommand('setContext', 'jsonFlow.splitView', false);
+    // Ensure webview knows current Live Sync state after revive
+    try {
+      JSONProvider.postMessageToWebview({
+        command: 'liveSyncState',
+        enabled: JSONProvider.liveSyncEnabled,
+      });
+    } catch {
+      // ignore
+    }
   }
 
   /**
@@ -161,6 +233,9 @@ export class JSONProvider {
 
     // Remove reference to the current provider
     JSONProvider.currentProvider = undefined;
+    JSONProvider.isSplitView = false;
+    // Reflect state in context for menus/UX
+    commands.executeCommand('setContext', 'jsonFlow.splitView', false);
 
     // Dispose the webview panel if it exists
     if (this._panel) {
@@ -186,6 +261,42 @@ export class JSONProvider {
     }
 
     this._disposables = undefined;
+  }
+
+  // -----------------------------------------------------------------
+  // Live Sync helpers
+  // -----------------------------------------------------------------
+
+  /** Enable/disable Live Sync and update context + webview */
+  static setLiveSyncEnabled(enabled: boolean) {
+    JSONProvider.liveSyncEnabled = enabled;
+    commands.executeCommand('setContext', 'jsonFlow.liveSyncEnabled', enabled);
+    try {
+      JSONProvider.postMessageToWebview({
+        command: 'liveSyncState',
+        enabled,
+      });
+    } catch {
+      // ignore
+    }
+  }
+
+  /** Post a message to the active webview panel, if present */
+  static postMessageToWebview(message: unknown) {
+    if (JSONProvider.currentProvider) {
+      JSONProvider.currentProvider._panel.webview.postMessage(message);
+    }
+  }
+
+  /** Tell the webview to apply selection to a graph node by ID (route-by-indices) */
+  static applyGraphSelection(nodeId?: string) {
+    if (!JSONProvider.currentProvider) {
+      return;
+    }
+    JSONProvider.postMessageToWebview({
+      command: 'applyGraphSelection',
+      nodeId,
+    });
   }
 
   /**

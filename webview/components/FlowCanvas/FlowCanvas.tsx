@@ -9,6 +9,7 @@ import { flowReducer } from '@webview/context/FlowContext';
 import { generateTree, getRootId } from '@webview/helpers/generateTree';
 import { sampleJsonData } from '@webview/helpers/mockData';
 import { useFlowController, useLayoutWorker } from '@webview/hooks';
+import { useEditorSync } from '@webview/hooks/useEditorSync';
 import { useFlowSettings } from '@webview/hooks/useFlowSettings';
 import { useTreeDataValidator } from '@webview/hooks/useTreeDataValidator';
 import { useVscodeMessageHandler } from '@webview/hooks/useVscodeMessageHandler';
@@ -84,13 +85,35 @@ export const FlowCanvas = memo(function FlowCanvas() {
 
   const { zoom } = useViewport();
 
-  const { selectedNode, onNodeClick, clearSelection } = useSelectedNode();
+  const { selectedNode, onNodeClick, clearSelection, selectNode } =
+    useSelectedNode();
 
   const { handleRotation, handleEdgeSettingsChange } = useFlowSettings(
     rotateLayout,
     flowData,
     setEdges,
   );
+
+  // Debounce heavy settings updates to avoid rapid recomputation/edge updates
+  const settingsChangeTimerRef = useRef<number | undefined>(undefined);
+  const debouncedHandleEdgeSettingsChange = useCallback(
+    (next: Parameters<typeof handleEdgeSettingsChange>[0]) => {
+      if (settingsChangeTimerRef.current) {
+        window.clearTimeout(settingsChangeTimerRef.current);
+      }
+      settingsChangeTimerRef.current = window.setTimeout(() => {
+        handleEdgeSettingsChange(next);
+      }, 150);
+    },
+    [handleEdgeSettingsChange],
+  );
+  useEffect(() => {
+    return () => {
+      if (settingsChangeTimerRef.current) {
+        window.clearTimeout(settingsChangeTimerRef.current);
+      }
+    };
+  }, []);
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds: Edge[]) => addEdge(params, eds)),
@@ -104,8 +127,6 @@ export const FlowCanvas = memo(function FlowCanvas() {
     () => ({
       fitView: true,
       nodeTypes,
-      nodesDraggable: isDraggable,
-      nodesConnectable: isDraggable,
       elementsSelectable: isDraggable,
       proOptions: { hideAttribution: true },
       minZoom: 0.1,
@@ -131,9 +152,14 @@ export const FlowCanvas = memo(function FlowCanvas() {
       setIsDraggable,
       currentDirection,
       onLayoutRotate: handleRotation,
-      onSettingsChange: handleEdgeSettingsChange,
+      onSettingsChange: debouncedHandleEdgeSettingsChange,
     }),
-    [isDraggable, currentDirection, handleRotation, handleEdgeSettingsChange],
+    [
+      isDraggable,
+      currentDirection,
+      handleRotation,
+      debouncedHandleEdgeSettingsChange,
+    ],
   );
 
   const debugProps = useMemo(
@@ -175,36 +201,43 @@ export const FlowCanvas = memo(function FlowCanvas() {
 
   const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
   const [graphReady, setGraphReady] = useState(false);
+  // Ensure we don't call fitView repeatedly during incremental updates
+  const didFitViewRef = useRef(false);
+  // Run fitView only once after processing completes and the graph is ready
   useEffect(() => {
-    logger.log(`isWorkerProcessing=${isWorkerProcessing}, progress=${workerProgress}`);
-  }, [isWorkerProcessing, workerProgress]);
-  useEffect(() => {
-    if (workerNodes && workerNodes.length > 0 && reactFlowInstanceRef.current) {
-      logger.log(`Auto-fit after worker: nodes=${workerNodes.length}, edges=${workerEdges?.length ?? 0}`);
+    if (
+      !isWorkerProcessing &&
+      graphReady &&
+      workerNodes &&
+      workerNodes.length > 0 &&
+      reactFlowInstanceRef.current &&
+      !didFitViewRef.current
+    ) {
+      if (import.meta.env.DEV) {
+        logger.log(
+          `Auto-fit after completion: nodes=${workerNodes.length}, edges=${workerEdges?.length ?? 0}`,
+        );
+      }
       requestAnimationFrame(() => {
         try {
-          reactFlowInstanceRef.current?.fitView({ padding: 0.2, includeHiddenNodes: true });
+          reactFlowInstanceRef.current?.fitView({
+            padding: 0.2,
+            includeHiddenNodes: true,
+          });
         } catch (e) {
           logger.warn('fitView failed:', e);
         }
+        didFitViewRef.current = true;
       });
     }
-  }, [workerNodes, workerEdges]);
+  }, [isWorkerProcessing, graphReady, workerNodes, workerEdges]);
   useEffect(() => {
     if (!isWorkerProcessing) {
       requestAnimationFrame(() => {
         const count = document.querySelectorAll('.react-flow__node').length;
-        logger.log(`Rendered DOM nodes count: ${count}`);
-        if (count > 0) {
-          setGraphReady(true);
+        if (import.meta.env.DEV) {
+          logger.log(`Rendered DOM nodes count: ${count}`);
         }
-      });
-    }
-  }, [isWorkerProcessing]);
-  useEffect(() => {
-    if (!isWorkerProcessing) {
-      requestAnimationFrame(() => {
-        const count = document.querySelectorAll('.react-flow__node').length;
         if (count > 0) {
           setGraphReady(true);
         }
@@ -227,12 +260,15 @@ export const FlowCanvas = memo(function FlowCanvas() {
     const isJsonChanged = lastDataRef.current !== jsonData;
     if (isJsonChanged) {
       setGraphReady(false);
+      didFitViewRef.current = false;
     }
 
     lastDataRef.current = jsonData;
     lastDirectionRef.current = flowData.orientation;
 
-    logger.log('Processing dataset');
+    if (import.meta.env.DEV) {
+      logger.log('Processing dataset');
+    }
     processWithWorker(jsonData, {
       direction: flowData.orientation === 'TB' ? 'vertical' : 'horizontal',
     });
@@ -240,6 +276,21 @@ export const FlowCanvas = memo(function FlowCanvas() {
 
   const finalNodes = workerNodes || nodes;
   const finalEdges = workerEdges || edges;
+  // Live Sync: wire selection synchronization (Phase 1)
+  useEditorSync({
+    selectedNodeId: selectedNode?.id ?? null,
+    onApplyGraphSelection: (nodeId?: string) => {
+      if (!nodeId) {
+        selectNode(null);
+        return;
+      }
+      const target =
+        (finalNodes || []).find((n: Node) => n.id === nodeId) || null;
+      selectNode(target);
+    },
+  });
+  // Render-only virtualization: defer edges until the graph is ready
+  const renderedEdges = graphReady ? finalEdges : [];
   const reactFlowKey = useMemo(() => {
     const n = workerNodes?.length ?? finalNodes?.length ?? 0;
     const e = workerEdges?.length ?? finalEdges?.length ?? 0;
@@ -262,11 +313,14 @@ export const FlowCanvas = memo(function FlowCanvas() {
       <ReactFlow
         key={reactFlowKey}
         nodes={finalNodes}
-        edges={finalEdges}
+        edges={renderedEdges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onNodeClick={onNodeClick}
         onNodeDoubleClick={onNodeDoubleClick}
+        nodesDraggable={graphReady && isDraggable}
+        nodesConnectable={graphReady && isDraggable}
         onInit={(instance) => {
           reactFlowInstanceRef.current = instance;
           try {
@@ -286,10 +340,17 @@ export const FlowCanvas = memo(function FlowCanvas() {
       >
         <CustomControls {...controlsProps} />
         <Background {...backgroundProps} />
-        {graphReady && <FlowMinimap />}
+        {graphReady && !isWorkerProcessing && <FlowMinimap />}
       </ReactFlow>
       {!graphReady && (
-        <div style={{ position: 'absolute', inset: 0, zIndex: 200, pointerEvents: 'none' }}>
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 200,
+            pointerEvents: 'none',
+          }}
+        >
           <Loading progress={workerProgress} text="Loading graph..." />
         </div>
       )}
@@ -309,13 +370,21 @@ export const FlowCanvas = memo(function FlowCanvas() {
           }}
         >
           <p>
-            <strong>Processing stats:</strong> {processingStats.nodesCount} nodes
-            processed in {Math.round(processingStats.time)}ms
+            <strong>Processing stats:</strong> {processingStats.nodesCount}{' '}
+            nodes processed in {Math.round(processingStats.time)}ms
           </p>
         </div>
       )}
       {import.meta.env.DEV && isValidTree && (
-        <div style={{ position: 'absolute', bottom: 0, right: 0, zIndex: 50, pointerEvents: 'none' }}>
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            right: 0,
+            zIndex: 50,
+            pointerEvents: 'auto',
+          }}
+        >
           <Debug {...debugProps} />
         </div>
       )}

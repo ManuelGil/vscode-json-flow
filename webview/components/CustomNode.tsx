@@ -2,7 +2,7 @@ import { cn } from '@webview/lib';
 import type { CustomNodeData } from '@webview/types';
 import { Handle, Position } from '@xyflow/react';
 import { Eye, EyeOff } from 'lucide-react';
-import { memo } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import { Badge } from './atoms/Badge';
 import { Button } from './atoms/Button';
 import { useNodeColors } from './CustomNode/useNodeColors';
@@ -48,10 +48,22 @@ export const CustomNode = memo<CustomNodeProps>(
       isCollapsed,
       id,
     } = data;
-    const isHorizontal = direction === 'LR' || direction === 'RL';
-    const isReversed = direction === 'BT' || direction === 'RL';
+    const isHorizontal = useMemo(
+      () => direction === 'LR' || direction === 'RL',
+      [direction],
+    );
+    const isReversed = useMemo(
+      () => direction === 'BT' || direction === 'RL',
+      [direction],
+    );
 
-    const getTargetPosition = () => {
+    const handleToggleChildren = useCallback(() => {
+      if (onToggleChildren) {
+        onToggleChildren(id);
+      }
+    }, [onToggleChildren, id]);
+
+    const targetPosition = useMemo(() => {
       if (isSpouse) {
         if (isHorizontal) {
           return isReversed ? Bottom : Top;
@@ -68,26 +80,28 @@ export const CustomNode = memo<CustomNodeProps>(
         return isReversed ? Right : Left;
       }
       return isReversed ? Bottom : Top;
-    };
+    }, [isSpouse, isSibling, isHorizontal, isReversed]);
 
-    const getSourcePosition = (type: 'children' | 'spouses' | 'siblings') => {
-      if (type === 'children') {
-        if (isHorizontal) {
-          return isReversed ? Left : Right;
-        }
-        return isReversed ? Top : Bottom;
-      }
-      if (type === 'spouses') {
-        if (isHorizontal) {
-          return isReversed ? Top : Bottom;
-        }
+    const sourceChildrenPosition = useMemo(() => {
+      if (isHorizontal) {
         return isReversed ? Left : Right;
       }
+      return isReversed ? Top : Bottom;
+    }, [isHorizontal, isReversed]);
+
+    const sourceSpousesPosition = useMemo(() => {
+      if (isHorizontal) {
+        return isReversed ? Top : Bottom;
+      }
+      return isReversed ? Left : Right;
+    }, [isHorizontal, isReversed]);
+
+    const sourceSiblingsPosition = useMemo(() => {
       if (isHorizontal) {
         return isReversed ? Bottom : Top;
       }
       return isReversed ? Right : Left;
-    };
+    }, [isHorizontal, isReversed]);
 
     const isRootNode = data?.isRoot;
     const hasChildren = !!data?.children?.length;
@@ -95,92 +109,130 @@ export const CustomNode = memo<CustomNodeProps>(
     const hasSpouses = !!data?.spouses?.length;
     const childrenCount = data?.children?.length || 0;
 
+    const containerClass = useMemo(
+      () =>
+        cn(
+          'selectable relative inline-flex h-9 text-sm rounded-lg border shadow-sm w-40',
+          'focus:ring-2 focus:ring-offset-0 transition-all duration-200',
+          ...colors.node,
+          selected && colors.nodeSelected,
+        ),
+      [colors.node, colors.nodeSelected, selected],
+    );
+
+    const labelClass = useMemo(
+      () =>
+        cn(
+          'font-medium truncate whitespace-nowrap max-w-64 text-card-foreground',
+          colors.label,
+        ),
+      [colors.label],
+    );
+
+    const childrenHandleClass = useMemo(
+      () =>
+        cn(
+          '!absolute w-2 h-2 border',
+          ...colors.handle,
+          sourceChildrenPosition === Bottom && '!bottom-[0px]',
+          sourceChildrenPosition === Top && '!top-[0px]',
+          sourceChildrenPosition === Left && '!left-[0px]',
+          sourceChildrenPosition === Right && '!right-[0px]',
+        ),
+      [colors.handle, sourceChildrenPosition],
+    );
+
+    const spousesHandleClass = useMemo(
+      () =>
+        cn(
+          '!absolute w-2 h-2 border',
+          ...colors.handle,
+          sourceSpousesPosition === Bottom && '!bottom-[0px]',
+          sourceSpousesPosition === Top && '!top-[0px]',
+          sourceSpousesPosition === Left && '!left-[0px]',
+          sourceSpousesPosition === Right && '!right-[0px]',
+        ),
+      [colors.handle, sourceSpousesPosition],
+    );
+
+    const siblingsHandleClass = useMemo(
+      () =>
+        cn(
+          '!absolute w-2 h-2 border',
+          ...colors.handle,
+          sourceSiblingsPosition === Bottom && '!bottom-[0px]',
+          sourceSiblingsPosition === Top && '!top-[0px]',
+          sourceSiblingsPosition === Left && '!left-[0px]',
+          sourceSiblingsPosition === Right && '!right-[0px]',
+        ),
+      [colors.handle, sourceSiblingsPosition],
+    );
+
+    const targetHandleClass = useMemo(
+      () =>
+        cn(
+          '!absolute w-2 h-2 border',
+          ...colors.handle,
+          targetPosition === Bottom && '!bottom-[0px]',
+          targetPosition === Top && '!top-[0px]',
+          targetPosition === Left && '!left-[0px]',
+          targetPosition === Right && '!right-[0px]',
+        ),
+      [colors.handle, targetPosition],
+    );
+
+    const toggleButtonClass = useMemo(
+      () =>
+        cn(
+          'h-full w-9 rounded-none rounded-r-lg p-0 shrink-0',
+          ...colors.toggleButton,
+        ),
+      [colors.toggleButton],
+    );
+
     return (
       <TooltipProvider delayDuration={300}>
-        <div
-          tabIndex={0}
-          className={cn(
-            'selectable relative inline-flex h-9 text-sm rounded-lg border shadow-sm w-40',
-            'focus:ring-2 focus:ring-offset-0 transition-all duration-200',
-            ...colors.node,
-            selected && colors.nodeSelected,
-          )}
-        >
+        <div tabIndex={0} className={containerClass}>
           {hasChildren && (
             <Handle
               type="source"
-              position={getSourcePosition('children')}
-              id={getSourcePosition('children')}
-              className={cn(
-                '!absolute w-2 h-2 border',
-                ...colors.handle,
-                getSourcePosition('children') === Bottom && '!bottom-[0px]',
-                getSourcePosition('children') === Top && '!top-[0px]',
-                getSourcePosition('children') === Left && '!left-[0px]',
-                getSourcePosition('children') === Right && '!right-[0px]',
-              )}
+              position={sourceChildrenPosition}
+              id={sourceChildrenPosition}
+              className={childrenHandleClass}
             />
           )}
 
           {hasSpouses && (
             <Handle
               type="source"
-              position={getSourcePosition('spouses')}
-              id={getSourcePosition('spouses')}
-              className={cn(
-                '!absolute w-2 h-2 border',
-                ...colors.handle,
-                getSourcePosition('spouses') === Bottom && '!bottom-[0px]',
-                getSourcePosition('spouses') === Top && '!top-[0px]',
-                getSourcePosition('spouses') === Left && '!left-[0px]',
-                getSourcePosition('spouses') === Right && '!right-[0px]',
-              )}
+              position={sourceSpousesPosition}
+              id={sourceSpousesPosition}
+              className={spousesHandleClass}
             />
           )}
 
           {hasSiblings && (
             <Handle
               type="source"
-              position={getSourcePosition('siblings')}
-              id={getSourcePosition('siblings')}
-              className={cn(
-                '!absolute w-2 h-2 border',
-                ...colors.handle,
-                getSourcePosition('siblings') === Bottom && '!bottom-[0px]',
-                getSourcePosition('siblings') === Top && '!top-[0px]',
-                getSourcePosition('siblings') === Left && '!left-[0px]',
-                getSourcePosition('siblings') === Right && '!right-[0px]',
-              )}
+              position={sourceSiblingsPosition}
+              id={sourceSiblingsPosition}
+              className={siblingsHandleClass}
             />
           )}
 
           {!isRootNode && (
             <Handle
               type="target"
-              position={getTargetPosition()}
-              id={getTargetPosition()}
-              className={cn(
-                '!absolute w-2 h-2 border',
-                ...colors.handle,
-                getTargetPosition() === Bottom && '!bottom-[0px]',
-                getTargetPosition() === Top && '!top-[0px]',
-                getTargetPosition() === Left && '!left-[0px]',
-                getTargetPosition() === Right && '!right-[0px]',
-              )}
+              position={targetPosition}
+              id={targetPosition}
+              className={targetHandleClass}
             />
           )}
           <div className="flex h-full w-full items-center justify-between">
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="flex flex-grow items-center justify-center overflow-hidden px-4">
-                  <div
-                    className={cn(
-                      'font-medium truncate whitespace-nowrap max-w-64 text-card-foreground',
-                      colors.label,
-                    )}
-                  >
-                    {label}
-                  </div>
+                  <div className={labelClass}>{label}</div>
                 </div>
               </TooltipTrigger>
               <TooltipContent className="max-w-sm overflow-auto whitespace-normal break-words">
@@ -201,11 +253,8 @@ export const CustomNode = memo<CustomNodeProps>(
                   tooltip="Toggle children"
                   variant="ghost"
                   size="icon"
-                  className={cn(
-                    'h-full w-9 rounded-none rounded-r-lg p-0 shrink-0',
-                    ...colors.toggleButton,
-                  )}
-                  onClick={() => onToggleChildren(id)}
+                  className={toggleButtonClass}
+                  onClick={handleToggleChildren}
                 >
                   {isCollapsed ? (
                     <EyeOff className={colors.icon} />
@@ -236,7 +285,12 @@ export const CustomNode = memo<CustomNodeProps>(
       prevProps.data.label === nextProps.data.label &&
       prevProps.data.direction === nextProps.data.direction &&
       prevProps.data.isCollapsed === nextProps.data.isCollapsed &&
-      prevProps.data.children?.length === nextProps.data.children?.length
+      prevProps.data.children?.length === nextProps.data.children?.length &&
+      prevProps.data.siblings?.length === nextProps.data.siblings?.length &&
+      prevProps.data.spouses?.length === nextProps.data.spouses?.length &&
+      prevProps.data.isSpouse === nextProps.data.isSpouse &&
+      prevProps.data.isSibling === nextProps.data.isSibling &&
+      prevProps.data.isRoot === nextProps.data.isRoot
     );
   },
 );

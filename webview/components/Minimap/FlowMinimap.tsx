@@ -8,11 +8,17 @@ interface FlowMinimapProps {
   height?: number;
 }
 
-export function FlowMinimap({ width = 200, height = 150 }: FlowMinimapProps): React.ReactElement {
+export function FlowMinimap({
+  width = 200,
+  height = 150,
+}: FlowMinimapProps): React.ReactElement {
   const nodeCount = useStore((s) => s.nodes.length);
   const isLarge = nodeCount > 1200;
 
-  const nodeColor = useCallback(() => 'var(--minimap-node-color, hsl(var(--foreground)))', []);
+  const nodeColor = useCallback(
+    () => 'var(--minimap-node-color, hsl(var(--foreground)))',
+    [],
+  );
   const nodeStrokeWidth = useMemo(() => (isLarge ? 0 : 1), [isLarge]);
 
   return (

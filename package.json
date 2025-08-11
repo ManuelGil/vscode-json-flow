@@ -236,6 +236,30 @@
 				"command": "jsonFlow.files.convertPartialToType",
 				"title": "%jsonFlow.files.convertPartialToType%",
 				"category": "JSON Flow"
+			},
+			{
+				"command": "jsonFlow.view.enableSplitView",
+				"title": "Open JSON Flow beside",
+				"category": "JSON Flow",
+				"icon": "$(split-horizontal)"
+			},
+			{
+				"command": "jsonFlow.view.disableSplitView",
+				"title": "Close JSON Flow",
+				"category": "JSON Flow",
+				"icon": "$(close)"
+			},
+			{
+				"command": "jsonFlow.view.enableLiveSync",
+				"title": "Enable Live Sync",
+				"category": "JSON Flow",
+				"icon": "$(sync)"
+			},
+			{
+				"command": "jsonFlow.view.disableLiveSync",
+				"title": "Disable Live Sync",
+				"category": "JSON Flow",
+				"icon": "$(debug-disconnect)"
 			}
 		],
 		"submenus": [
@@ -249,6 +273,28 @@
 			}
 		],
 		"menus": {
+			"editor/title": [
+				{
+					"command": "jsonFlow.view.enableSplitView",
+					"when": "!jsonFlow.splitView && resourceExtname =~ /json|jsonc|json5|cfg|csv|env|hcl|ini|properties|toml|tsv|xml|yaml|yml/",
+					"group": "navigation@9"
+				},
+				{
+					"command": "jsonFlow.view.disableSplitView",
+					"when": "jsonFlow.splitView",
+					"group": "navigation@9"
+				},
+				{
+					"command": "jsonFlow.view.enableLiveSync",
+					"when": "jsonFlow.splitView && !jsonFlow.liveSyncEnabled && resourceExtname =~ /json|jsonc|json5|cfg|csv|env|hcl|ini|properties|toml|tsv|xml|yaml|yml/",
+					"group": "navigation@10"
+				},
+				{
+					"command": "jsonFlow.view.disableLiveSync",
+					"when": "jsonFlow.splitView && jsonFlow.liveSyncEnabled",
+					"group": "navigation@10"
+				}
+			],
 			"view/title": [
 				{
 					"command": "jsonFlow.files.refreshList",

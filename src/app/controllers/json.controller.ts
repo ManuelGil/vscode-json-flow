@@ -4,6 +4,7 @@ import {
   ProgressLocation,
   Range,
   Uri,
+  ViewColumn,
   window,
   workspace,
 } from 'vscode';
@@ -50,7 +51,10 @@ export class JsonController {
    * Shows error messages for invalid files or parsing errors.
    * @param uri The file URI to preview.
    */
-  async showPreview(uri: Uri): Promise<void> {
+  async showPreview(
+    uri: Uri,
+    column: ViewColumn = ViewColumn.One,
+  ): Promise<void> {
     try {
       const document = await workspace.openTextDocument(uri.fsPath);
       const { graphLayoutOrientation } = this.config;
@@ -82,6 +86,7 @@ export class JsonController {
         fileName,
         graphLayoutOrientation,
         uri.fsPath,
+        column,
       );
     } catch (error) {
       const errorMessage =
@@ -249,9 +254,10 @@ export class JsonController {
     fileName: string,
     orientation: string,
     path?: string,
+    column: ViewColumn = ViewColumn.One,
   ): void {
     const displayName = fileName.split(/[\\/]/).pop() || 'JSON Flow';
-    const panel = JSONProvider.createPanel(this.context.extensionUri);
+    const panel = JSONProvider.createPanel(this.context.extensionUri, column);
 
     panel.title = displayName;
 

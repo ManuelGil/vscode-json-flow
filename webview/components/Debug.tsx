@@ -110,7 +110,10 @@ function JsonTree({
       <div style={{ marginLeft: 16 * level }}>
         {name && <span style={{ color: 'hsl(var(--primary))' }}>{name}: </span>}
         <span
-          style={{ cursor: 'pointer', color: 'hsl(var(--secondary-foreground))' }}
+          style={{
+            cursor: 'pointer',
+            color: 'hsl(var(--secondary-foreground))',
+          }}
           onClick={() => setOpen((o) => !o)}
         >
           {open ? (isArray ? '[ ' : '{ ') : isArray ? '[...]' : '{...}'}

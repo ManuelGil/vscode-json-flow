@@ -9,7 +9,9 @@ import { Direction, JsonValue } from '@webview/types';
 export type VscodeMessageCommand =
   | 'updateConfig'
   | 'openSettings'
-  | 'updateState';
+  | 'updateState'
+  // Live Sync (webview -> extension)
+  | 'graphSelectionChanged';
 
 /**
  * VSCode message structure
@@ -57,4 +59,13 @@ export type IncomingVscodeMessage =
     }
   | {
       command: 'clear';
+    }
+  // Live Sync (extension -> webview)
+  | {
+      command: 'liveSyncState';
+      enabled: boolean;
+    }
+  | {
+      command: 'applyGraphSelection';
+      nodeId?: string; // route by indices, e.g., "root-0-2-5"
     };
