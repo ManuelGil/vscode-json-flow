@@ -5,7 +5,7 @@ All notable changes to the "JSON Flow" extension will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.2.0] - 2025-08-11
 
 * feat: :sparkles: add localization support for JSON Flow with new UI labels and live sync options ([0377191](https://github.com/ManuelGil/vscode-json-flow/commit/0377191))
 * feat: :sparkles: enhance JSON Flow extension with .env file support and improved CSV/TSV parsing ([6104de2](https://github.com/ManuelGil/vscode-json-flow/commit/6104de2))
