@@ -62,5 +62,14 @@
 	"label.preview": "Vista previa",
 	"label.properties": "Propiedades",
 	"label.type": "Tipo",
-	"label.structure": "Interfaz"
+	"label.structure": "Interfaz",
+	"{0}: Close": "{0}: Cerrar",
+	"Close JSON Flow": "Cerrar JSON Flow",
+	"{0}: Open": "{0}: Abrir",
+	"Open JSON Flow beside": "Abrir JSON Flow al lado",
+	"Live Sync: On": "Live Sync: Activado",
+	"Live Sync: Off": "Live Sync: Desactivado",
+	"Disable Live Sync": "Desactivar Live Sync",
+	"Enable Live Sync": "Activar Live Sync",
+	"Error fetching JSON: {0}": "Error al obtener JSON: {0}"
 }

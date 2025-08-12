@@ -22,5 +22,14 @@
 	"jsonFlow.json.fetchJsonData": "Recupera dati JSON da URL",
 	"jsonFlow.filesView": "Elenco dei file",
 	"jsonFlow.feedbackView": "Aiuto e commenti",
-	"viewsWelcome.jsonFlow.filesView": "Per catturare correttamente i file, includi il tipo di file nella configurazione dello spazio di lavoro.\n[Apri la configurazione dello spazio di lavoro](command:workbench.action.openWorkspaceSettingsFile)\nPer maggiori informazioni su come usare JSON Flow [consulta la documentazione](https://github.com/ManuelGil/vscode-json-flow)."
+	"viewsWelcome.jsonFlow.filesView": "Per catturare correttamente i file, includi il tipo di file nella configurazione dello spazio di lavoro.\n[Apri la configurazione dello spazio di lavoro](command:workbench.action.openWorkspaceSettingsFile)\nPer maggiori informazioni su come usare JSON Flow [consulta la documentazione](https://github.com/ManuelGil/vscode-json-flow).",
+	"jsonFlow.configuration.title": "JSON Flow",
+	"jsonFlow.category": "JSON Flow",
+	"jsonFlow.view.enableSplitView": "Apri JSON Flow affiancato",
+	"jsonFlow.view.disableSplitView": "Chiudi JSON Flow",
+	"jsonFlow.view.enableLiveSync": "Abilita Live Sync",
+	"jsonFlow.view.disableLiveSync": "Disabilita Live Sync",
+	"jsonFlow.menu.explorer.label": "JSON Flow",
+	"jsonFlow.menu.editor.label": "JSON Flow",
+	"jsonFlow.activitybar.title": "JSON Flow"
 }

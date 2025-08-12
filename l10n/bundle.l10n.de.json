@@ -42,5 +42,14 @@
 	"Image saved to: {0}": "Bild gespeichert unter: `{0}`",
 	"Enter the name of the type or structure generated": "Geben Sie den Namen des generierten Typs oder Interface ein",
 	"Enter the name of the type or structure, e.g., User, Post, etc.": "Geben Sie den Namen des Typs oder Interface ein (z. B. `Benutzer`, `Beitrag`)",
-	"The name of the type or structure is required!": "Der Name des Typs oder Interface ist erforderlich!"
+	"The name of the type or structure is required!": "Der Name des Typs oder Interface ist erforderlich!",
+	"{0}: Close": "{0}: Schließen",
+	"Close JSON Flow": "JSON Flow schließen",
+	"{0}: Open": "{0}: Öffnen",
+	"Open JSON Flow beside": "JSON Flow daneben öffnen",
+	"Live Sync: On": "Live Sync: Ein",
+	"Live Sync: Off": "Live Sync: Aus",
+	"Disable Live Sync": "Live Sync deaktivieren",
+	"Enable Live Sync": "Live Sync aktivieren",
+	"Error fetching JSON: {0}": "Fehler beim Abrufen von JSON: {0}"
 }
