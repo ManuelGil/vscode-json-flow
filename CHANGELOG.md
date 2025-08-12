@@ -5,7 +5,7 @@ All notable changes to the "JSON Flow" extension will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [unreleased]
+## [Unreleased]
 
 * feat: :sparkles: add localization support for JSON Flow with new UI labels and live sync options ([0377191](https://github.com/ManuelGil/vscode-json-flow/commit/0377191))
 * feat: :sparkles: enhance JSON Flow extension with .env file support and improved CSV/TSV parsing ([6104de2](https://github.com/ManuelGil/vscode-json-flow/commit/6104de2))
@@ -172,7 +172,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * build: add webview path ([960fb18](https://github.com/ManuelGil/vscode-json-flow/commit/960fb18))
 * fix: :rotating_light: fix compilation settings ([1ccbfa5](https://github.com/ManuelGil/vscode-json-flow/commit/1ccbfa5))
 
-[unreleased]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.1.0...HEAD
+[Unreleased]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.1.0...HEAD
 [2.1.0]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.0.1...v2.1.0
 [2.0.1]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/ManuelGil/vscode-json-flow/compare/v1.13.0...v2.0.0
