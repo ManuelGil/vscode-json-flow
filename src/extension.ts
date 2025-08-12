@@ -41,6 +41,18 @@ export async function activate(context: vscode.ExtensionContext) {
   // The code you place here will be executed every time your command is executed
   let resource: vscode.WorkspaceFolder | undefined;
 
+  // Initialize contexts for menus/keybindings
+  await vscode.commands.executeCommand(
+    'setContext',
+    'jsonFlow.splitView',
+    JSONProvider.isSplitView,
+  );
+  await vscode.commands.executeCommand(
+    'setContext',
+    'jsonFlow.liveSyncEnabled',
+    JSONProvider.liveSyncEnabled,
+  );
+
   // Check if there are workspace folders
   if (
     !vscode.workspace.workspaceFolders ||
@@ -572,6 +584,56 @@ export async function activate(context: vscode.ExtensionContext) {
   // -----------------------------------------------------------------
   // Register TransformController
   // -----------------------------------------------------------------
+
+  const splitStatusItem = vscode.window.createStatusBarItem(
+    vscode.StatusBarAlignment.Right,
+    100,
+  );
+  const liveStatusItem = vscode.window.createStatusBarItem(
+    vscode.StatusBarAlignment.Right,
+    99,
+  );
+
+  const updateStatusBar = () => {
+    // Split view toggle
+    if (JSONProvider.isSplitView) {
+      splitStatusItem.text = vscode.l10n.t('{0}: Close', [
+        EXTENSION_DISPLAY_NAME,
+      ]);
+      splitStatusItem.tooltip = vscode.l10n.t('Close JSON Flow');
+      splitStatusItem.command = `${EXTENSION_ID}.view.disableSplitView`;
+    } else {
+      splitStatusItem.text = vscode.l10n.t('{0}: Open', [
+        EXTENSION_DISPLAY_NAME,
+      ]);
+      splitStatusItem.tooltip = vscode.l10n.t('Open JSON Flow beside');
+      splitStatusItem.command = `${EXTENSION_ID}.view.enableSplitView`;
+    }
+    splitStatusItem.show();
+
+    // Live sync toggle (visible only when split view is active)
+    if (JSONProvider.isSplitView) {
+      if (JSONProvider.liveSyncEnabled) {
+        liveStatusItem.text = vscode.l10n.t('Live Sync: On');
+        liveStatusItem.tooltip = vscode.l10n.t('Disable Live Sync');
+        liveStatusItem.command = `${EXTENSION_ID}.view.disableLiveSync`;
+      } else {
+        liveStatusItem.text = vscode.l10n.t('Live Sync: Off');
+        liveStatusItem.tooltip = vscode.l10n.t('Enable Live Sync');
+        liveStatusItem.command = `${EXTENSION_ID}.view.enableLiveSync`;
+      }
+      liveStatusItem.show();
+    } else {
+      liveStatusItem.hide();
+    }
+  };
+
+  // Update on provider state changes
+  const stateListener = JSONProvider.onStateChanged(() => updateStatusBar());
+  // Initialize once
+  updateStatusBar();
+
+  context.subscriptions.push(splitStatusItem, liveStatusItem, stateListener);
 
   // Create a new TransformController
   const transformController = new TransformController();

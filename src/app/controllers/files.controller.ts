@@ -51,6 +51,11 @@ export class FilesController {
     } = this.config;
 
     const fileExtensionPattern = `**/*.{${includedFilePatterns.join(',')}}`;
+    // Include .env and .env.* files explicitly, since they don't have a normal extension
+    const includePatterns = [fileExtensionPattern];
+    if (includedFilePatterns.includes('env')) {
+      includePatterns.push('**/.env', '**/.env.*');
+    }
     const fileExclusionPatterns = Array.isArray(excludedFilePatterns)
       ? excludedFilePatterns
       : [excludedFilePatterns];
@@ -58,7 +63,7 @@ export class FilesController {
     for (const folder of folders) {
       const result = await this.findFiles(
         folder,
-        [fileExtensionPattern],
+        includePatterns,
         fileExclusionPatterns,
         maxSearchRecursionDepth,
         supportsHiddenFiles,
@@ -83,19 +88,22 @@ export class FilesController {
           filename += folder ? ` (${folder})` : ' (root)';
         }
 
-        nodes.push(
-          new NodeModel(
-            filename ?? 'Untitled',
-            new ThemeIcon('file'),
-            {
-              command: `${EXTENSION_ID}.json.showPreview`,
-              title: 'Open Preview',
-              arguments: [file],
-            },
-            file,
-            file.fsPath,
-          ),
+        const node = new NodeModel(
+          filename ?? 'Untitled',
+          new ThemeIcon('file'),
+          {
+            command: `${EXTENSION_ID}.json.showPreview`,
+            title: 'Open Preview',
+            arguments: [file],
+          },
+          file,
+          file.fsPath,
         );
+        node.tooltip = l10n.t(
+          'File: {0}\nPath: {1}\nHint: Click to open preview',
+          [filename ?? 'Untitled', path],
+        );
+        nodes.push(node);
       }
 
       return nodes;
@@ -151,13 +159,19 @@ export class FilesController {
         // Get the language ID and file name
         const { languageId, fileName } = document;
 
-        // Determine the file type, defaulting to 'json' if unsupported
+        // Determine the file type, handling .env variants explicitly
         let fileType = languageId;
 
         if (!isFileTypeSupported(fileType)) {
-          const fileExtension = fileName.split('.').pop();
-
-          fileType = fileExtension;
+          const baseName = fileName.split(/[\\\/]/).pop() ?? fileName;
+          if (/^\.env(\..*)?$/i.test(baseName)) {
+            fileType = 'env';
+          } else {
+            const fileExtension = fileName.split('.').pop();
+            fileType = isFileTypeSupported(fileExtension)
+              ? fileExtension
+              : 'json';
+          }
         }
 
         // Parse JSON content
@@ -224,8 +238,13 @@ export class FilesController {
     text = normalized;
 
     if (!isFileTypeSupported(fileType)) {
-      const fileExtension = fileName.split('.').pop();
-      fileType = isFileTypeSupported(fileExtension) ? fileExtension : 'jsonc';
+      const baseName = fileName.split(/[\\\/]/).pop() ?? fileName;
+      if (/^\.env(\..*)?$/i.test(baseName)) {
+        fileType = 'env';
+      } else {
+        const fileExtension = fileName.split('.').pop();
+        fileType = isFileTypeSupported(fileExtension) ? fileExtension : 'jsonc';
+      }
     }
 
     // Parse JSON content

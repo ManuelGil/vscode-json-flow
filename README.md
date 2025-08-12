@@ -46,9 +46,13 @@ Exploring complex data structures in code or configuration files can be cumberso
       - [Project Structure](#project-structure)
       - [Design Philosophy](#design-philosophy)
     - [Typical Workflow](#typical-workflow)
+  - [Split View](#split-view)
+    - [Editor Toolbar and Status Bar](#editor-toolbar-and-status-bar)
+    - [Views \& Activity Bar](#views--activity-bar)
   - [Requirements \& Limitations](#requirements--limitations)
   - [Security \& Privacy](#security--privacy)
   - [Commands \& Menus](#commands--menus)
+  - [Keyboard Shortcuts](#keyboard-shortcuts)
   - [Frequently Asked Questions (FAQ)](#frequently-asked-questions-faq)
     - [Technology Stack](#technology-stack)
     - [Main Commands \& Views](#main-commands--views)
@@ -68,6 +72,7 @@ Exploring complex data structures in code or configuration files can be cumberso
   - [Troubleshooting](#troubleshooting)
   - [Internationalization (i18n)](#internationalization-i18n)
   - [Additional Resources](#additional-resources)
+  - [Community Invitation](#community-invitation)
   - [Contributing](#contributing)
   - [Code of Conduct](#code-of-conduct)
   - [Changelog](#changelog)
@@ -203,13 +208,43 @@ flowchart TB
 
 ---
 
+## Split View
+
+JSON Flow supports working with the text editor and the graph view side-by-side.
+
+- **Split View**: Opens the JSON Flow webview beside the active editor for supported file types. You can toggle it from the editor title bar or the status bar.
+
+### Editor Toolbar and Status Bar
+
+- **Status Bar**: Shows a quick toggle:
+  - `JSON Flow: Open` / `JSON Flow: Close`
+- **Editor Title Bar**: Buttons to enable/disable Split View when relevant.
+
+Notes:
+
+- Available when the active file matches the configured extensions (see `jsonFlow.files.includedFilePatterns`).
+
+### Views & Activity Bar
+
+- **Activity Bar Container**: `JSON Explorer` (`json-explorer`).
+- **Views**:
+  - `Files` (`jsonFlow.filesView`): Browse supported files. The view title has a Refresh action. Context menus provide Open, Convert, Copy, and Properties.
+  - `Feedback` (`jsonFlow.feedbackView`): Quick links to Extension Website, Report a Bug, and Rate Us.
+- **Welcome Content**: The Files view shows a helpful message when no files match or on first use.
+
+Additional note:
+
+- The Live Sync status appears only when Split View is active. This feature is staged per the Roadmap and may evolve.
+
+---
+
 ## Requirements & Limitations
 
 - **Editor Compatibility:** Compatible with Visual Studio Code and all VSCode-based editors (including VSCodium, WindSurf, Cursor, and others).
 - **Minimum VS Code Version:** Requires Visual Studio Code 1.88.0 or later (or a compatible base version).
 - **Supported Operating Systems:** Windows, macOS, and Linux.
-- **Performance Recommendation:** For optimal performance, it is recommended to visualize files up to approximately 2MB in size. Larger files may affect responsiveness.
-- **Limitations:** Extremely large or deeply nested data structures may render slowly or partially. Please refer to the Troubleshooting section for known issues and workarounds.
+- **Performance:** No hard limits on file size or depth. Rendering is incremental and designed to degrade gracefully on very large/complex data. See Troubleshooting for tuning tips.
+- **Limitations:** Certain operations may take longer on extremely large graphs; Live Sync pauses on JSON syntax errors until fixed. Refer to Troubleshooting for known issues and workarounds.
 
 ---
 
@@ -223,26 +258,41 @@ JSON Flow processes all data locally within your editor environment. No data is 
 
 Below is a summary of the main commands and context menu options available in JSON Flow. All commands can be accessed via the Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`) or via context menus in the Explorer and Editor.
 
-| Command ID                              | Title                        | Where/How to Access     | Description                               |
-| --------------------------------------- | ---------------------------- | ----------------------- | ----------------------------------------- |
-| jsonFlow.files.refreshList              | Refresh List                 | Explorer/Palette        | Refreshes the file list in JSON Flow view |
-| jsonFlow.files.openFile                 | Open File                    | Explorer/Palette        | Opens the selected file in the editor     |
-| jsonFlow.files.copyContent              | Copy Content                 | Explorer/Editor/Palette | Copies the file content                   |
-| jsonFlow.files.copyContentAsJson        | Copy Content as JSON         | Explorer/Editor/Palette | Copies content as JSON                    |
-| jsonFlow.files.getFileProperties        | Get File Properties          | Explorer/Palette        | Shows metadata and structure              |
-| jsonFlow.files.convertToJson            | Convert to JSON              | Explorer/Editor/Palette | Converts file to JSON                     |
-| jsonFlow.files.convertToType            | Convert to Type or Structure | Explorer/Editor/Palette | Generates types from JSON                 |
-| jsonFlow.files.convertPartialToType     | Convert Partial to Type      | Editor/Palette          | Generates types from selected block       |
-| jsonFlow.files.convertPartialToJson     | Convert Partial to JSON      | Editor/Palette          | Converts selected block to JSON           |
-| jsonFlow.files.copyContentPartialAsJson | Copy Partial as JSON         | Editor/Palette          | Copies selected block as JSON             |
-| jsonFlow.json.showPreview               | Show Preview                 | Explorer/Editor/Palette | Shows the data as an interactive graph    |
-| jsonFlow.json.showPartialPreview        | Show Partial Preview         | Editor/Palette          | Shows a preview of the selected block     |
-| jsonFlow.json.fetchJsonData             | Fetch JSON Data from URL     | Editor/Palette          | Fetches JSON data from a specified URL    |
+| Command ID                              | Title                        | Where/How to Access     | Description                                   |
+| --------------------------------------- | ---------------------------- | ----------------------- | --------------------------------------------- |
+| jsonFlow.files.refreshList              | Refresh List                 | Explorer/Palette        | Refreshes the file list in JSON Flow view     |
+| jsonFlow.files.openFile                 | Open File                    | Explorer/Palette        | Opens the selected file in the editor         |
+| jsonFlow.files.copyContent              | Copy Content                 | Explorer/Editor/Palette | Copies the file content                       |
+| jsonFlow.files.copyContentAsJson        | Copy Content as JSON         | Explorer/Editor/Palette | Copies content as JSON                        |
+| jsonFlow.files.getFileProperties        | Get File Properties          | Explorer/Palette        | Shows metadata and structure                  |
+| jsonFlow.files.convertToJson            | Convert to JSON              | Explorer/Editor/Palette | Converts file to JSON                         |
+| jsonFlow.files.convertToType            | Convert to Type or Structure | Explorer/Editor/Palette | Generates types from JSON                     |
+| jsonFlow.files.convertPartialToType     | Convert Partial to Type      | Editor/Palette          | Generates types from selected block           |
+| jsonFlow.files.convertPartialToJson     | Convert Partial to JSON      | Editor/Palette          | Converts selected block to JSON               |
+| jsonFlow.files.copyContentPartialAsJson | Copy Partial as JSON         | Editor/Palette          | Copies selected block as JSON                 |
+| jsonFlow.json.showPreview               | Show Preview                 | Explorer/Editor/Palette | Shows the data as an interactive graph        |
+| jsonFlow.json.showPartialPreview        | Show Partial Preview         | Editor/Palette          | Shows a preview of the selected block         |
+| jsonFlow.json.fetchJsonData             | Fetch JSON Data from URL     | Editor/Palette          | Fetches JSON data from a specified URL        |
+| jsonFlow.view.enableSplitView           | Enable Split View            | Editor Title/Palette    | Opens the JSON Flow webview beside the editor |
+| jsonFlow.view.disableSplitView          | Disable Split View           | Editor Title/Palette    | Closes the side-by-side JSON Flow view        |
 
 - **Context Menus:** Right-click on a supported file in the Explorer or inside the Editor to access these commands quickly.
 - **Submenus:** JSON Flow groups actions under a dedicated submenu in both Explorer and Editor context menus for convenience.
 
-For a full list of commands and their descriptions, see the [package.json](./package.json) or use the Command Palette in your editor.
+For a full list of commands and their descriptions, see the [package.json](https://github.com/ManuelGil/vscode-json-flow/blob/main/package.json) or use the Command Palette in your editor.
+
+---
+
+## Keyboard Shortcuts
+
+Default keybindings:
+
+- Toggle Split View: Ctrl+Alt+F (macOS: Cmd+Alt+F)
+
+Notes:
+
+- Split View key toggles on/off depending on current state.
+- Show Preview is active for supported file types when the editor has focus.
 
 ---
 
@@ -332,7 +382,7 @@ For more detailed guidance, see the [Official Documentation](https://github.com/
 | Copy Content to Clipboard    | Copy the content of the selected file to the clipboard                                                                                   |
 | Copy Content as JSON         | Copy the content of the selected file as JSON                                                                                            |
 | Get File Properties          | Get the properties of the selected file                                                                                                  |
-| Show Selection as JSON       | Show the Selection in the JSON Flow view                                                                                                 |
+| Show Partial Preview         | Show a preview of the selected block in the JSON Flow view                                                                               |
 
 ---
 
@@ -436,7 +486,7 @@ export interface Person {
 
 For assistance with common issues or error diagnostics, please refer to the following resources:
 
-- [Troubleshooting Guide](./TROUBLESHOOTING.md)
+- [Troubleshooting Guide](https://github.com/ManuelGil/vscode-json-flow/blob/main/TROUBLESHOOTING.md)
 - [GitHub Issues](https://github.com/ManuelGil/vscode-json-flow/issues)
 
 If your issue is not addressed, you are encouraged to open a new issue on GitHub with a detailed description and reproduction steps.
@@ -445,24 +495,74 @@ If your issue is not addressed, you are encouraged to open a new issue on GitHub
 
 ## Internationalization (i18n)
 
-All user-facing strings are externalized in the `l10n` directory and `package.nls.*.json` files. To add a new language:
+All user-facing strings are localized using VS Code's `l10n` system:
 
-1. Duplicate `package.nls.json` and rename it to `package.nls.<lang>.json` (e.g., `package.nls.de.json` for German).
-2. Translate the values while keeping the keys unchanged.
-3. Submit a pull request with your translation file.
+- **Manifest (static) strings**: `package.nls.*.json`
+- **Runtime strings**: `l10n/bundle.l10n.*.json`
 
-The extension will automatically use the appropriate language file based on your VS Code display language settings.
+To add a new language:
+
+1. Manifest: duplicate `package.nls.json` and rename to `package.nls.<lang>.json` (e.g., `package.nls.de.json`). Translate the values, keep keys unchanged.
+2. Runtime: add a file `l10n/bundle.l10n.<lang>.json` with translations for runtime message keys. Use existing bundles (e.g., Spanish, German, French, Italian, Brazilian Portuguese) as references.
+3. Preserve placeholders such as `{0}`, `{1}`, etc., exactly as in the source strings.
+4. Reload the window to see your translations.
+
+The extension automatically selects the appropriate language based on your VS Code display language settings.
 
 ---
 
 ## Additional Resources
 
 - [Official Documentation & Wiki](https://github.com/ManuelGil/vscode-json-flow/wiki)
+- [Usage Guide](https://github.com/ManuelGil/vscode-json-flow/blob/main/USAGE_GUIDE.md)
 - [Feature Requests & Bug Reports](https://github.com/ManuelGil/vscode-json-flow/issues)
-- [Troubleshooting Guide](./TROUBLESHOOTING.md)
+- [Troubleshooting Guide](https://github.com/ManuelGil/vscode-json-flow/blob/main/TROUBLESHOOTING.md)
+- [Roadmap](https://github.com/ManuelGil/vscode-json-flow/blob/main/ROADMAP.md)
+- [Changelog](https://github.com/ManuelGil/vscode-json-flow/blob/main/CHANGELOG.md)
+- [About](https://github.com/ManuelGil/vscode-json-flow/blob/main/ABOUT.md)
+- [Developers Guide](https://github.com/ManuelGil/vscode-json-flow/blob/main/DEVELOPERS_GUIDE.md)
 - [Contribution Guidelines](https://github.com/ManuelGil/vscode-json-flow/blob/main/CONTRIBUTING.md)
 
 If your question or issue is not addressed, please open a new issue on GitHub with a detailed description and reproduction steps.
+
+---
+
+## Community Invitation
+
+We invite the community to collaborate on implementing versions 2.3.0 and onward as defined in the `ROADMAP.md`. Contributions in code, documentation, testing, and technical discussion are welcome.
+
+- **Priority scope**
+  - 2.3.0 — Live Sync Phase 1 (Selection)
+  - 2.4.0 — Live Sync Phase 2 (Editing, Multi-Format)
+  - 2.5.0 — Theming & VS Code Tokens (High Contrast MVP)
+  - 2.6.0 — Graph Search/Filter (Phased Delivery)
+  - 2.7.0 — Webview i18n & Language Packs
+  - 2.8.0 — Workspace Graph Phase 1 (Indexing & Navigation)
+  - 2.9.0 — Workspace Graph Phase 2 (Cross-file Live Sync & Overlay)
+
+- **How to participate**
+  - Review the relevant sections in `ROADMAP.md` and select a task aligned with your expertise.
+  - Open an Issue to propose your approach or claim a task before submitting a Pull Request.
+  - Keep PRs focused and reasonably sized; include a clear description, tests, and documentation notes.
+
+- **Criteria and guidelines**
+  - Use `(uri, indexPath)` addressing and avoid DOM mutations in the webview.
+  - Use VS Code APIs for navigation/editing and respect Workspace Trust.
+  - Consider performance (debounce/coalescing, incremental indexing) and anti-loop via `requestId`.
+  - Where applicable, satisfy acceptance criteria and Test Matrix items defined in the roadmap.
+
+- **Good first contributions**
+  - Parsing helpers or targeted indexing rules for a specific format.
+  - UX refinements for navigation (Go to Definition/Find Usages/Peek) and overlay controls.
+  - Message type definitions and debounce/anti-loop hardening for Editor ↔ Webview events.
+  - i18n validation scripts or documentation improvements.
+
+- **Links**
+  - Roadmap: [ROADMAP.md](https://github.com/ManuelGil/vscode-json-flow/blob/main/ROADMAP.md)
+  - Contribution Guide: [CONTRIBUTING.md](https://github.com/ManuelGil/vscode-json-flow/blob/main/CONTRIBUTING.md)
+  - Issues: [GitHub Issues](https://github.com/ManuelGil/vscode-json-flow/issues)
+
+We appreciate your time and contributions to the project.
 
 ---
 

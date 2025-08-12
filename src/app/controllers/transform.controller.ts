@@ -50,8 +50,13 @@ export class TransformController {
     let fileType = languageId;
 
     if (!isFileTypeSupported(fileType)) {
-      const fileExtension = fileName.split('.').pop();
-      fileType = fileExtension;
+      const baseName = fileName.split(/[\\\/]/).pop() ?? fileName;
+      if (/^\.env(\..*)?$/i.test(baseName)) {
+        fileType = 'env';
+      } else {
+        const fileExtension = fileName.split('.').pop();
+        fileType = isFileTypeSupported(fileExtension) ? fileExtension : 'json';
+      }
     }
 
     const jsonContent = parseJSONContent(
@@ -107,8 +112,13 @@ export class TransformController {
     text = normalized;
 
     if (!isFileTypeSupported(fileType)) {
-      const fileExtension = fileName.split('.').pop();
-      fileType = isFileTypeSupported(fileExtension) ? fileExtension : 'jsonc';
+      const baseName = fileName.split(/[\\\/]/).pop() ?? fileName;
+      if (/^\.env(\..*)?$/i.test(baseName)) {
+        fileType = 'env';
+      } else {
+        const fileExtension = fileName.split('.').pop();
+        fileType = isFileTypeSupported(fileExtension) ? fileExtension : 'jsonc';
+      }
     }
 
     const jsonContent = parseJSONContent(text, fileType as FileType);
@@ -143,9 +153,13 @@ export class TransformController {
     let fileType = languageId;
 
     if (!isFileTypeSupported(fileType)) {
-      const fileExtension = fileName.split('.').pop();
-
-      fileType = isFileTypeSupported(fileExtension) ? fileExtension : 'json';
+      const baseName = fileName.split(/[\\\/]/).pop() ?? fileName;
+      if (/^\.env(\..*)?$/i.test(baseName)) {
+        fileType = 'env';
+      } else {
+        const fileExtension = fileName.split('.').pop();
+        fileType = isFileTypeSupported(fileExtension) ? fileExtension : 'json';
+      }
     }
 
     const jsonContent = parseJSONContent(
@@ -258,9 +272,13 @@ export class TransformController {
     }
 
     if (!isFileTypeSupported(fileType)) {
-      const fileExtension = fileName.split('.').pop();
-
-      fileType = isFileTypeSupported(fileExtension) ? fileExtension : 'jsonc';
+      const baseName = fileName.split(/[\\\/]/).pop() ?? fileName;
+      if (/^\.env(\..*)?$/i.test(baseName)) {
+        fileType = 'env';
+      } else {
+        const fileExtension = fileName.split('.').pop();
+        fileType = isFileTypeSupported(fileExtension) ? fileExtension : 'jsonc';
+      }
     }
 
     // Parse JSON content

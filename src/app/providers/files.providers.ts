@@ -2,6 +2,7 @@ import { PromisePool } from '@supercharge/promise-pool';
 import {
   Event,
   EventEmitter,
+  l10n,
   ThemeIcon,
   TreeDataProvider,
   TreeItem,
@@ -38,6 +39,18 @@ export class FilesProvider implements TreeDataProvider<NodeModel> {
    * Tracks whether the provider has been disposed to prevent redundant disposal.
    */
   private _isDisposed = false;
+  /**
+   * Cache compiled regex by file type to avoid re-allocations across runs.
+   */
+  private _regexCache = new Map<string, RegExp>();
+  /**
+   * Debounce timer for refresh calls.
+   */
+  private _refreshTimer: ReturnType<typeof setTimeout> | null = null;
+  /**
+   * Debounce interval in milliseconds for refresh events.
+   */
+  private _refreshDebounceMs = 200;
 
   // -----------------------------------------------------------------
   // Constructor
@@ -66,6 +79,10 @@ export class FilesProvider implements TreeDataProvider<NodeModel> {
       return;
     }
     this._isDisposed = true;
+    if (this._refreshTimer) {
+      clearTimeout(this._refreshTimer);
+      this._refreshTimer = null;
+    }
     if (this._onDidChangeTreeData) {
       this._onDidChangeTreeData.dispose();
     }
@@ -123,7 +140,14 @@ export class FilesProvider implements TreeDataProvider<NodeModel> {
   refresh(): void {
     this._cachedNodes = undefined;
     this._cachePromise = undefined;
-    this._onDidChangeTreeData.fire();
+    if (this._refreshTimer) {
+      clearTimeout(this._refreshTimer);
+      this._refreshTimer = null;
+    }
+    this._refreshTimer = setTimeout(() => {
+      this._onDidChangeTreeData.fire();
+      this._refreshTimer = null;
+    }, this._refreshDebounceMs);
   }
 
   /**
@@ -142,15 +166,30 @@ export class FilesProvider implements TreeDataProvider<NodeModel> {
     const { results, errors } = await PromisePool.for(includedFilePatterns)
       .withConcurrency(3)
       .process(async (fileType) => {
-        const children = files.filter((file) =>
-          file.label.toString().includes(`.${fileType}`),
-        );
+        const children = files.filter((file) => {
+          const fsPath = file.resourceUri?.fsPath ?? '';
+          const baseName =
+            fsPath.split(/[\\\/]/).pop() ?? file.label.toString();
+
+          if (fileType === 'env') {
+            // Match .env and .env.* (but not .envrc)
+            return /^\.env(\..*)?$/i.test(baseName);
+          }
+
+          // Strict extension match: ends with .<fileType>
+          let extRegex = this._regexCache.get(fileType);
+          if (!extRegex) {
+            extRegex = new RegExp(`\\.${fileType}$`, 'i');
+            this._regexCache.set(fileType, extRegex);
+          }
+          return extRegex.test(baseName);
+        });
 
         if (children.length === 0) {
           return undefined;
         }
 
-        return new NodeModel(
+        const node = new NodeModel(
           `${fileType}: ${children.length}`,
           new ThemeIcon('folder-opened'),
           undefined,
@@ -158,12 +197,21 @@ export class FilesProvider implements TreeDataProvider<NodeModel> {
           fileType,
           children,
         );
+        node.tooltip = l10n.t('Group: {0}\nFiles: {1}\nHint: Click to expand', [
+          fileType,
+          children.length,
+        ]);
+        return node;
       });
 
     if (errors.length > 0) {
       console.error('Errors processing file types:', errors);
     }
-
-    return results.filter((node): node is NodeModel => node !== undefined);
+    const nodes = results.filter(
+      (node): node is NodeModel => node !== undefined,
+    );
+    // Order groups by size (descending) for usability
+    nodes.sort((a, b) => (b.children?.length ?? 0) - (a.children?.length ?? 0));
+    return nodes;
   }
 }

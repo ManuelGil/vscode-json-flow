@@ -1,7 +1,6 @@
 {
   "./**/*.ts": [
     "biome format --write",
-    "biome lint --write",
-    "git add ."
+    "biome lint --write"
   ]
 }

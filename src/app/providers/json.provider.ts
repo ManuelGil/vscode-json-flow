@@ -1,6 +1,8 @@
 import {
   commands,
   Disposable,
+  Event,
+  EventEmitter,
   Uri,
   ViewColumn,
   Webview,
@@ -9,7 +11,7 @@ import {
   window,
 } from 'vscode';
 
-import { EXTENSION_ID } from '../configs';
+import { EXTENSION_DISPLAY_NAME, EXTENSION_ID } from '../configs';
 import { getNonce } from '../helpers';
 
 /**
@@ -43,6 +45,16 @@ export class JSONProvider {
 
   /** Tracks whether Live Sync is enabled */
   static liveSyncEnabled: boolean = false;
+
+  /** Event fired when provider state changes (split view or live sync) */
+  private static _onStateChanged = new EventEmitter<{
+    isSplitView?: boolean;
+    liveSyncEnabled?: boolean;
+  }>();
+  static readonly onStateChanged: Event<{
+    isSplitView?: boolean;
+    liveSyncEnabled?: boolean;
+  }> = JSONProvider._onStateChanged.event;
 
   /**
    * Tracks all disposables for this provider to ensure proper cleanup of resources and event listeners.
@@ -106,6 +118,10 @@ export class JSONProvider {
           'jsonFlow.splitView',
           JSONProvider.isSplitView,
         );
+        // Notify listeners
+        JSONProvider._onStateChanged.fire({
+          isSplitView: JSONProvider.isSplitView,
+        });
       },
       null,
       this._disposables,
@@ -139,6 +155,10 @@ export class JSONProvider {
         'jsonFlow.splitView',
         JSONProvider.isSplitView,
       );
+      // Notify listeners
+      JSONProvider._onStateChanged.fire({
+        isSplitView: JSONProvider.isSplitView,
+      });
       // Also reflect current Live Sync state to the webview when revealing
       try {
         JSONProvider.postMessageToWebview({
@@ -154,7 +174,7 @@ export class JSONProvider {
 
     const panel = window.createWebviewPanel(
       JSONProvider.viewType,
-      'JSON Flow',
+      EXTENSION_DISPLAY_NAME,
       column,
       this.getWebviewOptions(extensionUri),
     );
@@ -166,6 +186,10 @@ export class JSONProvider {
       'jsonFlow.splitView',
       JSONProvider.isSplitView,
     );
+    // Notify listeners
+    JSONProvider._onStateChanged.fire({
+      isSplitView: JSONProvider.isSplitView,
+    });
     // Send initial Live Sync state
     try {
       JSONProvider.postMessageToWebview({
@@ -201,6 +225,8 @@ export class JSONProvider {
     // Revived panels do not imply split view; reset context to false
     JSONProvider.isSplitView = false;
     commands.executeCommand('setContext', 'jsonFlow.splitView', false);
+    // Notify listeners
+    JSONProvider._onStateChanged.fire({ isSplitView: false });
     // Ensure webview knows current Live Sync state after revive
     try {
       JSONProvider.postMessageToWebview({
@@ -236,6 +262,8 @@ export class JSONProvider {
     JSONProvider.isSplitView = false;
     // Reflect state in context for menus/UX
     commands.executeCommand('setContext', 'jsonFlow.splitView', false);
+    // Notify listeners
+    JSONProvider._onStateChanged.fire({ isSplitView: false });
 
     // Dispose the webview panel if it exists
     if (this._panel) {
@@ -279,6 +307,8 @@ export class JSONProvider {
     } catch {
       // ignore
     }
+    // Notify listeners
+    JSONProvider._onStateChanged.fire({ liveSyncEnabled: enabled });
   }
 
   /** Post a message to the active webview panel, if present */
@@ -349,7 +379,7 @@ export class JSONProvider {
 
     <link href="${styleMainUri}" rel="stylesheet" />
 
-    <title>JSON Flow</title>
+    <title>${EXTENSION_DISPLAY_NAME}</title>
   </head>
   <body>
     <div id="root"></div>

@@ -91,7 +91,7 @@
 	"l10n": "./l10n",
 	"contributes": {
 		"configuration": {
-			"title": "JSON Flow",
+			"title": "%jsonFlow.configuration.title%",
 			"properties": {
 				"jsonFlow.enable": {
 					"type": "boolean",
@@ -174,125 +174,125 @@
 			{
 				"command": "jsonFlow.files.refreshList",
 				"title": "%jsonFlow.files.refreshList%",
-				"category": "JSON Flow",
+				"category": "%jsonFlow.category%",
 				"icon": "$(refresh)"
 			},
 			{
 				"command": "jsonFlow.files.openFile",
 				"title": "%jsonFlow.files.openFile%",
-				"category": "JSON Flow"
+				"category": "%jsonFlow.category%"
 			},
 			{
 				"command": "jsonFlow.files.copyContent",
 				"title": "%jsonFlow.files.copyContent%",
-				"category": "JSON Flow"
+				"category": "%jsonFlow.category%"
 			},
 			{
 				"command": "jsonFlow.files.copyContentAsJson",
 				"title": "%jsonFlow.files.copyContentAsJson%",
-				"category": "JSON Flow"
+				"category": "%jsonFlow.category%"
 			},
 			{
 				"command": "jsonFlow.files.copyContentPartialAsJson",
 				"title": "%jsonFlow.files.copyContentPartialAsJson%",
-				"category": "JSON Flow"
+				"category": "%jsonFlow.category%"
 			},
 			{
 				"command": "jsonFlow.files.getFileProperties",
 				"title": "%jsonFlow.files.getFileProperties%",
-				"category": "JSON Flow"
+				"category": "%jsonFlow.category%"
 			},
 			{
 				"command": "jsonFlow.json.showPartialPreview",
 				"title": "%jsonFlow.json.showPartialPreview%",
-				"category": "JSON Flow"
+				"category": "%jsonFlow.category%"
 			},
 			{
 				"command": "jsonFlow.json.showPreview",
 				"title": "%jsonFlow.json.showPreview%",
-				"category": "JSON Flow"
+				"category": "%jsonFlow.category%"
 			},
 			{
 				"command": "jsonFlow.json.fetchJsonData",
 				"title": "%jsonFlow.json.fetchJsonData%",
-				"category": "JSON Flow"
+				"category": "%jsonFlow.category%"
 			},
 			{
 				"command": "jsonFlow.files.convertToJson",
 				"title": "%jsonFlow.files.convertToJson%",
-				"category": "JSON Flow"
+				"category": "%jsonFlow.category%"
 			},
 			{
 				"command": "jsonFlow.files.convertPartialToJson",
 				"title": "%jsonFlow.files.convertPartialToJson%",
-				"category": "JSON Flow"
+				"category": "%jsonFlow.category%"
 			},
 			{
 				"command": "jsonFlow.files.convertToType",
 				"title": "%jsonFlow.files.convertToType%",
-				"category": "JSON Flow"
+				"category": "%jsonFlow.category%"
 			},
 			{
 				"command": "jsonFlow.files.convertPartialToType",
 				"title": "%jsonFlow.files.convertPartialToType%",
-				"category": "JSON Flow"
+				"category": "%jsonFlow.category%"
 			},
 			{
 				"command": "jsonFlow.view.enableSplitView",
-				"title": "Open JSON Flow beside",
-				"category": "JSON Flow",
-				"icon": "$(split-horizontal)"
+				"title": "%jsonFlow.view.enableSplitView%",
+				"category": "%jsonFlow.category%",
+				"icon": "./assets/logo.svg"
 			},
 			{
 				"command": "jsonFlow.view.disableSplitView",
-				"title": "Close JSON Flow",
-				"category": "JSON Flow",
+				"title": "%jsonFlow.view.disableSplitView%",
+				"category": "%jsonFlow.category%",
 				"icon": "$(close)"
 			},
 			{
 				"command": "jsonFlow.view.enableLiveSync",
-				"title": "Enable Live Sync",
-				"category": "JSON Flow",
+				"title": "%jsonFlow.view.enableLiveSync%",
+				"category": "%jsonFlow.category%",
 				"icon": "$(sync)"
 			},
 			{
 				"command": "jsonFlow.view.disableLiveSync",
-				"title": "Disable Live Sync",
-				"category": "JSON Flow",
+				"title": "%jsonFlow.view.disableLiveSync%",
+				"category": "%jsonFlow.category%",
 				"icon": "$(debug-disconnect)"
 			}
 		],
 		"submenus": [
 			{
 				"id": "jsonFlow.explorer.submenu",
-				"label": "JSON Flow"
+				"label": "%jsonFlow.menu.explorer.label%"
 			},
 			{
 				"id": "jsonFlow.editor.submenu",
-				"label": "JSON Flow"
+				"label": "%jsonFlow.menu.editor.label%"
 			}
 		],
 		"menus": {
 			"editor/title": [
 				{
 					"command": "jsonFlow.view.enableSplitView",
-					"when": "!jsonFlow.splitView && resourceExtname =~ /json|jsonc|json5|cfg|csv|env|hcl|ini|properties|toml|tsv|xml|yaml|yml/",
-					"group": "navigation@9"
+					"when": "!jsonFlow.splitView && (resourceExtname =~ /^\\.(json|jsonc|json5|cfg|csv|hcl|ini|properties|toml|tsv|xml|yaml|yml)$/ || resourceFilename =~ /^\\.env(\\..*)?$/)",
+					"group": "navigation@-100"
 				},
 				{
 					"command": "jsonFlow.view.disableSplitView",
 					"when": "jsonFlow.splitView",
-					"group": "navigation@9"
+					"group": "navigation@-100"
 				},
 				{
 					"command": "jsonFlow.view.enableLiveSync",
-					"when": "jsonFlow.splitView && !jsonFlow.liveSyncEnabled && resourceExtname =~ /json|jsonc|json5|cfg|csv|env|hcl|ini|properties|toml|tsv|xml|yaml|yml/",
-					"group": "navigation@10"
+					"when": "jsonFlow.splitView && !jsonFlow.liveSyncEnabled && (resourceExtname =~ /^\\.(json|jsonc|json5|cfg|csv|hcl|ini|properties|toml|tsv|xml|yaml|yml)$/ || resourceFilename =~ /^\\.env(\\..*)?$/)",
+					"group": "navigation@-99"
 				},
 				{
 					"command": "jsonFlow.view.disableLiveSync",
 					"when": "jsonFlow.splitView && jsonFlow.liveSyncEnabled",
-					"group": "navigation@10"
+					"group": "navigation@-99"
 				}
 			],
 			"view/title": [
@@ -305,32 +305,32 @@
 			"view/item/context": [
 				{
 					"command": "jsonFlow.files.openFile",
-					"when": "view == jsonFlow.filesView && viewItem =~ /.(json|jsonc|json5|cfg|csv|env|hcl|ini|properties|toml|tsv|xml|yaml|yml)/",
+					"when": "view == jsonFlow.filesView && (viewItem =~ /\\.(json|jsonc|json5|cfg|csv|hcl|ini|properties|toml|tsv|xml|yaml|yml)$/ || viewItem =~ /(^|[\\\\/])\\.env(\\..*)?$/)",
 					"group": "1_navigation"
 				},
 				{
 					"command": "jsonFlow.files.convertToJson",
-					"when": "view == jsonFlow.filesView && viewItem =~ /.(cfg|csv|env|hcl|ini|properties|toml|tsv|xml|yaml|yml)/",
+					"when": "view == jsonFlow.filesView && (viewItem =~ /\\.(cfg|csv|hcl|ini|properties|toml|tsv|xml|yaml|yml)$/ || viewItem =~ /(^|[\\\\/])\\.env(\\..*)?$/)",
 					"group": "2_modification"
 				},
 				{
 					"command": "jsonFlow.files.convertToType",
-					"when": "view == jsonFlow.filesView && viewItem =~ /.(json|jsonc|json5|cfg|csv|env|hcl|ini|properties|toml|tsv|xml|yaml|yml)/",
+					"when": "view == jsonFlow.filesView && (viewItem =~ /\\.(json|jsonc|json5|cfg|csv|hcl|ini|properties|toml|tsv|xml|yaml|yml)$/ || viewItem =~ /(^|[\\\\/])\\.env(\\..*)?$/)",
 					"group": "2_modification"
 				},
 				{
 					"command": "jsonFlow.files.copyContent",
-					"when": "view == jsonFlow.filesView && viewItem =~ /.(json|jsonc|json5|cfg|csv|env|hcl|ini|properties|toml|tsv|xml|yaml|yml)/",
+					"when": "view == jsonFlow.filesView && (viewItem =~ /\\.(json|jsonc|json5|cfg|csv|hcl|ini|properties|toml|tsv|xml|yaml|yml)$/ || viewItem =~ /(^|[\\\\/])\\.env(\\..*)?$/)",
 					"group": "3_cutcopypaste@1"
 				},
 				{
 					"command": "jsonFlow.files.copyContentAsJson",
-					"when": "view == jsonFlow.filesView && viewItem =~ /.(cfg|csv|env|hcl|ini|properties|toml|tsv|xml|yaml|yml)/",
+					"when": "view == jsonFlow.filesView && (viewItem =~ /\\.(cfg|csv|hcl|ini|properties|toml|tsv|xml|yaml|yml)$/ || viewItem =~ /(^|[\\\\/])\\.env(\\..*)?$/)",
 					"group": "3_cutcopypaste@2"
 				},
 				{
 					"command": "jsonFlow.files.getFileProperties",
-					"when": "view == jsonFlow.filesView && viewItem =~ /.(json|jsonc|json5|cfg|csv|env|hcl|ini|properties|toml|tsv|xml|yaml|yml)/",
+					"when": "view == jsonFlow.filesView && (viewItem =~ /\\.(json|jsonc|json5|cfg|csv|hcl|ini|properties|toml|tsv|xml|yaml|yml)$/ || viewItem =~ /(^|[\\\\/])\\.env(\\..*)?$/)",
 					"group": "4_properties"
 				}
 			],
@@ -338,7 +338,7 @@
 				{
 					"submenu": "jsonFlow.explorer.submenu",
 					"group": "2_workspace",
-					"when": "resourceExtname =~ /json|jsonc|json5|cfg|csv|env|hcl|ini|properties|toml|tsv|xml|yaml|yml/"
+					"when": "(resourceExtname =~ /^\\.(json|jsonc|json5|cfg|csv|hcl|ini|properties|toml|tsv|xml|yaml|yml)$/ || resourceFilename =~ /^\\.env(\\..*)?$/)"
 				}
 			],
 			"editor/context": [
@@ -357,25 +357,25 @@
 				{
 					"command": "jsonFlow.files.convertToJson",
 					"title": "%jsonFlow.files.convertToJson%",
-					"when": "resourceExtname =~ /cfg|csv|env|hcl|ini|properties|toml|tsv|xml|yaml|yml/",
+					"when": "(resourceExtname =~ /^\\.(cfg|csv|hcl|ini|properties|toml|tsv|xml|yaml|yml)$/ || resourceFilename =~ /^\\.env(\\..*)?$/)",
 					"group": "2_modification"
 				},
 				{
 					"command": "jsonFlow.files.convertToType",
 					"title": "%jsonFlow.files.convertToType%",
-					"when": "resourceExtname =~ /json|jsonc|json5|cfg|csv|env|hcl|ini|properties|toml|tsv|xml|yaml|yml/",
+					"when": "(resourceExtname =~ /^\\.(json|jsonc|json5|cfg|csv|hcl|ini|properties|toml|tsv|xml|yaml|yml)$/ || resourceFilename =~ /^\\.env(\\..*)?$/)",
 					"group": "2_modification"
 				},
 				{
 					"command": "jsonFlow.files.copyContent",
 					"title": "%jsonFlow.files.copyContent%",
-					"when": "resourceExtname =~ /json|jsonc|json5|cfg|csv|env|hcl|ini|properties|toml|tsv|xml|yaml|yml/",
+					"when": "(resourceExtname =~ /^\\.(json|jsonc|json5|cfg|csv|hcl|ini|properties|toml|tsv|xml|yaml|yml)$/ || resourceFilename =~ /^\\.env(\\..*)?$/)",
 					"group": "3_cutcopypaste"
 				},
 				{
 					"command": "jsonFlow.files.copyContentAsJson",
 					"title": "%jsonFlow.files.copyContentAsJson%",
-					"when": "resourceExtname =~ /cfg|csv|env|hcl|ini|properties|toml|tsv|xml|yaml|yml/",
+					"when": "(resourceExtname =~ /^\\.(cfg|csv|hcl|ini|properties|toml|tsv|xml|yaml|yml)$/ || resourceFilename =~ /^\\.env(\\..*)?$/)",
 					"group": "3_cutcopypaste"
 				}
 			],
@@ -388,19 +388,19 @@
 				{
 					"command": "jsonFlow.files.convertPartialToJson",
 					"title": "%jsonFlow.files.convertPartialToJson%",
-					"when": "resourceExtname =~ /cfg|csv|env|hcl|ini|properties|toml|tsv|xml|yaml|yml/",
+					"when": "(resourceExtname =~ /^\\.(cfg|csv|hcl|ini|properties|toml|tsv|xml|yaml|yml)$/ || resourceFilename =~ /^\\.env(\\..*)?$/)",
 					"group": "2_modification"
 				},
 				{
 					"command": "jsonFlow.files.convertPartialToType",
 					"title": "%jsonFlow.files.convertPartialToType%",
-					"when": "resourceExtname =~ /json|jsonc|json5|cfg|csv|env|hcl|ini|properties|toml|tsv|xml|yaml|yml/",
+					"when": "(resourceExtname =~ /^\\.(json|jsonc|json5|cfg|csv|hcl|ini|properties|toml|tsv|xml|yaml|yml)$/ || resourceFilename =~ /^\\.env(\\..*)?$/)",
 					"group": "2_modification"
 				},
 				{
 					"command": "jsonFlow.files.copyContentPartialAsJson",
 					"title": "%jsonFlow.files.copyContentPartialAsJson%",
-					"when": "resourceExtname =~ /cfg|csv|env|hcl|ini|properties|toml|tsv|xml|yaml|yml/",
+					"when": "(resourceExtname =~ /^\\.(cfg|csv|hcl|ini|properties|toml|tsv|xml|yaml|yml)$/ || resourceFilename =~ /^\\.env(\\..*)?$/)",
 					"group": "3_cutcopypaste"
 				}
 			]
@@ -415,7 +415,7 @@
 			"activitybar": [
 				{
 					"id": "json-explorer",
-					"title": "JSON Flow",
+					"title": "%jsonFlow.activitybar.title%",
 					"icon": "./assets/logo.svg"
 				}
 			]
@@ -432,7 +432,7 @@
 					"id": "jsonFlow.feedbackView",
 					"name": "%jsonFlow.feedbackView%",
 					"visibility": "visible",
-					"icon": "$(file-feedback)"
+					"icon": "$(feedback)"
 				}
 			]
 		},
@@ -440,6 +440,20 @@
 			{
 				"fileMatch": ".vscode/settings.json",
 				"url": "./schemas/config.schema.json"
+			}
+		],
+		"keybindings": [
+			{
+				"command": "jsonFlow.view.enableSplitView",
+				"key": "ctrl+alt+f",
+				"mac": "cmd+alt+f",
+				"when": "!jsonFlow.splitView && editorTextFocus"
+			},
+			{
+				"command": "jsonFlow.view.disableSplitView",
+				"key": "ctrl+alt+f",
+				"mac": "cmd+alt+f",
+				"when": "jsonFlow.splitView"
 			}
 		]
 	},

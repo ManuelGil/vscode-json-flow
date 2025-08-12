@@ -1,4 +1,5 @@
 export * from './csv-parser.helper';
+export * from './detect-delimiter.helper';
 export * from './env-parser.helper';
 export * from './error-handler.helper';
 export * from './hcl-parser.helper';

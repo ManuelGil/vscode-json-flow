@@ -9,7 +9,7 @@ import {
   workspace,
 } from 'vscode';
 
-import { ExtensionConfig } from '../configs';
+import { EXTENSION_DISPLAY_NAME, ExtensionConfig } from '../configs';
 import { FileType, isFileTypeSupported, parseJSONContent } from '../helpers';
 import { normalizeToJsonString } from '../helpers/normalize.helper';
 import { JSONProvider } from '../providers';
@@ -65,8 +65,15 @@ export class JsonController {
       let fileType = languageId;
 
       if (!isFileTypeSupported(fileType)) {
-        const fileExtension = fileName.split('.').pop();
-        fileType = isFileTypeSupported(fileExtension) ? fileExtension : 'json';
+        const baseName = fileName.split(/[\\\/]/).pop() ?? fileName;
+        if (/^\.env(\..*)?$/i.test(baseName)) {
+          fileType = 'env';
+        } else {
+          const fileExtension = fileName.split('.').pop();
+          fileType = isFileTypeSupported(fileExtension)
+            ? fileExtension
+            : 'json';
+        }
       }
 
       // Parse JSON content
@@ -141,8 +148,13 @@ export class JsonController {
     text = normalized;
 
     if (!isFileTypeSupported(fileType)) {
-      const fileExtension = fileName.split('.').pop();
-      fileType = isFileTypeSupported(fileExtension) ? fileExtension : 'jsonc';
+      const baseName = fileName.split(/[\\\/]/).pop() ?? fileName;
+      if (/^\.env(\..*)?$/i.test(baseName)) {
+        fileType = 'env';
+      } else {
+        const fileExtension = fileName.split('.').pop();
+        fileType = isFileTypeSupported(fileExtension) ? fileExtension : 'jsonc';
+      }
     }
 
     // Parse JSON content
@@ -234,7 +246,7 @@ export class JsonController {
           );
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
-          window.showErrorMessage(`Error fetching JSON: ${msg}`);
+          window.showErrorMessage(l10n.t('Error fetching JSON: {0}', [msg]));
         } finally {
           clearTimeout(timeout);
         }
@@ -256,7 +268,7 @@ export class JsonController {
     path?: string,
     column: ViewColumn = ViewColumn.One,
   ): void {
-    const displayName = fileName.split(/[\\/]/).pop() || 'JSON Flow';
+    const displayName = fileName.split(/[\\/]/).pop() || EXTENSION_DISPLAY_NAME;
     const panel = JSONProvider.createPanel(this.context.extensionUri, column);
 
     panel.title = displayName;
