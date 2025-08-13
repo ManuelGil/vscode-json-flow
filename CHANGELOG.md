@@ -5,6 +5,8 @@ All notable changes to the "JSON Flow" extension will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
 ## [2.2.1] - 2025-08-12
 
 * chore: :bookmark: update localization strings and improve documentation in README and ROADMAP ([bcd10a6](https://github.com/ManuelGil/vscode-json-flow/commit/bcd10a6))
@@ -176,7 +178,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * build: add webview path ([960fb18](https://github.com/ManuelGil/vscode-json-flow/commit/960fb18))
 * fix: :rotating_light: fix compilation settings ([1ccbfa5](https://github.com/ManuelGil/vscode-json-flow/commit/1ccbfa5))
 
-[Unreleased]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.2.0...HEAD
+[Unreleased]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.2.1...HEAD
+[2.2.1]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.2.0...v2.2.1
 [2.2.0]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.0.1...v2.1.0
 [2.0.1]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.0.0...v2.0.1
