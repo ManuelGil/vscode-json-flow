@@ -1,7 +1,7 @@
 {
 	"name": "vscode-json-flow",
 	"displayName": "JSON Flow",
-	"description": "Transform JSON and structured data into interactive graphs in VSCode and all VSCode-based editors (VSCodium, WindSurf, Cursor, and more) - Free & Open Source",
+	"description": "Visualize, convert, and manage JSON/YAML/XML/CSV as interactive graphs in VS Code. Offline and open-source.",
 	"version": "2.2.0",
 	"icon": "icon.png",
 	"license": "MIT",
@@ -23,60 +23,33 @@
 		"Other"
 	],
 	"keywords": [
-		"cfg",
-		"csv",
-		"data",
-		"diagram",
-		"dotenv",
-		"env",
-		"explorer",
-		"fileview",
-		"flow view",
-		"flow",
-		"flowchart",
-		"flowview",
-		"graph view",
-		"graph",
-		"graphview",
-		"hcl",
-		"ini",
-		"json flow",
-		"json schema",
-		"json view",
-		"json-flow",
-		"json-schema",
-		"json-xml",
 		"json",
+		"yaml",
+		"xml",
+		"csv",
+		"toml",
+		"ini",
+		"env",
+		"dotenv",
 		"json5",
 		"jsonc",
-		"jsonflow",
-		"jsonschema",
-		"jsonview",
-		"live preview",
-		"livepreview",
-		"manager",
-		"node",
-		"nodes",
-		"preview",
-		"preview",
-		"properties",
-		"schema",
-		"toml",
-		"tool",
-		"tools",
-		"tree",
-		"treeview",
-		"tsv",
-		"view",
+		"graph",
 		"visualization",
-		"visualize",
-		"visualizer",
-		"vscode-extension",
-		"vscode-json-flow",
-		"vscode",
-		"xml",
-		"yaml",
-		"yml"
+		"json schema",
+		"json view",
+		"json viewer",
+		"json visualizer",
+		"treeview",
+		"conversion",
+		"code generation",
+		"yaml to json",
+		"json to yaml",
+		"xml to json",
+		"csv to json",
+		"json formatter",
+		"json validator",
+		"diagram",
+		"graph viewer"
 	],
 	"homepage": "https://json-flow.com",
 	"repository": {
@@ -86,9 +59,30 @@
 	"bugs": {
 		"url": "https://github.com/ManuelGil/vscode-json-flow/issues"
 	},
-	"activationEvents": [],
+	"galleryBanner": {
+		"color": "#0a84ff",
+		"theme": "dark"
+	},
+	"badges": [
+		{
+			"url": "https://img.shields.io/visual-studio-marketplace/i/imgildev.vscode-json-flow.svg?color=0a84ff",
+			"href": "https://marketplace.visualstudio.com/items?itemName=imgildev.vscode-json-flow",
+			"description": "VS Marketplace Installs"
+		},
+		{
+			"url": "https://img.shields.io/github/stars/ManuelGil/vscode-json-flow?label=GitHub%20Stars&color=0a84ff",
+			"href": "https://github.com/ManuelGil/vscode-json-flow",
+			"description": "GitHub Stars"
+		}
+	],
+	"qna": false,
+	"extensionKind": ["workspace"],
 	"main": "./out/extension.js",
 	"l10n": "./l10n",
+	"capabilities": {
+		"untrustedWorkspaces": { "supported": true },
+		"virtualWorkspaces": { "supported": "limited" }
+	},
 	"contributes": {
 		"configuration": {
 			"title": "%jsonFlow.configuration.title%",
@@ -345,7 +339,7 @@
 				{
 					"submenu": "jsonFlow.editor.submenu",
 					"group": "1_modification",
-					"when": "editorHasSelection"
+					"when": "editorHasSelection && (resourceExtname =~ /^\\.(json|jsonc|json5|cfg|csv|hcl|ini|properties|toml|tsv|xml|yaml|yml)$/ || resourceFilename =~ /^\\.env(\\..*)?$/)"
 				}
 			],
 			"jsonFlow.explorer.submenu": [
@@ -426,13 +420,13 @@
 					"id": "jsonFlow.filesView",
 					"name": "%jsonFlow.filesView%",
 					"visibility": "visible",
-					"icon": "$(file-directory)"
+					"icon": "$(folder)"
 				},
 				{
 					"id": "jsonFlow.feedbackView",
 					"name": "%jsonFlow.feedbackView%",
 					"visibility": "visible",
-					"icon": "$(feedback)"
+					"icon": "$(comment-discussion)"
 				}
 			]
 		},
@@ -447,7 +441,7 @@
 				"command": "jsonFlow.view.enableSplitView",
 				"key": "ctrl+alt+f",
 				"mac": "cmd+alt+f",
-				"when": "!jsonFlow.splitView && editorTextFocus"
+				"when": "!jsonFlow.splitView && editorTextFocus && (resourceExtname =~ /^\\.(json|jsonc|json5|cfg|csv|hcl|ini|properties|toml|tsv|xml|yaml|yml)$/ || resourceFilename =~ /^\\.env(\\..*)?$/)"
 			},
 			{
 				"command": "jsonFlow.view.disableSplitView",

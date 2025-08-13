@@ -3,8 +3,8 @@
 	"type": "object",
 	"properties": {
 		"jsonFlow.enable": {
-			"type": "string",
-			"default": "Enable JSON Flow",
+			"type": "boolean",
+			"default": true,
 			"description": "Enable JSON Flow"
 		},
 		"jsonFlow.files.includedFilePatterns": {
@@ -25,8 +25,8 @@
 				"yaml",
 				"yml"
 			],
-			"scope": "resource",
-			"description": "Glob patterns to include in the package."
+			"items": { "type": "string" },
+			"description": "File type identifiers to include (e.g., extensions like json, yaml)."
 		},
 		"jsonFlow.files.excludedFilePatterns": {
 			"type": "array",
@@ -37,39 +37,34 @@
 				"**/build/**",
 				"**/vendor/**"
 			],
-			"scope": "resource",
-			"description": "Glob patterns to exclude from the package. The default is node_modules, dist, out, build, and any hidden files."
+			"items": { "type": "string" },
+			"description": "Glob patterns to exclude from search (e.g., node_modules, dist, out, build, vendor)."
 		},
 		"jsonFlow.files.maxSearchRecursionDepth": {
 			"type": "number",
 			"default": 0,
-			"scope": "resource",
-			"description": "Maximum recursion depth for file search. The default is 0, which means no limit."
+			"description": "Maximum recursion depth for file search. 0 means no limit."
 		},
 		"jsonFlow.files.supportsHiddenFiles": {
 			"type": "boolean",
 			"default": true,
-			"scope": "resource",
-			"description": "Supports hidden files. The default is true."
+			"description": "Whether to include hidden files."
 		},
 		"jsonFlow.files.preserveGitignoreSettings": {
 			"type": "boolean",
 			"default": false,
-			"scope": "resource",
-			"description": "Supports gitignore files. The default is false."
+			"description": "Preserve .gitignore settings when scanning files."
 		},
 		"jsonFlow.files.includeFilePath": {
 			"type": "boolean",
 			"default": true,
-			"scope": "resource",
-			"description": "Show the path of the file in the name of the list of generated files"
+			"description": "Show the file path next to the name in the generated files list."
 		},
 		"jsonFlow.graph.layoutOrientation": {
 			"type": "string",
 			"default": "TB",
 			"enum": ["TB", "LR", "BT", "RL"],
-			"scope": "resource",
-			"description": "The direction of the layout of the graph. TB is top to bottom, LR is left to right."
+			"description": "Graph layout orientation. TB (top-bottom), LR (left-right), BT (bottom-top), RL (right-left)."
 		}
 	}
 }

@@ -17,6 +17,28 @@
 
 ---
 
+## Highlights
+
+- **Interactive graphs** for JSON and other structured formats (YAML, XML, CSV, TOML, INI, ENV, JSON5/JSONC).
+- **One-click conversions** between JSON and popular formats; copy as JSON anywhere.
+- **Code generation** from JSON (TypeScript, Go, JSON Schema, and more).
+- **Split View + Live Sync (roadmap)** to mirror selection and edits between editor and graph.
+- **Works across VS Code family** (VS Code, VSCodium, WindSurf, Cursor) on Windows, macOS, and Linux.
+- **Private by design**: 100% local processing, no telemetry, no uploads.
+- **Built for scale**: Incremental rendering for large/complex data; no hard size caps.
+
+---
+
+## Why choose JSON Flow for VS Code
+
+- **Offline-first & open source (MIT)**: Processing happens locally in VS Code. Codebase is open for audit and contributions.
+- **VS Code–native UX**: Activity Bar views, Explorer context menus, editor title actions, and keybindings for a smooth workflow.
+- **Broad multi-format scope**: JSON/JSONC/JSON5, YAML, XML, CSV/TSV, TOML, INI, .env, HCL, and more with unified operations.
+- **Split View today, Live Sync tomorrow**: Toggle split view now; selection and edit synchronization are on the roadmap (see versions 2.3–2.4).
+- **Code generation built-in**: Generate TypeScript, Go, JSON Schema and more directly from JSON.
+- **Workspace-ready**: Supports untrusted and virtual workspaces (limited), respects ignore rules, and is configurable per workspace.
+- **Accessibility & theming roadmap**: High Contrast and token-aware theming improvements planned (see 2.5.0).
+
 ## Why JSON Flow?
 
 Exploring complex data structures in code or configuration files can be cumbersome. JSON Flow converts supported files into interactive graphs, enabling you to:
@@ -32,6 +54,8 @@ Exploring complex data structures in code or configuration files can be cumberso
 
 - [JSON Flow](#json-flow)
   - [Introduction](#introduction)
+  - [Highlights](#highlights)
+  - [Why choose JSON Flow for VS Code](#why-choose-json-flow-for-vs-code)
   - [Why JSON Flow?](#why-json-flow)
   - [Table of Contents](#table-of-contents)
   - [Key Features](#key-features)
@@ -250,7 +274,11 @@ Additional note:
 
 ## Security & Privacy
 
-JSON Flow processes all data locally within your editor environment. No data is transmitted externally or collected for analytics purposes. The extension does not access your files or network beyond the explicit operations you perform. For further details regarding privacy and security, please consult the extension's privacy policy or contact the maintainer.
+- **100% local**: Parsing, visualization, and conversions run inside VS Code.
+- **No telemetry or analytics**: We do not collect usage or content data.
+- **No network access by default**: The only network action is the explicit command `jsonFlow.json.fetchJsonData` when you choose to fetch from a URL.
+- **Workspace Trust aware**: Behaves safely in untrusted workspaces and supports virtual workspaces (with limitations).
+- **Offline friendly**: Works without internet connectivity once installed.
 
 ---
 
@@ -532,24 +560,24 @@ If your question or issue is not addressed, please open a new issue on GitHub wi
 We invite the community to collaborate on implementing versions 2.3.0 and onward as defined in the `ROADMAP.md`. Contributions in code, documentation, testing, and technical discussion are welcome.
 
 - **Priority scope**
-  - 2.3.0 — Live Sync Phase 1 (Selection)
-  - 2.4.0 — Live Sync Phase 2 (Editing, Multi-Format)
-  - 2.5.0 — Theming & VS Code Tokens (High Contrast MVP)
-  - 2.6.0 — Graph Search/Filter (Phased Delivery)
-  - 2.7.0 — Webview i18n & Language Packs
-  - 2.8.0 — Workspace Graph Phase 1 (Indexing & Navigation)
-  - 2.9.0 — Workspace Graph Phase 2 (Cross-file Live Sync & Overlay)
+  - 2.3.0 - Live Sync Phase 1 (Selection)
+  - 2.4.0 - Live Sync Phase 2 (Editing, Multi-Format)
+  - 2.5.0 - Theming & VS Code Tokens (High Contrast MVP)
+  - 2.6.0 - Graph Search/Filter (Phased Delivery)
+  - 2.7.0 - Webview i18n & Language Packs
+  - 2.8.0 - Workspace Graph Phase 1 (Indexing & Navigation)
+  - 2.9.0 - Workspace Graph Phase 2 (Cross-file Live Sync & Overlay)
 
 - **How to participate**
   - Review the relevant sections in `ROADMAP.md` and select a task aligned with your expertise.
   - Open an Issue to propose your approach or claim a task before submitting a Pull Request.
-  - Keep PRs focused and reasonably sized; include a clear description, tests, and documentation notes.
+  - Keep PRs focused and reasonably sized; include a clear description and relevant documentation notes.
 
 - **Criteria and guidelines**
-  - Use `(uri, indexPath)` addressing and avoid DOM mutations in the webview.
-  - Use VS Code APIs for navigation/editing and respect Workspace Trust.
-  - Consider performance (debounce/coalescing, incremental indexing) and anti-loop via `requestId`.
-  - Where applicable, satisfy acceptance criteria and Test Matrix items defined in the roadmap.
+  - Follow `(uri, indexPath)` addressing and avoid DOM mutations in the webview.
+  - Use VS Code APIs and respect Workspace Trust.
+  - Be mindful of performance (debounce/coalescing) and avoid event loops.
+  - Align changes with the relevant roadmap section.
 
 - **Good first contributions**
   - Parsing helpers or targeted indexing rules for a specific format.
@@ -579,12 +607,11 @@ JSON Flow is an open-source project and welcomes contributions from the communit
 
 3. **Implement your changes**, ensuring you:
    - Follow the project's coding standards and best practices.
-   - Include or update relevant tests.
    - Update documentation if your change affects usage or features.
 4. **Commit your changes** and push the branch to your fork.
 5. **Submit a Pull Request** against the `main` branch with a clear, descriptive title and summary of your contribution.
 
-Before submitting, please review the [Contribution Guidelines](https://github.com/ManuelGil/vscode-json-flow/blob/main/CONTRIBUTING.md) for details on coding standards, testing, and commit message conventions. If you encounter a bug or wish to request a new feature, please open an Issue on GitHub or use the [Feature Requests & Bug Reports](https://github.com/ManuelGil/vscode-json-flow/issues) page.
+Before submitting, please review the [Contribution Guidelines](https://github.com/ManuelGil/vscode-json-flow/blob/main/CONTRIBUTING.md) for details on coding standards and commit message conventions. If you encounter a bug or wish to request a new feature, please open an Issue on GitHub or use the [Feature Requests & Bug Reports](https://github.com/ManuelGil/vscode-json-flow/issues) page.
 
 ---
 

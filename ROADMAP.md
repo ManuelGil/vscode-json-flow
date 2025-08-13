@@ -125,12 +125,12 @@ Goal: open the source file and the JSON Flow webview side-by-side (two columns) 
   - Visibility listeners; debounce/coalesce editor events.
   - Anti-loop guard using `requestId`/`source`.
 
- - APIs & Operations
-   - Compute editor ranges with `jsonc-parser.getLocation(text, offset)` and walk parents to build `indexPath`.
-   - Reveal text ranges via `vscode.window.showTextDocument` + `editor.revealRange(range, InCenterIfOutsideViewport)`.
-   - Debounce selection emits (75–120 ms) and coalesce rapid updates.
+- APIs & Operations
+  - Compute editor ranges with `jsonc-parser.getLocation(text, offset)` and walk parents to build `indexPath`.
+  - Reveal text ranges via `vscode.window.showTextDocument` + `editor.revealRange(range, InCenterIfOutsideViewport)`.
+  - Debounce selection emits (75–120 ms) and coalesce rapid updates.
 
- - Webview Implementation
+- Webview Implementation
   - `useEditorSync` hook to apply inbound selection (already scaffolded in `FlowCanvas.tsx`).
   - Emit `graphSelectionChanged` on node click.
 

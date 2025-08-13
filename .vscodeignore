@@ -21,3 +21,5 @@ src/**
 vsc-extension-quickstart.md
 webview/**
 yarn.lock
+commitlint.config.mjs
+**/*.vsix
