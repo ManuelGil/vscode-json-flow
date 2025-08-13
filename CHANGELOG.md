@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+* chore: :bookmark: update localization strings and improve documentation in README and ROADMAP ([bcd10a6](https://github.com/ManuelGil/vscode-json-flow/commit/bcd10a6))
+
 ## [2.2.0] - 2025-08-11
 
 * feat: :sparkles: add localization support for JSON Flow with new UI labels and live sync options ([0377191](https://github.com/ManuelGil/vscode-json-flow/commit/0377191))
