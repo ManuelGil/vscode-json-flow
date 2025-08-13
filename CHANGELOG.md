@@ -5,7 +5,7 @@ All notable changes to the "JSON Flow" extension will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.2.1] - 2025-08-12
 
 * chore: :bookmark: update localization strings and improve documentation in README and ROADMAP ([bcd10a6](https://github.com/ManuelGil/vscode-json-flow/commit/bcd10a6))
 
