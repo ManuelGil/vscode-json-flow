@@ -60,7 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.13.0] - 2025-01-16
 
-* feat: add error messages for cancelled operations in controllers ([ee5787a](https://github.com/ManuelGil/vscode-json-flow/commit/ee5787a))
+* feat: add error messages for canceled operations in controllers ([ee5787a](https://github.com/ManuelGil/vscode-json-flow/commit/ee5787a))
 
 ## [1.12.0] - 2025-01-15
 

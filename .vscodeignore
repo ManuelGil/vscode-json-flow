@@ -1,5 +1,6 @@
 .editorconfig
 .gitattributes
+.github/**
 .gitignore
 .husky/**
 .lintstagedrc
@@ -9,11 +10,13 @@
 **/.vscode-test.*
 **/*.map
 **/*.ts
+**/*.vsix
 **/eslint.config.mjs
 **/tsconfig.*.json
 **/tsconfig.json
 biome.json
 commitlint.config.js
+commitlint.config.mjs
 compodoc/**
 docs/**
 out/test/**
@@ -21,5 +24,3 @@ src/**
 vsc-extension-quickstart.md
 webview/**
 yarn.lock
-commitlint.config.mjs
-**/*.vsix

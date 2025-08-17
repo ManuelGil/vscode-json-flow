@@ -32,9 +32,9 @@
 ## Why choose JSON Flow for VS Code
 
 - **Offline-first & open source (MIT)**: Processing happens locally in VS Code. Codebase is open for audit and contributions.
-- **VS Code–native UX**: Activity Bar views, Explorer context menus, editor title actions, and keybindings for a smooth workflow.
+- **VS Code-native UX**: Activity Bar views, Explorer context menus, editor title actions, and keybindings for a smooth workflow.
 - **Broad multi-format scope**: JSON/JSONC/JSON5, YAML, XML, CSV/TSV, TOML, INI, .env, HCL, and more with unified operations.
-- **Split View today, Live Sync tomorrow**: Toggle split view now; selection and edit synchronization are on the roadmap (see versions 2.3–2.4).
+- **Split View today, Live Sync tomorrow**: Toggle split view now; selection and edit synchronization are on the roadmap (see versions 2.3-2.4).
 - **Code generation built-in**: Generate TypeScript, Go, JSON Schema and more directly from JSON.
 - **Workspace-ready**: Supports untrusted and virtual workspaces (limited), respects ignore rules, and is configurable per workspace.
 - **Accessibility & theming roadmap**: High Contrast and token-aware theming improvements planned (see 2.5.0).
@@ -253,7 +253,7 @@ Notes:
 - **Activity Bar Container**: `JSON Explorer` (`json-explorer`).
 - **Views**:
   - `Files` (`jsonFlow.filesView`): Browse supported files. The view title has a Refresh action. Context menus provide Open, Convert, Copy, and Properties.
-  - `Feedback` (`jsonFlow.feedbackView`): Quick links to Extension Website, Report a Bug, and Rate Us.
+  - `Feedback` (`jsonFlow.feedbackView`): Quick links to Extension Website, Report an Issue, and Rate Us.
 - **Welcome Content**: The Files view shows a helpful message when no files match or on first use.
 
 Additional note:
@@ -536,6 +536,15 @@ To add a new language:
 4. Reload the window to see your translations.
 
 The extension automatically selects the appropriate language based on your VS Code display language settings.
+
+### i18n maintenance
+
+Use the following scripts to validate and prune localization keys:
+
+```bash
+# Check used keys vs translation bundles
+npm run -s l10n:check
+```
 
 ---
 

@@ -59,22 +59,6 @@
 	"bugs": {
 		"url": "https://github.com/ManuelGil/vscode-json-flow/issues"
 	},
-	"galleryBanner": {
-		"color": "#0a84ff",
-		"theme": "dark"
-	},
-	"badges": [
-		{
-			"url": "https://img.shields.io/visual-studio-marketplace/i/imgildev.vscode-json-flow.svg?color=0a84ff",
-			"href": "https://marketplace.visualstudio.com/items?itemName=imgildev.vscode-json-flow",
-			"description": "VS Marketplace Installs"
-		},
-		{
-			"url": "https://img.shields.io/github/stars/ManuelGil/vscode-json-flow?label=GitHub%20Stars&color=0a84ff",
-			"href": "https://github.com/ManuelGil/vscode-json-flow",
-			"description": "GitHub Stars"
-		}
-	],
 	"qna": false,
 	"extensionKind": [
 		"workspace"
@@ -470,6 +454,7 @@
 		"lint:check": "biome check --write",
 		"test": "vscode-test",
 		"compodoc": "npx compodoc -p tsconfig.doc.json -d compodoc --theme readthedocs -s",
+		"l10n:check": "node scripts/check-l10n.js",
 		"prepare": "husky",
 		"release": "release-it"
 	},

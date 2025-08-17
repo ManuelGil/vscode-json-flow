@@ -42,7 +42,7 @@ Deliver a smooth and faithful visualization of structured data, enabling reactiv
   - Throttled progress updates with coalescing.
   - Iterative traversal with cycle detection and timed cancellation checks.
 - Worker Resilience:
-  - Per-request tokens, `PROCESSING_CANCELLED`, automatic worker recreation on errors.
+  - Per-request tokens, `PROCESSING_CANCELED`, automatic worker recreation on errors.
 - UX Compatibility:
   - React Flow virtualization disabled to keep full DOM for integrations.
   - User interactions disabled until `graphReady` during processing.
@@ -128,7 +128,7 @@ Goal: open the source file and the JSON Flow webview side-by-side (two columns) 
 - APIs & Operations
   - Compute editor ranges with `jsonc-parser.getLocation(text, offset)` and walk parents to build `indexPath`.
   - Reveal text ranges via `vscode.window.showTextDocument` + `editor.revealRange(range, InCenterIfOutsideViewport)`.
-  - Debounce selection emits (75–120 ms) and coalesce rapid updates.
+  - Debounce selection emits (75-120 ms) and coalesce rapid updates.
 
 - Webview Implementation
   - `useEditorSync` hook to apply inbound selection (already scaffolded in `FlowCanvas.tsx`).
@@ -326,7 +326,7 @@ Goal: open the source file and the JSON Flow webview side-by-side (two columns) 
 - Follow-up minors
   - Infra: webview i18n hook + automatic language selection + runtime fallback.
   - Tooling: validation script, contribution docs, bundle templates.
-  - Packs: add 1–2 initial community languages (e.g., es, pt) subject to PRs.
+  - Packs: add 1-2 initial community languages (e.g., es, pt) subject to PRs.
 
 - Acceptance Criteria
   - Webview strings switch language consistently with VS Code display language.
@@ -460,7 +460,7 @@ Goal: open the source file and the JSON Flow webview side-by-side (two columns) 
 
 - Anti-loop & Debounce
   - Maintain `lastEmittedRequestId` per channel; ignore inbound events that carry the same `requestId`.
-  - Debounce timings: selection 75–120 ms; document change notifications 200–300 ms.
+  - Debounce timings: selection 75-120 ms; document change notifications 200-300 ms.
   - Coalesce rapid selection changes and only emit the last stable range.
 
 - JSONC Helpers (extension side)

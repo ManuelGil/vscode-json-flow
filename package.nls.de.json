@@ -6,7 +6,7 @@
 	"jsonFlow.files.supportsHiddenFiles": "Unterstützt versteckte Dateien. Standard: `true`.",
 	"jsonFlow.files.preserveGitignoreSettings": "`.gitignore`-Einstellungen beibehalten. Standard: `false`.",
 	"jsonFlow.files.includeFilePath": "Dateipfad neben dem Namen in der Liste der generierten Dateien anzeigen.",
-	"jsonFlow.graph.layoutOrientation": "Diagrammausrichtung. TB (oben–unten), LR (links–rechts), BT (unten–oben), RL (rechts–links).",
+	"jsonFlow.graph.layoutOrientation": "Diagrammausrichtung. TB (oben-unten), LR (links-rechts), BT (unten-oben), RL (rechts-links).",
 	"jsonFlow.files.refreshList": "Liste aktualisieren",
 	"jsonFlow.files.openFile": "Datei öffnen",
 	"jsonFlow.files.convertToJson": "In JSON-Format umwandeln",

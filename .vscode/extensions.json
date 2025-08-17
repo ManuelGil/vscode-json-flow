@@ -6,6 +6,7 @@
 		"shardulm94.trailing-spaces",
 		"editorconfig.editorconfig",
 		"usernamehw.errorlens",
-		"kisstkondoros.vscode-gutter-preview"
+		"kisstkondoros.vscode-gutter-preview",
+		"streetsidesoftware.code-spell-checker"
 	]
 }
