@@ -1,7 +1,6 @@
 import fg from 'fast-glob';
-import { existsSync, readFileSync } from 'fs';
 import ignore from 'ignore';
-import { join, relative } from 'path';
+import { relative } from 'path';
 import { env, l10n, Range, ThemeIcon, Uri, window, workspace } from 'vscode';
 
 import { EXTENSION_ID, ExtensionConfig } from '../configs';
@@ -25,8 +24,8 @@ export class FilesController {
 
   /**
    * Returns a list of files in the workspace as plain file objects.
-   * Shows an error message if no workspace is open or operation is cancelled.
-   * @returns Promise resolving to an array of file info objects or void if cancelled.
+   * Shows an error message if no workspace is open or operation is canceled.
+   * @returns Promise resolving to an array of file info objects or void if canceled.
    */
   async getFiles(): Promise<NodeModel[] | void> {
     // Get the files in the folder
@@ -34,7 +33,7 @@ export class FilesController {
     let files: Uri[] = [];
 
     if (!workspace.workspaceFolders) {
-      const message = l10n.t('Operation cancelled!');
+      const message = l10n.t('Operation canceled');
       window.showErrorMessage(message);
       return;
     }
@@ -149,7 +148,7 @@ export class FilesController {
 
       // Check if the resource URI is valid
       if (!resourceUri) {
-        const message = l10n.t('Operation cancelled!');
+        const message = l10n.t('Operation canceled');
         window.showErrorMessage(message);
         return;
       }
@@ -204,7 +203,9 @@ export class FilesController {
 
     // Check if there is an active editor
     if (!editor) {
-      const message = l10n.t('No active editor!');
+      const message = l10n.t(
+        'No active editor. Open a file to use this command',
+      );
       window.showErrorMessage(message);
       return;
     }
@@ -213,7 +214,7 @@ export class FilesController {
     const selection = editor.selection;
 
     if (selection.isEmpty) {
-      const message = l10n.t('No selection!');
+      const message = l10n.t('No selection. Select some text and try again');
       window.showErrorMessage(message);
       return;
     }
@@ -321,10 +322,18 @@ export class FilesController {
       let gitignore;
 
       if (enableGitignoreDetection) {
-        const gitignorePath = join(baseDir, '.gitignore');
-        // Load .gitignore if it exists
-        if (existsSync(gitignorePath)) {
-          gitignore = ignore().add(readFileSync(gitignorePath, 'utf8'));
+        const baseUri = Uri.file(baseDir);
+        const gitignoreUri = Uri.joinPath(baseUri, '.gitignore');
+        // Load .gitignore if it exists using VS Code workspace.fs
+        try {
+          const contentBytes = await workspace.fs.readFile(gitignoreUri);
+          const gitignoreText = new TextDecoder().decode(contentBytes);
+          gitignore = ignore().add(gitignoreText);
+        } catch (error: unknown) {
+          // Ignore missing file, rethrow other errors
+          if ((error as { code?: string }).code !== 'FileNotFound') {
+            throw error;
+          }
         }
       }
 
@@ -355,7 +364,7 @@ export class FilesController {
 
       // Convert file paths to VS Code Uri objects
       return foundFilePaths.sort().map((filePath) => Uri.file(filePath));
-    } catch (error) {
+    } catch (error: unknown) {
       const errorDetails =
         error instanceof Error
           ? { message: error.message, stack: error.stack }

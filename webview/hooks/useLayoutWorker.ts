@@ -245,7 +245,7 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
       obj.type === 'PROCESSING_COMPLETE' ||
       obj.type === 'PROCESSING_PROGRESS' ||
       obj.type === 'PROCESSING_ERROR' ||
-      obj.type === 'PROCESSING_CANCELLED' ||
+      obj.type === 'PROCESSING_CANCELED' ||
       obj.type === 'PROCESSING_PARTIAL' ||
       obj.type === 'PROCESSING_PARTIAL_COMPACT' ||
       obj.type === 'PROCESSING_COMPLETE_COMPACT'
@@ -450,7 +450,7 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
           break;
         }
 
-        case 'PROCESSING_CANCELLED': {
+        case 'PROCESSING_CANCELED': {
           if (import.meta.env.DEV) {
             logger.log('Worker reported cancellation');
           }

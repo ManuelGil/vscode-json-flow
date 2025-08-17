@@ -38,7 +38,7 @@ export function parseCsv(content: string): object[] {
         {} as Record<string, string>,
       );
     });
-  } catch (error) {
+  } catch (error: unknown) {
     throwError('Failed to parse CSV', error);
   }
 }

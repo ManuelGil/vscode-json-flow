@@ -112,15 +112,15 @@ export const parseJSONContent = (
         return parseTsv(content);
       default: {
         // Show a localized error for unsupported file types
-        const message = l10n.t('Invalid file type!');
+        const message = l10n.t('Invalid file type');
         window.showErrorMessage(message);
         return null;
       }
     }
-  } catch (error) {
+  } catch (error: unknown) {
     const message = l10n.t('Error parsing {0}: {1}', [
       type.toUpperCase(),
-      error.message,
+      error instanceof Error ? error.message : String(error),
     ]);
 
     window.showErrorMessage(message);

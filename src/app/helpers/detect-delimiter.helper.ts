@@ -31,7 +31,7 @@ export function detectDelimiter(
     let lastCols = -1;
 
     for (const line of lines) {
-      // Avoid splitting quoted fields for now — simple heuristic only
+      // Avoid splitting quoted fields for now - simple heuristic only
       const parts = line.split(sep);
       const cols = parts.length;
       if (cols > 1) {

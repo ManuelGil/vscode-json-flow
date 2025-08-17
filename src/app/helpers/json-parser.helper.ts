@@ -16,7 +16,7 @@ import { throwError } from './error-handler.helper';
 export function parseJson(content: string): object {
   try {
     return json5.parse(content);
-  } catch (error) {
+  } catch (error: unknown) {
     throwError('Failed to parse JSON', error);
   }
 }

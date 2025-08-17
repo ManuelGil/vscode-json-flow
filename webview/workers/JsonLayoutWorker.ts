@@ -45,7 +45,7 @@ type WorkerRequestMessage =
 
 // Track active processing
 let activeRequestId: string | null = null;
-let processingCancelled = false;
+let processingCanceled = false;
 
 // String interning to reduce memory duplication across nodes/edges
 const internTable = new Map<string, string>();
@@ -117,8 +117,8 @@ function processJsonData(
     let lastProgressTime = 0;
     let lastProgressValue = -1;
     const updateProgress = (step: number, substep = 0, totalSubsteps = 1) => {
-      if (processingCancelled) {
-        throw new Error('Processing cancelled');
+      if (processingCanceled) {
+        throw new Error('Processing canceled');
       }
 
       const baseProgress = (step / totalSteps) * 100;
@@ -291,7 +291,7 @@ function processJsonData(
         const edgesSlice = edges.slice(lastEdgesSent);
         lastNodesSent = nodes.length;
         lastEdgesSent = edges.length;
-        if (!processingCancelled) {
+        if (!processingCanceled) {
           if (options?.compact) {
             const compact = packCompact(nodesSlice, edgesSlice);
             self.postMessage(
@@ -395,8 +395,8 @@ function processJsonData(
       const { data, parentId, depth, index } = current;
 
       // Cooperative cancellation checks (time-based and flag-based)
-      if (processingCancelled) {
-        throw new Error('Processing cancelled');
+      if (processingCanceled) {
+        throw new Error('Processing canceled');
       }
       const now2 = performance.now();
       if (now2 - lastCancelCheck >= cancelCheckInterval) {
@@ -546,11 +546,11 @@ function processJsonData(
     return { nodes, edges, processingTime };
   } catch (error) {
     if (
-      processingCancelled &&
+      processingCanceled &&
       error instanceof Error &&
-      error.message === 'Processing cancelled'
+      error.message === 'Processing canceled'
     ) {
-      processingCancelled = false; // Reset for next run
+      processingCanceled = false; // Reset for next run
       throw error; // Re-throw for proper handling
     }
     throw error;
@@ -625,12 +625,12 @@ self.onmessage = (event: MessageEvent<WorkerRequestMessage>) => {
 
         // Cancel any active processing
         if (activeRequestId && activeRequestId !== requestId) {
-          processingCancelled = true;
+          processingCanceled = true;
         }
 
         // Set new active request
         activeRequestId = requestId;
-        processingCancelled = false;
+        processingCanceled = false;
 
         // Process the JSON data
         try {
@@ -730,12 +730,12 @@ self.onmessage = (event: MessageEvent<WorkerRequestMessage>) => {
         } catch (error) {
           if (
             error instanceof Error &&
-            error.message === 'Processing cancelled'
+            error.message === 'Processing canceled'
           ) {
             // Notify main thread if still the active request
             if (activeRequestId === requestId) {
               self.postMessage({
-                type: 'PROCESSING_CANCELLED',
+                type: 'PROCESSING_CANCELED',
                 payload: { requestId },
               });
             }
@@ -754,10 +754,10 @@ self.onmessage = (event: MessageEvent<WorkerRequestMessage>) => {
       case 'CANCEL': {
         const { requestId } = payload;
         if (activeRequestId === requestId) {
-          processingCancelled = true;
+          processingCanceled = true;
           // Immediately notify cancellation to main thread
           self.postMessage({
-            type: 'PROCESSING_CANCELLED',
+            type: 'PROCESSING_CANCELED',
             payload: { requestId },
           });
           activeRequestId = null;

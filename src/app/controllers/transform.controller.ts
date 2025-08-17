@@ -25,7 +25,7 @@ export class TransformController {
    */
   async convertToJson(node: NodeModel | Uri): Promise<void> {
     if (!node) {
-      const message = l10n.t('Operation cancelled!');
+      const message = l10n.t('Operation canceled');
       window.showErrorMessage(message);
       return;
     }
@@ -40,7 +40,7 @@ export class TransformController {
    */
   private async convertResourceToJson(resourceUri?: Uri): Promise<void> {
     if (!resourceUri) {
-      const message = l10n.t('Operation cancelled!');
+      const message = l10n.t('Operation canceled');
       window.showErrorMessage(message);
       return;
     }
@@ -82,7 +82,9 @@ export class TransformController {
     const editor = window.activeTextEditor;
 
     if (!editor) {
-      const message = l10n.t('No active editor!');
+      const message = l10n.t(
+        'No active editor. Open a file to use this command',
+      );
       window.showErrorMessage(message);
       return;
     }
@@ -90,7 +92,7 @@ export class TransformController {
     const selection = editor.selection;
 
     if (selection.isEmpty) {
-      const message = l10n.t('No selection!');
+      const message = l10n.t('No selection. Select some text and try again');
       window.showErrorMessage(message);
       return;
     }
@@ -143,7 +145,7 @@ export class TransformController {
    */
   async convertFileToType(fileUri: Uri, targetLanguage: string): Promise<void> {
     if (!fileUri) {
-      const message = l10n.t('Operation cancelled!');
+      const message = l10n.t('Operation canceled');
       window.showErrorMessage(message);
       return;
     }
@@ -174,12 +176,12 @@ export class TransformController {
     const typeName = await window.showInputBox({
       prompt: l10n.t('Enter the name of the type or structure generated'),
       placeHolder: l10n.t(
-        'Enter the name of the type or structure, e.g., User, Post, etc.',
+        'Enter the name of the type or structure, e.g., User, Post, etc',
       ),
       value: undefined,
       validateInput: (value) => {
         if (!value) {
-          return l10n.t('The name of the type or structure is required!');
+          return l10n.t('The name of the type or structure is required');
         }
 
         return;
@@ -187,7 +189,7 @@ export class TransformController {
     });
 
     if (!typeName) {
-      const message = l10n.t('Operation cancelled!');
+      const message = l10n.t('Operation canceled');
       window.showErrorMessage(message);
       return;
     }
@@ -224,7 +226,9 @@ export class TransformController {
     const editor = window.activeTextEditor;
 
     if (!editor) {
-      const message = l10n.t('No active editor!');
+      const message = l10n.t(
+        'No active editor. Open a file to use this command',
+      );
       window.showErrorMessage(message);
       return;
     }
@@ -233,7 +237,7 @@ export class TransformController {
     const selection = editor.selection;
 
     if (selection.isEmpty) {
-      const message = l10n.t('No selection!');
+      const message = l10n.t('No selection. Select some text and try again');
       window.showErrorMessage(message);
       return;
     }
@@ -293,12 +297,12 @@ export class TransformController {
     const typeName = await window.showInputBox({
       prompt: l10n.t('Enter the name of the type or structure generated'),
       placeHolder: l10n.t(
-        'Enter the name of the type or structure, e.g., User, Post, etc.',
+        'Enter the name of the type or structure, e.g., User, Post, etc',
       ),
       value: undefined,
       validateInput: (value) => {
         if (!value) {
-          return l10n.t('The name of the type or structure is required!');
+          return l10n.t('The name of the type or structure is required');
         }
 
         return;
@@ -306,7 +310,7 @@ export class TransformController {
     });
 
     if (!typeName) {
-      const message = l10n.t('Operation cancelled!');
+      const message = l10n.t('Operation canceled');
       window.showErrorMessage(message);
       return;
     }

@@ -95,7 +95,7 @@ export class JsonController {
         uri.fsPath,
         column,
       );
-    } catch (error) {
+    } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       console.error('Error opening JSON preview:', errorMessage);
@@ -117,7 +117,9 @@ export class JsonController {
 
     // Check if there is an active editor
     if (!editor) {
-      window.showErrorMessage(l10n.t('No active editor!'));
+      window.showErrorMessage(
+        l10n.t('No active editor. Open a file to use this command'),
+      );
       return;
     }
 
@@ -125,7 +127,9 @@ export class JsonController {
     const selection = editor.selection;
 
     if (selection.isEmpty) {
-      window.showErrorMessage(l10n.t('No selection!'));
+      window.showErrorMessage(
+        l10n.t('No selection. Select some text and try again'),
+      );
       return;
     }
 
@@ -180,31 +184,31 @@ export class JsonController {
    */
   async fetchJsonData(): Promise<void> {
     const url = await window.showInputBox({
-      prompt: 'Enter the REST API URL (GET)',
-      placeHolder: 'https://api.example.com/data',
+      prompt: l10n.t('Enter the REST API URL (GET)'),
+      placeHolder: l10n.t('https://api.example.com/data'),
       validateInput: (text) => {
         if (!text.trim()) {
-          return 'URL cannot be empty';
+          return l10n.t('URL cannot be empty');
         }
 
         try {
           new URL(text);
           return null;
         } catch {
-          return 'Invalid URL format';
+          return l10n.t('Invalid URL format');
         }
       },
     });
 
     if (!url) {
-      window.showWarningMessage(l10n.t('Operation cancelled: No URL provided'));
+      window.showWarningMessage(l10n.t('Operation canceled: No URL provided'));
       return;
     }
 
     await window.withProgress(
       {
         location: ProgressLocation.Notification,
-        title: 'Fetching JSON...',
+        title: l10n.t('Fetching JSON...'),
         cancellable: false,
       },
       async () => {

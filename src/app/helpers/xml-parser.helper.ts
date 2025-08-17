@@ -17,7 +17,7 @@ export function parseXml(content: string): object {
   try {
     const parser = new XMLParser();
     return parser.parse(content);
-  } catch (error) {
+  } catch (error: unknown) {
     throwError('Failed to parse XML', error);
   }
 }

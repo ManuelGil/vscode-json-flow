@@ -37,10 +37,10 @@ export type WorkerProcessingError = {
 };
 
 /**
- * Message emitted when the current processing request is cancelled.
+ * Message emitted when the current processing request is canceled.
  */
-export type WorkerProcessingCancelled = {
-  type: 'PROCESSING_CANCELLED';
+export type WorkerProcessingCanceled = {
+  type: 'PROCESSING_CANCELED';
   payload: { requestId: string };
 };
 
@@ -67,7 +67,7 @@ export type WorkerMessage =
   | WorkerProcessingComplete
   | WorkerProcessingProgress
   | WorkerProcessingError
-  | WorkerProcessingCancelled
+  | WorkerProcessingCanceled
   | WorkerProcessingPartial
   | WorkerProcessingCompleteCompact
   | WorkerProcessingPartialCompact;
