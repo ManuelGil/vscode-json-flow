@@ -56,24 +56,6 @@ export class FeedbackProvider implements TreeDataProvider<TreeItem> {
     this.onDidChangeTreeData = this._onDidChangeTreeData.event;
   }
 
-  /**
-   * Disposes internal resources and event listeners to prevent memory leaks.
-   * This method is idempotent and safe to call multiple times.
-   *
-   * @remarks
-   * Always call this method when the provider is no longer needed to avoid resource leaks.
-   */
-  dispose(): void {
-    if (this._isDisposed) {
-      return;
-    }
-    this._isDisposed = true;
-    if (this._onDidChangeTreeData) {
-      this._onDidChangeTreeData.dispose();
-    }
-    this._onDidChangeTreeData = undefined;
-  }
-
   // -----------------------------------------------------------------
   // Methods
   // -----------------------------------------------------------------
@@ -105,6 +87,24 @@ export class FeedbackProvider implements TreeDataProvider<TreeItem> {
   }
 
   /**
+   * Disposes internal resources and event listeners to prevent memory leaks.
+   * This method is idempotent and safe to call multiple times.
+   *
+   * @remarks
+   * Always call this method when the provider is no longer needed to avoid resource leaks.
+   */
+  dispose(): void {
+    if (this._isDisposed) {
+      return;
+    }
+    this._isDisposed = true;
+    if (this._onDidChangeTreeData) {
+      this._onDidChangeTreeData.dispose();
+    }
+    this._onDidChangeTreeData = undefined;
+  }
+
+  /**
    * Returns the feedback actions for the feedback tree view as NodeModel instances.
    * @private
    * @returns Promise<NodeModel[]> Array of feedback action nodes.
@@ -120,7 +120,7 @@ export class FeedbackProvider implements TreeDataProvider<TreeItem> {
   private buildFeedbackActions(): NodeModel[] {
     const actions = [
       {
-        label: l10n.t('Extension Website'),
+        label: l10n.t('About JSON Flow'),
         icon: new ThemeIcon('globe'),
         command: {
           command: `${EXTENSION_ID}.feedback.aboutUs`,
@@ -128,19 +128,19 @@ export class FeedbackProvider implements TreeDataProvider<TreeItem> {
         },
       },
       {
-        label: l10n.t('Report a Bug'),
+        label: l10n.t('Report an Issue'),
         icon: new ThemeIcon('bug'),
         command: {
           command: `${EXTENSION_ID}.feedback.reportIssues`,
-          title: l10n.t('Report a Bug'),
+          title: l10n.t('Report an Issue'),
         },
       },
       {
-        label: l10n.t('Rate Us'),
+        label: l10n.t('Rate This Extension'),
         icon: new ThemeIcon('star-full'),
         command: {
           command: `${EXTENSION_ID}.feedback.rateUs`,
-          title: l10n.t('Rate Us'),
+          title: l10n.t('Rate This Extension'),
         },
       },
     ];

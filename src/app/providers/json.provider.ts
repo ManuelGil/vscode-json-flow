@@ -51,15 +51,12 @@ export class JSONProvider {
     isSplitView?: boolean;
     liveSyncEnabled?: boolean;
   }>();
-  static readonly onStateChanged: Event<{
-    isSplitView?: boolean;
-    liveSyncEnabled?: boolean;
-  }> = JSONProvider._onStateChanged.event;
 
   /**
    * Tracks all disposables for this provider to ensure proper cleanup of resources and event listeners.
    */
   private _disposables: Disposable[] = [];
+
   /**
    * Tracks whether the provider has been disposed to prevent double-dispose.
    */
@@ -88,7 +85,7 @@ export class JSONProvider {
       (message) => {
         switch (message?.command ?? message?.type) {
           case 'graphSelectionChanged': {
-            // TODO: Phase 1 – apply selection in the JSON editor based on route-by-indices nodeId
+            // TODO: Phase 1 - apply selection in the JSON editor based on route-by-indices nodeId
             // This is a scaffold; mapping from nodeId -> text range will be implemented in Phase 1
             // For now, we simply acknowledge the message when Live Sync is enabled.
             if (JSONProvider.liveSyncEnabled) {
@@ -131,6 +128,17 @@ export class JSONProvider {
   // -----------------------------------------------------------------
   // Methods
   // -----------------------------------------------------------------
+
+  /**
+   * Gets the event emitter for state changes (split view or live sync).
+   * @returns The event emitter for state changes.
+   */
+  static get onStateChanged(): Event<{
+    isSplitView?: boolean;
+    liveSyncEnabled?: boolean;
+  }> {
+    return JSONProvider._onStateChanged.event;
+  }
 
   /**
    * Creates and returns a new webview panel for JSON preview.
@@ -269,7 +277,7 @@ export class JSONProvider {
     if (this._panel) {
       try {
         this._panel.dispose();
-      } catch (error) {
+      } catch (error: unknown) {
         // Ignore errors if already disposed
         console.error('Error disposing webview panel:', error);
       }
@@ -281,7 +289,7 @@ export class JSONProvider {
       if (disposable && typeof disposable.dispose === 'function') {
         try {
           disposable.dispose();
-        } catch (error) {
+        } catch (error: unknown) {
           // Ignore errors if already disposed
           console.error('Error disposing disposable:', error);
         }
@@ -316,6 +324,27 @@ export class JSONProvider {
     if (JSONProvider.currentProvider) {
       JSONProvider.currentProvider._panel.webview.postMessage(message);
     }
+  }
+
+  /**
+   * Cleans up static resources used by JSONProvider to avoid leaks across
+   * activation/deactivation cycles. Resets flags and reinitializes the
+   * state change emitter to a fresh instance.
+   */
+  static shutdown(): void {
+    try {
+      JSONProvider._onStateChanged.dispose();
+    } catch {
+      // ignore
+    }
+    // Reinitialize to ensure a valid emitter on next activation
+    JSONProvider._onStateChanged = new EventEmitter<{
+      isSplitView?: boolean;
+      liveSyncEnabled?: boolean;
+    }>();
+    // Reset flags
+    JSONProvider.liveSyncEnabled = false;
+    JSONProvider.isSplitView = false;
   }
 
   /** Tell the webview to apply selection to a graph node by ID (route-by-indices) */

@@ -129,35 +129,38 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   // Watch for changes in the configuration
-  vscode.workspace.onDidChangeConfiguration((event) => {
-    const workspaceConfig = vscode.workspace.getConfiguration(
-      EXTENSION_ID,
-      resource?.uri,
-    );
+  const configChangeDisposable = vscode.workspace.onDidChangeConfiguration(
+    (event) => {
+      const workspaceConfig = vscode.workspace.getConfiguration(
+        EXTENSION_ID,
+        resource?.uri,
+      );
 
-    if (event.affectsConfiguration(`${EXTENSION_ID}.enable`, resource?.uri)) {
-      const isEnabled = workspaceConfig.get<boolean>('enable');
+      if (event.affectsConfiguration(`${EXTENSION_ID}.enable`, resource?.uri)) {
+        const isEnabled = workspaceConfig.get<boolean>('enable');
 
-      config.update(workspaceConfig);
+        config.update(workspaceConfig);
 
-      if (isEnabled) {
-        const message = vscode.l10n.t(
-          'The {0} extension is now enabled and ready to use',
-          [EXTENSION_DISPLAY_NAME],
-        );
-        vscode.window.showInformationMessage(message);
-      } else {
-        const message = vscode.l10n.t('The {0} extension is now disabled', [
-          EXTENSION_DISPLAY_NAME,
-        ]);
-        vscode.window.showInformationMessage(message);
+        if (isEnabled) {
+          const message = vscode.l10n.t(
+            'The {0} extension is now enabled and ready to use',
+            [EXTENSION_DISPLAY_NAME],
+          );
+          vscode.window.showInformationMessage(message);
+        } else {
+          const message = vscode.l10n.t('The {0} extension is now disabled', [
+            EXTENSION_DISPLAY_NAME,
+          ]);
+          vscode.window.showInformationMessage(message);
+        }
       }
-    }
 
-    if (event.affectsConfiguration(EXTENSION_ID, resource?.uri)) {
-      config.update(workspaceConfig);
-    }
-  });
+      if (event.affectsConfiguration(EXTENSION_ID, resource?.uri)) {
+        config.update(workspaceConfig);
+      }
+    },
+  );
+  context.subscriptions.push(configChangeDisposable);
 
   // -----------------------------------------------------------------
   // Get version of the extension
@@ -275,12 +278,10 @@ export async function activate(context: vscode.ExtensionContext) {
             error,
           );
         }
-        const message = vscode.l10n.t(
-          'Failed to check for new version of the extension',
-        );
+        const message = vscode.l10n.t("We couldn't check for updates");
         vscode.window.showErrorMessage(message);
       });
-  } catch (error) {
+  } catch (error: unknown) {
     // Only log fatal errors that occur during the update check process
     console.error('Fatal error while checking for extension updates:', error);
   }
@@ -507,7 +508,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
       const editor = vscode.window.activeTextEditor;
       if (!editor) {
-        vscode.window.showErrorMessage(vscode.l10n.t('No active editor!'));
+        vscode.window.showErrorMessage(
+          vscode.l10n.t('No active editor. Open a file to use this command'),
+        );
         return;
       }
 
@@ -543,10 +546,6 @@ export async function activate(context: vscode.ExtensionContext) {
     disposableEnableSplitView,
     disposableDisableSplitView,
   );
-
-  // -----------------------------------------------------------------
-  // Register Live Sync commands (Phase 1 scaffold)
-  // -----------------------------------------------------------------
 
   const liveSyncEnableCmd = vscode.commands.registerCommand(
     `${EXTENSION_ID}.view.enableLiveSync`,
@@ -841,6 +840,7 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(
+    feedbackProvider,
     feedbackTreeView,
     disposableAboutUs,
     disposableReportIssues,
@@ -880,7 +880,11 @@ export async function activate(context: vscode.ExtensionContext) {
     },
   );
 
-  context.subscriptions.push(filesTreeView, disposableRefreshList);
+  context.subscriptions.push(
+    filesProvider,
+    filesTreeView,
+    disposableRefreshList,
+  );
 
   // -----------------------------------------------------------------
   // Live Sync commands and editor listeners
@@ -906,9 +910,11 @@ export async function activate(context: vscode.ExtensionContext) {
   // Register FilesProvider and ListMethodsProvider events
   // -----------------------------------------------------------------
 
-  vscode.workspace.onDidSaveTextDocument(() => {
+  const disposableSaveListener = vscode.workspace.onDidSaveTextDocument(() => {
     filesProvider.refresh();
   });
+
+  context.subscriptions.push(disposableSaveListener);
 
   // -----------------------------------------------------------------
   // Register the JSONProvider
@@ -916,14 +922,19 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // Create a new JSONProvider
   if (vscode.window.registerWebviewPanelSerializer) {
-    vscode.window.registerWebviewPanelSerializer(JSONProvider.viewType, {
-      async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel) {
-        webviewPanel.webview.options = JSONProvider.getWebviewOptions(
-          context.extensionUri,
-        );
-        JSONProvider.revive(webviewPanel, context.extensionUri);
+    const disposableSerializer = vscode.window.registerWebviewPanelSerializer(
+      JSONProvider.viewType,
+      {
+        async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel) {
+          webviewPanel.webview.options = JSONProvider.getWebviewOptions(
+            context.extensionUri,
+          );
+          JSONProvider.revive(webviewPanel, context.extensionUri);
+        },
       },
-    });
+    );
+
+    context.subscriptions.push(disposableSerializer);
   }
 }
 
@@ -932,5 +943,23 @@ export async function activate(context: vscode.ExtensionContext) {
  * Responsible for cleaning up extension resources and disposables.
  */
 export function deactivate() {
-  // This method is intentionally left empty for extension deactivation cleanup if needed in the future.
+  // Ensure Live Sync is disabled and any active webview is disposed
+  try {
+    JSONProvider.setLiveSyncEnabled(false);
+  } catch {
+    // no-op
+  }
+  try {
+    if (JSONProvider.currentProvider) {
+      JSONProvider.currentProvider.dispose();
+    }
+  } catch {
+    // no-op
+  }
+  // Ensure static resources are fully reset between activations
+  try {
+    JSONProvider.shutdown();
+  } catch {
+    // no-op
+  }
 }
