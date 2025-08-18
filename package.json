@@ -151,6 +151,14 @@
 					],
 					"scope": "resource",
 					"description": "%jsonFlow.graph.layoutOrientation%"
+				},
+				"jsonFlow.liveSync.selectionThrottleMs": {
+					"type": "number",
+					"default": 100,
+					"minimum": 0,
+					"maximum": 1000,
+					"scope": "resource",
+					"description": "%jsonFlow.liveSync.selectionThrottleMs%"
 				}
 			}
 		},
@@ -455,6 +463,7 @@
 		"test": "vscode-test",
 		"compodoc": "npx compodoc -p tsconfig.doc.json -d compodoc --theme readthedocs -s",
 		"l10n:check": "node scripts/check-l10n.js",
+		"nls:check": "node scripts/check-nls.js",
 		"prepare": "husky",
 		"release": "release-it"
 	},

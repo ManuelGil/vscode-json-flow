@@ -31,5 +31,6 @@
 	"jsonFlow.view.disableLiveSync": "Live Sync deaktivieren",
 	"jsonFlow.menu.explorer.label": "JSON Flow",
 	"jsonFlow.menu.editor.label": "JSON Flow",
-	"jsonFlow.activitybar.title": "JSON Flow"
+	"jsonFlow.activitybar.title": "JSON Flow",
+	"jsonFlow.liveSync.selectionThrottleMs": "Verzögerung (Millisekunden) für die Editor-zu-Webview-Auswahlsynchronisierung. 0 für sofortige Aktualisierungen."
 }

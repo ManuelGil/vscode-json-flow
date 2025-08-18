@@ -25,7 +25,9 @@
 				"yaml",
 				"yml"
 			],
-			"items": { "type": "string" },
+			"items": {
+				"type": "string"
+			},
 			"description": "File type identifiers to include (e.g., extensions like json, yaml)."
 		},
 		"jsonFlow.files.excludedFilePatterns": {
@@ -37,7 +39,9 @@
 				"**/build/**",
 				"**/vendor/**"
 			],
-			"items": { "type": "string" },
+			"items": {
+				"type": "string"
+			},
 			"description": "Glob patterns to exclude from search (e.g., node_modules, dist, out, build, vendor)."
 		},
 		"jsonFlow.files.maxSearchRecursionDepth": {
@@ -63,8 +67,20 @@
 		"jsonFlow.graph.layoutOrientation": {
 			"type": "string",
 			"default": "TB",
-			"enum": ["TB", "LR", "BT", "RL"],
+			"enum": [
+				"TB",
+				"LR",
+				"BT",
+				"RL"
+			],
 			"description": "Graph layout orientation. TB (top-bottom), LR (left-right), BT (bottom-top), RL (right-left)."
+		},
+		"jsonFlow.liveSync.selectionThrottleMs": {
+			"type": "number",
+			"default": 100,
+			"minimum": 0,
+			"maximum": 1000,
+			"description": "Throttle delay (milliseconds) for editor-to-webview selection sync. Set 0 for immediate updates."
 		}
 	}
 }

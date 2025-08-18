@@ -18,6 +18,7 @@ Welcome to the **JSON Flow** usage guide! This document provides a clear, step-b
   - [5. Troubleshooting](#5-troubleshooting)
     - [Common Issues](#common-issues)
   - [6. Additional Resources](#6-additional-resources)
+  - [7. Live Sync (Preview)](#7-live-sync-preview)
 
 ---
 
@@ -114,3 +115,30 @@ If you have any questions or need support, feel free to open an issue on GitHub.
 ---
 
 Enjoy using JSON Flow to effortlessly visualize and interact with your data!
+
+---
+
+## 7. Live Sync (Preview)
+
+Live Sync mirrors selection (and, in future versions, edits) between the editor and the JSON Flow graph when Split View is active.
+
+- Toggle from the editor title bar using:
+  - JSON Flow: Enable Live Sync
+  - JSON Flow: Disable Live Sync
+
+### Selection Throttle
+
+- To coalesce rapid selection events, configure the delay:
+  - Setting key: jsonFlow.liveSync.selectionThrottleMs
+  - Type: number (range 0–1000)
+  - Default: 100
+  - 0 disables the delay
+
+You can configure it via Settings UI (search for "JSON Flow") or add to .vscode/settings.json:
+
+```jsonc
+{
+  // Delay (ms) for selection synchronization in Live Sync
+  "jsonFlow.liveSync.selectionThrottleMs": 100
+}
+```

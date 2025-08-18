@@ -114,6 +114,8 @@ Goal: open the source file and the JSON Flow webview side-by-side (two columns) 
   - Use existing index-route IDs from the worker (e.g., `root-0-2-5`).
   - No DOM attribute changes; keep current structure.
   - Manual Live Sync toggle (independent from Split View).
+  - Unified selection mapper registry: `getSelectionMapper()` lives in `src/app/helpers/selection-mapper.helper.ts`.
+  - Compatibility: `src/app/helpers/format-selection.helper.ts` acts as a shim and re-exports `getSelectionMapper`.
 
 - Message Contracts
   - Extension → Webview: `EDITOR_SELECTION_CHANGED` { indexPath, requestId?, source? }.
@@ -121,12 +123,12 @@ Goal: open the source file and the JSON Flow webview side-by-side (two columns) 
   - Bidirectional: `LIVE_SYNC_TOGGLE` { enabled }.
 
 - Extension Implementation
-  - Map indexPath ↔ JSON AST node ↔ text offsets using `jsonc-parser` (tolerant mode).
+  - Map indexPath ↔ JSON AST node ↔ text offsets using an internal tolerant JSON/JSONC mapper (no external dependency).
   - Visibility listeners; debounce/coalesce editor events.
   - Anti-loop guard using `requestId`/`source`.
 
 - APIs & Operations
-  - Compute editor ranges with `jsonc-parser.getLocation(text, offset)` and walk parents to build `indexPath`.
+  - Compute editor ranges with an internal resolver (scanner/parser tolerant of comments and trailing commas) and walk parents to build `indexPath` (route-by-indices).
   - Reveal text ranges via `vscode.window.showTextDocument` + `editor.revealRange(range, InCenterIfOutsideViewport)`.
   - Debounce selection emits (75-120 ms) and coalesce rapid updates.
 
@@ -168,13 +170,13 @@ Goal: open the source file and the JSON Flow webview side-by-side (two columns) 
   - Extension → Webview: `EDITOR_DOC_CHANGED` diff/structural notification (optional compact form).
 
 - Extension Implementation
-  - Apply minimal text edits using `jsonc-parser.modify`, preserving comments/format.
+  - TBD: apply minimal text edits using an internal edit engine (no external dependency) that aims to preserve comments/formatting; provide safe reprint fallback where needed.
   - Version checks (`document.version`) and anti-loop protections.
 
 - APIs & Operations
-  - JSON/JSONC minimal edits: `jsonc-parser.modify(text, path, value, { formattingOptions })`.
+  - JSON/JSONC minimal edits: internal edit engine (planned) with formatting options; reprint fallback when minimal preservation is not possible.
   - Apply using `WorkspaceEdit`/`TextEdit.replace(document.uri, range, newText)` with current `document.version` check.
-  - Map `indexPath` ↔ offsets using tolerant parsing (`jsonc-parser.getLocation`) or format-specific helpers.
+  - Map `indexPath` ↔ offsets using internal tolerant selection helpers or format-specific helpers.
   - Notify webview (`EDITOR_DOC_CHANGED`) with compact structural hints; debounce bursts.
 
 - Webview Implementation
@@ -182,7 +184,7 @@ Goal: open the source file and the JSON Flow webview side-by-side (two columns) 
   - Compact payload compatibility maintained; no DOM attribute changes.
 
 - Follow-up minors
-  - `setValue` (primitives) with `jsonc-parser.modify`.
+  - `setValue` (primitives) via the internal minimal edit engine (when available).
   - `add/remove` (property/item) preserving formatting/comments.
   - `renameKey` with basic validations.
   - Optional: improved conflict UX and retries.
@@ -203,15 +205,16 @@ Goal: open the source file and the JSON Flow webview side-by-side (two columns) 
 #### Multi-Format Strategy
 
 - Goals
-  - Reuse existing normalization/parsing helpers in `src/app/helpers/` (e.g., `parseJSONContent` delegates to format-specific helpers) to support Live Sync for: JSON, JSONC, JSON5, YAML/YML, TOML, INI/CFG/PROPERTIES, `.env`, XML, CSV, TSV, and HCL.
+  - Reuse existing format-specific helpers in `src/app/helpers/` to support Live Sync for: JSON, JSONC, JSON5, YAML/YML, TOML, INI/CFG/PROPERTIES, `.env`, XML, CSV, TSV, and HCL.
   - Preserve formatting/comments wherever feasible; otherwise provide configurable, explicit fallback behaviors.
 
 - Approach
   - Selection mapping always normalizes to JSON paths/index routes produced by the worker. No DOM attribute changes.
   - Editing applies a format-specific text edit strategy. For formats lacking CST-aware minimal edit support, fall back to reprint or disable by default (configurable).
+  - Implementation: per-format selection mappers located in `src/app/helpers/*-selection.helper.ts`, orchestrated by `src/app/helpers/selection-mapper.helper.ts`.
 
 - Format Support Matrix (initial)
-  - JSON/JSONC: minimal text edits via `jsonc-parser.modify` (preserves comments/format). Full support for `setValue`, `add/remove`, and `renameKey`.
+  - JSON/JSONC: Selection via internal tolerant mapper (no external dependency). Editing redesigned to use an internal minimal edit engine (WIP) with best-effort comment/format preservation; configurable reprint fallback. Scope of `setValue`, `add/remove`, and `renameKey` to follow the internal engine readiness.
   - JSON5: read tolerant via `json5.parse`. Editing modes (configurable): `off` (default), `reprint` (lossy re-serialize), `preserveIfPossible` (best-effort heuristics).
   - YAML/YML: parse via helper; apply best-effort minimal edits when possible, else `reprint`. Preserve indentation and comments where feasible.
   - TOML: limited editing; prefer key/value updates and add/remove with best-effort preservation. Option to `reprint` for complex changes.
@@ -231,6 +234,7 @@ Goal: open the source file and the JSON Flow webview side-by-side (two columns) 
 - Notes
   - All strategies maintain existing index-path mapping and compact payload contracts.
   - Lossy paths (e.g., `reprint`) will be clearly indicated in the UI copy and release notes when enabled.
+  - Import compatibility: `src/app/helpers/format-selection.helper.ts` re-exports the unified registry for existing consumers.
 
 ### 2.5.0: Theming & VS Code Tokens (High Contrast MVP)
 
@@ -343,15 +347,15 @@ Goal: open the source file and the JSON Flow webview side-by-side (two columns) 
 ### 2.8.0: Workspace Graph Phase 1 (Indexing & Navigation)
 
 - Scope
-  - Indexar y visualizar referencias entre archivos del workspace para formatos soportados (JSON/JSONC/JSON5, YAML/YML, TOML, XML, HCL, etc.).
-  - Resolver `$ref` (JSON Schema/OpenAPI), YAML anchors/aliases, referencias relativas entre documentos y módulos HCL.
-  - Navegación: Go to Definition, Find Usages, Peek Definition.
+  - Index and visualize references across workspace files for supported formats (JSON/JSONC/JSON5, YAML/YML, TOML, XML, HCL, etc.).
+  - Resolve `$ref` (JSON Schema/OpenAPI), YAML anchors/aliases, relative references between documents, and HCL modules.
+  - Navigation: Go to Definition, Find Usages, Peek Definition.
 
 - Decisions & Rules
-  - Índice incremental mantenido por la extensión (no acceso al FS desde el webview). Respeta Workspace Trust.
-  - Direccionamiento por `(uri, indexPath)`; sin mutar atributos del DOM.
-  - Reindexación con watchers del workspace, debounce y límites por tamaño/formatos soportados.
-  - Resolución remota deshabilitada por defecto; opt-in para fetches de red (con caché y timeouts).
+  - Incremental index maintained by the extension (no FS access from the webview). Respect Workspace Trust.
+  - Addressing via `(uri, indexPath)`; no DOM attribute mutations.
+  - Reindex using workspace watchers, debouncing, and limits based on size/supported formats.
+  - Remote resolution disabled by default; opt-in for network fetches (with cache and timeouts).
 
 - Message Contracts
   - Extension → Webview: `REF_GRAPH_UPDATE` { summary: { files: number; refs: number }; edges: Array<{ from: { uri: string; indexPath: string }; to: { uri: string; indexPath: string }; kind: 'ref'|'alias'|'include' }>; requestId?: string }.
@@ -359,39 +363,39 @@ Goal: open the source file and the JSON Flow webview side-by-side (two columns) 
   - Webview → Extension: `REQUEST_FIND_USAGES` { uri: string; indexPath: string; requestId?: string }.
 
 - Implementation
-  - Indexador: usar helpers de parsing por formato; detectar `$ref`/anchors/links y construir un grafo `(uri,indexPath) ↔ (uri,indexPath)`.
-  - File Watchers: `workspace.createFileSystemWatcher` por patrones; reindex parcial y coalescing.
-  - Navegación: resolver rangos de texto por `(uri,indexPath)` y abrir/revelar con VS Code APIs.
+  - Indexer: use per-format parsing helpers; detect `$ref`/anchors/links and build a graph `(uri,indexPath) ↔ (uri,indexPath)`.
+  - File Watchers: `workspace.createFileSystemWatcher` with glob patterns; partial reindexing and coalescing.
+  - Navigation: resolve text ranges by `(uri,indexPath)` and open/reveal with VS Code APIs.
 
 - APIs & Operations
-  - Comandos: `Go to Definition`, `Find Usages`, `Peek Definition`, `Reveal in Explorer`.
+  - Commands: `Go to Definition`, `Find Usages`, `Peek Definition`, `Reveal in Explorer`.
 
 - Follow-up minors
-  - Inline preview de nodos referenciados y breadcrumb cross-file.
-  - Caché persistente del índice (p. ej., `.jsonflow/index.json`) con invalidación segura.
-  - Opt-in para referencias cross-workspace o monorepos multi-root.
+  - Inline preview of referenced nodes and cross-file breadcrumb.
+  - Persistent index cache (e.g., `.jsonflow/index.json`) with safe invalidation.
+  - Opt-in for cross-workspace references or multi-root monorepos.
 
 - Acceptance Criteria
-  - Definiciones/Usos resueltos correctamente entre archivos; navegación rápida y precisa.
-  - Indexado incremental estable en workspaces grandes; sin límites duros.
-  - Paridad con el editor: rangos correctos.
+  - Definitions/Usages correctly resolved across files; fast and accurate navigation.
+  - Incremental indexing stable on large workspaces; no hard limits.
+  - Editor parity: correct ranges.
 
 - Test Matrix
-  - Proyectos con docenas de archivos enlazados; referencias circulares; objetivos ausentes; formatos mixtos.
-  - Cambios rápidos de archivos (crear/mover/borrar); reindexación con debounce sin perder consistencia.
-  - Workspace Trust deshabilitado: sin acceso a red; comportamiento degradado con mensajes claros.
+  - Projects with dozens of linked files; circular references; missing targets; mixed formats.
+  - Rapid file changes (create/move/delete); debounced reindex without losing consistency.
+  - Workspace Trust disabled: no network access; clear degraded behavior messaging.
 
 ### 2.9.0: Workspace Graph Phase 2 (Cross-file Live Sync & Overlay)
 
 - Scope
-  - Cross-file Live Sync: selección/edición en un archivo refleja inmediatamente en el grafo y abre/revela el destino si es necesario.
-  - Sincronización de selección Editor ↔ Webview entre archivos utilizando `(uri, indexPath)`.
-  - Overlay de aristas de referencia con toggle para densidad; sin mutar DOM.
+  - Cross-file Live Sync: selection/edits in one file immediately reflect in the graph and open/reveal the target if necessary.
+  - Selection synchronization Editor ↔ Webview across files using `(uri, indexPath)`.
+  - Reference edge overlay with density toggle; no DOM mutations.
 
 - Decisions & Rules
-  - Respeta Workspace Trust; sin acceso de red desde el webview. Resolución remota opt‑in (si aplica) con caché y timeouts.
-  - Direccionamiento por `(uri, indexPath)` para todas las operaciones cross-file.
-  - Anti-loop con `requestId`; debounce/coalescing para eventos de selección/edición.
+  - Respect Workspace Trust; no network access from the webview. Remote resolution opt‑in (if applicable) with cache and timeouts.
+  - Address via `(uri, indexPath)` for all cross-file operations.
+  - Anti-loop with `requestId`; debounce/coalesce selection/edit events.
 
 - Message Contracts
   - Webview → Extension: `graphSelectionChanged` { uri: string; indexPath: string; requestId?: string }.
@@ -400,28 +404,28 @@ Goal: open the source file and the JSON Flow webview side-by-side (two columns) 
   - Extension ↔ Webview: `LIVE_SYNC_TOGGLE` { enabled: boolean; requestId?: string }.
 
 - Implementation
-  - Editor → Webview: mapear selección/edición del editor a `(uri, indexPath)` y reflejar en el grafo (centrado/zoom suave; sin flicker).
-  - Webview → Editor: al seleccionar un nodo, abrir/revelar el documento destino y resaltar el rango correspondiente.
-  - Overlay: calcular aristas visibles desde el índice y renderizar overlay con controles de densidad; preferir cálculos incrementales.
+  - Editor → Webview: map editor selection/edits to `(uri, indexPath)` and reflect in the graph (center/smooth zoom; no flicker).
+  - Webview → Editor: when selecting a node, open/reveal the target document and highlight the corresponding range.
+  - Overlay: compute visible edges from the index and render the overlay with density controls; prefer incremental calculations.
 
 - APIs & Operations
-  - Comandos: `Toggle Reference Overlay`, `Reveal in Explorer`, `Sync Selection Across Files` (enable/disable).
-  - Settings: include/exclude globs para sync, límites de frecuencia (debounce), persistencia del estado del overlay.
+  - Commands: `Toggle Reference Overlay`, `Reveal in Explorer`, `Sync Selection Across Files` (enable/disable).
+  - Settings: include/exclude globs for sync, rate limits (debounce), overlay state persistence.
 
 - Follow-up minors
-  - Breadcrumb cross-file e inline previews en hover.
-  - Caché persistente del índice (p. ej., `.jsonflow/index.json`) con invalidación segura.
-  - Opt-in para referencias cross-workspace o monorepos multi-root.
+  - Cross-file breadcrumb and inline previews on hover.
+  - Persistent index cache (e.g., `.jsonflow/index.json`) with safe invalidation.
+  - Opt-in for cross-workspace references or multi-root monorepos.
 
 - Acceptance Criteria
-  - Selección/edición reflejada de forma consistente Editor ↔ Webview entre archivos; apertura/reveal sin pérdida de foco.
-  - Overlay estable, configurable y performante en repos grandes; sin mutaciones de DOM.
-  - Sin límites duros; comportamiento degradado claro con Workspace Trust deshabilitado.
+  - Selection/edits consistently reflected Editor ↔ Webview across files; open/reveal without losing focus.
+  - Stable, configurable, and performant overlay on large repos; no DOM mutations.
+  - No hard limits; clear degraded behavior with Workspace Trust disabled.
 
 - Test Matrix
-  - Cambios rápidos (crear/mover/borrar) y selección alternante; sin loops ni jitter.
-  - Multi-root/monorepo; referencias circulares; objetivos ausentes.
-  - Medición de latencia de sync; verificación de que no hay regresión de rendimiento.
+  - Rapid changes (create/move/delete) and alternating selection; no loops or jitter.
+  - Multi-root/monorepo; circular references; missing targets.
+  - Measure sync latency; verify no performance regressions.
 
 ---
 
@@ -463,12 +467,12 @@ Goal: open the source file and the JSON Flow webview side-by-side (two columns) 
   - Debounce timings: selection 75-120 ms; document change notifications 200-300 ms.
   - Coalesce rapid selection changes and only emit the last stable range.
 
-- JSONC Helpers (extension side)
-  - Parse with `jsonc-parser` in tolerant mode: `{ allowTrailingComma: true, disallowComments: false }`.
+- JSON/JSONC Helpers (extension side)
+  - Parse and locate via an internal tolerant scanner/parser (supports comments and trailing commas; optionally unquoted keys where applicable). Implemented in `src/app/helpers/jsonc-path.helper.ts` (no `jsonc-parser` dependency for selection).
   - Selection mapping:
-    - Editor → Graph: use `getLocation(text, offset)` to compute the index route; walk parents to build `root-...` path.
-    - Graph → Editor: map `indexPath` to AST node; compute `{start, end}` byte offsets for `revealRange`.
-  - Minimal edits: prefer `modify(text, path, value, { formattingOptions })` to preserve comments/formatting.
+    - Editor → Graph: compute index route via internal location resolver and build `root-...` path (route-by-indices).
+    - Graph → Editor: map `indexPath` to node ranges computed by the internal AST walk; compute `{start, end}` byte offsets for `revealRange`.
+  - Minimal edits: planned internal edit engine to preserve comments/formatting where feasible; otherwise reprint fallback. No external dependency.
 
 - Error States & UX
   - On JSON parse errors, pause Live Sync and show a small, dismissible banner in webview ("Paused due to syntax error").
@@ -497,6 +501,12 @@ Goal: open the source file and the JSON Flow webview side-by-side (two columns) 
   - `webview/hooks/useEditorSync.ts`: selection/edit sync logic.
   - `webview/services/types.ts`: message types and VS Code messaging glue.
   - `webview/types/syncMessages.ts`: Live Sync message contracts (to be added).
+
+- Core Helpers
+  - `src/app/helpers/selection-mapper.helper.ts`: unified registry `getSelectionMapper(languageId, fileName?)` to resolve the per-format mapper.
+  - `src/app/helpers/*-selection.helper.ts`: per-format selection mappers (json, yaml, csv, env, ini, toml, xml, hcl) that implement `SelectionMapper`.
+  - `src/app/helpers/jsonc-path.helper.ts`: internal tolerant parser/mapping for JSON/JSONC (comments and trailing commas) that maps between text offsets, AST nodes, and index paths.
+  - `src/app/helpers/format-selection.helper.ts`: compatibility shim that re-exports `getSelectionMapper` from the unified registry.
 
 ---
 

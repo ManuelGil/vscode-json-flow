@@ -148,6 +148,7 @@ Exploring complex data structures in code or configuration files can be cumberso
 - **Preserve Gitignore Settings**: Respects rules defined in `.gitignore` when searching or listing files. Key: `jsonFlow.files.preserveGitignoreSettings` (`boolean`, default value: `false`).
 - **Include File Path in Views**: Displays the full file path in views. Key: `jsonFlow.files.includeFilePath` (`boolean`, default value: `true`).
 - **Graph Layout Orientation**: Defines the orientation of the graph in visualizations. Key: `jsonFlow.graph.layoutOrientation` (`string`, options: `TB`, `LR`, `BT`, `RL`; default value: `TB`).
+- **Live Sync Selection Throttle (ms)**: Delay for propagating selection changes between the editor and the graph when Live Sync is enabled. Key: `jsonFlow.liveSync.selectionThrottleMs` (`number`, range: `0–1000`, default value: `100`). A value of `0` disables the delay.
 
 ### Architecture Overview
 
@@ -435,7 +436,9 @@ JSON Flow can be customized to fit your workflow. Add or edit the following sett
   "jsonFlow.files.supportsHiddenFiles": true,
   "jsonFlow.files.preserveGitignoreSettings": false,
   "jsonFlow.files.includeFilePath": true,
-  "jsonFlow.graph.layoutOrientation": "TB"
+  "jsonFlow.graph.layoutOrientation": "TB",
+  // Delay (ms) for selection synchronization in Live Sync (0–1000)
+  "jsonFlow.liveSync.selectionThrottleMs": 100
 }
 ```
 
@@ -539,11 +542,14 @@ The extension automatically selects the appropriate language based on your VS Co
 
 ### i18n maintenance
 
-Use the following scripts to validate and prune localization keys:
+Use the following scripts to validate localization keys:
 
 ```bash
 # Check used keys vs translation bundles
 npm run -s l10n:check
+  
+# Validate NLS manifest keys
+npm run -s nls:check
 ```
 
 ---
