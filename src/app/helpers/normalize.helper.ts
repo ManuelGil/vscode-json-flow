@@ -1,6 +1,23 @@
 /**
- * Helper to normalize text to a JSON string format.
- * Converts JavaScript/TypeScript-like syntax to valid JSON.
+ * Normalize text to a JSON-like string format.
+ *
+ * Converts common JavaScript/TypeScript object literal notations into a
+ * JSON/JSONC-friendly string by quoting keys and normalizing quotes/braces.
+ *
+ * @param text The raw text to normalize (e.g., copied JS/TS object literal).
+ * @param fileType The language id or type hint (e.g., 'typescript', 'json').
+ * @returns An object with:
+ * - `normalized`: the transformed JSON/JSONC-like string
+ * - `detectedType`: either the original `fileType` or 'jsonc' when JS/TS
+ *
+ * @remarks
+ * Heuristic-only. Not a full JS/TS parser. Intended to make quick pastes usable
+ * by downstream tolerant parsers. Nested edge cases (e.g., regex literals,
+ * quotes within strings) may require manual fixes.
+ *
+ * @example
+ * const { normalized } = normalizeToJsonString("const x = { foo: 'bar' }", 'typescript');
+ * // normalized => "{ \"foo\": \"bar\" }"
  */
 export function normalizeToJsonString(
   text: string,

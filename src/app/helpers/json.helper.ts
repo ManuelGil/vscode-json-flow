@@ -1,16 +1,14 @@
 import { l10n, window } from 'vscode';
 
-import {
-  parseCsv,
-  parseEnv,
-  parseHcl,
-  parseIni,
-  parseJson,
-  parseToml,
-  parseTsv,
-  parseXml,
-  parseYaml,
-} from '.';
+import { parseCsv } from './csv-parser.helper';
+import { parseEnv } from './env-parser.helper';
+import { parseHcl } from './hcl-parser.helper';
+import { parseIni } from './ini-parser.helper';
+import { parseJson } from './json-parser.helper';
+import { parseToml } from './toml-parser.helper';
+import { parseTsv } from './tsv-parser.helper';
+import { parseXml } from './xml-parser.helper';
+import { parseYaml } from './yaml-parser.helper';
 
 /**
  * List of supported file types for parsing structured data.

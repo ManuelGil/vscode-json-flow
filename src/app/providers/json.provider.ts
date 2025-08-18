@@ -3,6 +3,9 @@ import {
   Disposable,
   Event,
   EventEmitter,
+  Range,
+  Selection,
+  TextEditorRevealType,
   Uri,
   ViewColumn,
   Webview,
@@ -12,7 +15,7 @@ import {
 } from 'vscode';
 
 import { EXTENSION_DISPLAY_NAME, EXTENSION_ID } from '../configs';
-import { getNonce } from '../helpers';
+import { getNonce, getSelectionMapper } from '../helpers';
 
 /**
  * JSONProvider manages the JSON preview webview panel for the VSCode JSON Flow extension.
@@ -45,6 +48,17 @@ export class JSONProvider {
 
   /** Tracks whether Live Sync is enabled */
   static liveSyncEnabled: boolean = false;
+
+  /** Tracks whether Live Sync is paused due to an error */
+  static liveSyncPaused: boolean = false;
+  /** Optional pause reason to display in the webview */
+  static liveSyncPauseReason: string | undefined;
+
+  /** Guard to prevent feedback loop when applying selection from webview */
+  static suppressEditorSelectionEvent: boolean = false;
+
+  /** Path of the document currently previewed in the webview (fsPath) */
+  static previewedPath: string | undefined;
 
   /** Event fired when provider state changes (split view or live sync) */
   private static _onStateChanged = new EventEmitter<{
@@ -85,11 +99,59 @@ export class JSONProvider {
       (message) => {
         switch (message?.command ?? message?.type) {
           case 'graphSelectionChanged': {
-            // TODO: Phase 1 - apply selection in the JSON editor based on route-by-indices nodeId
-            // This is a scaffold; mapping from nodeId -> text range will be implemented in Phase 1
-            // For now, we simply acknowledge the message when Live Sync is enabled.
-            if (JSONProvider.liveSyncEnabled) {
-              // placeholder: no-op
+            if (!JSONProvider.liveSyncEnabled) {
+              break;
+            }
+            // Inbound guards: only accept messages from webview origin
+            if (message?.origin && message.origin !== 'webview') {
+              break;
+            }
+            // If message includes a path, it must match the previewedPath
+            const maybePath = (message as { path?: string } | undefined)?.path;
+            if (
+              typeof maybePath === 'string' &&
+              JSONProvider.previewedPath &&
+              maybePath !== JSONProvider.previewedPath
+            ) {
+              break;
+            }
+            try {
+              const nodeId = message?.nodeId as string | undefined;
+              if (!nodeId) {
+                break;
+              }
+              const editor = window.activeTextEditor;
+              if (!editor) {
+                break;
+              }
+              const doc = editor.document;
+              // Active editor guard: only apply selection if it matches the previewed file
+              const previewPath = JSONProvider.previewedPath;
+              if (!previewPath) {
+                break;
+              }
+              if (doc.uri.fsPath !== previewPath) {
+                break;
+              }
+              const text = doc.getText();
+              const mapper = getSelectionMapper(doc.languageId, doc.fileName);
+              const byteRange = mapper?.rangeFromNodeId(text, nodeId);
+              if (!byteRange) {
+                break;
+              }
+              const start = doc.positionAt(byteRange.start);
+              const end = doc.positionAt(byteRange.end);
+              JSONProvider.suppressEditorSelectionEvent = true;
+              editor.selection = new Selection(start, end);
+              editor.revealRange(
+                new Range(start, end),
+                TextEditorRevealType.InCenterIfOutsideViewport,
+              );
+            } finally {
+              // Release suppression on next tick to avoid immediate event
+              setTimeout(() => {
+                JSONProvider.suppressEditorSelectionEvent = false;
+              }, 0);
             }
             break;
           }
@@ -172,6 +234,10 @@ export class JSONProvider {
         JSONProvider.postMessageToWebview({
           command: 'liveSyncState',
           enabled: JSONProvider.liveSyncEnabled,
+          paused: JSONProvider.liveSyncPaused,
+          reason: JSONProvider.liveSyncPauseReason,
+          origin: 'extension',
+          nonce: getNonce(),
         });
       } catch {
         // ignore
@@ -203,6 +269,10 @@ export class JSONProvider {
       JSONProvider.postMessageToWebview({
         command: 'liveSyncState',
         enabled: JSONProvider.liveSyncEnabled,
+        paused: JSONProvider.liveSyncPaused,
+        reason: JSONProvider.liveSyncPauseReason,
+        origin: 'extension',
+        nonce: getNonce(),
       });
     } catch {
       // ignore
@@ -240,6 +310,10 @@ export class JSONProvider {
       JSONProvider.postMessageToWebview({
         command: 'liveSyncState',
         enabled: JSONProvider.liveSyncEnabled,
+        paused: JSONProvider.liveSyncPaused,
+        reason: JSONProvider.liveSyncPauseReason,
+        origin: 'extension',
+        nonce: getNonce(),
       });
     } catch {
       // ignore
@@ -268,6 +342,7 @@ export class JSONProvider {
     // Remove reference to the current provider
     JSONProvider.currentProvider = undefined;
     JSONProvider.isSplitView = false;
+    JSONProvider.previewedPath = undefined;
     // Reflect state in context for menus/UX
     commands.executeCommand('setContext', 'jsonFlow.splitView', false);
     // Notify listeners
@@ -311,12 +386,34 @@ export class JSONProvider {
       JSONProvider.postMessageToWebview({
         command: 'liveSyncState',
         enabled,
+        paused: JSONProvider.liveSyncPaused,
+        reason: JSONProvider.liveSyncPauseReason,
+        origin: 'extension',
+        nonce: getNonce(),
       });
     } catch {
       // ignore
     }
     // Notify listeners
     JSONProvider._onStateChanged.fire({ liveSyncEnabled: enabled });
+  }
+
+  /** Pause or resume Live Sync selection state and notify webview */
+  static setLiveSyncPaused(paused: boolean, reason?: string) {
+    JSONProvider.liveSyncPaused = paused;
+    JSONProvider.liveSyncPauseReason = paused ? reason : undefined;
+    try {
+      JSONProvider.postMessageToWebview({
+        command: 'liveSyncState',
+        enabled: JSONProvider.liveSyncEnabled,
+        paused: JSONProvider.liveSyncPaused,
+        reason: JSONProvider.liveSyncPauseReason,
+        origin: 'extension',
+        nonce: getNonce(),
+      });
+    } catch {
+      // ignore
+    }
   }
 
   /** Post a message to the active webview panel, if present */
@@ -345,6 +442,9 @@ export class JSONProvider {
     // Reset flags
     JSONProvider.liveSyncEnabled = false;
     JSONProvider.isSplitView = false;
+    JSONProvider.previewedPath = undefined;
+    JSONProvider.liveSyncPaused = false;
+    JSONProvider.liveSyncPauseReason = undefined;
   }
 
   /** Tell the webview to apply selection to a graph node by ID (route-by-indices) */
@@ -355,7 +455,14 @@ export class JSONProvider {
     JSONProvider.postMessageToWebview({
       command: 'applyGraphSelection',
       nodeId,
+      origin: 'extension',
+      nonce: getNonce(),
     });
+  }
+
+  /** Update the path of the document currently previewed (used for sync filtering) */
+  static setPreviewedPath(path?: string) {
+    JSONProvider.previewedPath = path;
   }
 
   /**

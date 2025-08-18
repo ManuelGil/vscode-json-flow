@@ -11,7 +11,7 @@ export function detectDelimiter(
 ): string {
   const lines = content
     .split('\n')
-    .map((l) => l.replace('\r', ''))
+    .map((l) => l.replace(/\r/g, ''))
     .filter((l) => l.trim().length > 0)
     .slice(0, 100); // limit for performance
 

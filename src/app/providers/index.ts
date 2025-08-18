@@ -1,3 +1,3 @@
 export * from './feedback.provider';
-export * from './files.providers';
+export * from './files.provider';
 export * from './json.provider';

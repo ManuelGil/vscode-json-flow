@@ -1,15 +1,3 @@
-/**
- * Parses CSV content into an array of objects.
- * Throws a formatted error if parsing fails.
- *
- * @param content The CSV string to parse.
- * @returns The parsed array of objects.
- * @throws Error if parsing fails.
- *
- * @example
- * const data = parseCsv('name,age\nAlice,30\nBob,25');
- * // [{ name: 'Alice', age: '30' }, { name: 'Bob', age: '25' }]
- */
 import { detectDelimiter } from './detect-delimiter.helper';
 import { throwError } from './error-handler.helper';
 
@@ -26,6 +14,7 @@ export function parseCsv(content: string): object[] {
 
     // Prefer common CSV delimiters; include tab/pipe to be robust with mislabeled files
     const delimiter = detectDelimiter(content, [',', ';', '|', '\t']);
+
     const headers = rows[0].split(delimiter);
 
     return rows.slice(1).map((row) => {
