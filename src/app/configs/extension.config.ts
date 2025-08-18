@@ -58,6 +58,11 @@ export class ExtensionConfig {
    */
   graphLayoutOrientation: 'TB' | 'LR' | 'BT' | 'RL';
 
+  /**
+   * Throttle window in milliseconds for Live Sync editor->webview selection messages.
+   */
+  liveSyncSelectionThrottleMs: number;
+
   // -----------------------------------------------------------------
   // Constructor
   // -----------------------------------------------------------------
@@ -97,6 +102,10 @@ export class ExtensionConfig {
       'graph.layoutOrientation',
       LAYOUT_DIRECTION,
     );
+    this.liveSyncSelectionThrottleMs = config.get<number>(
+      'liveSync.selectionThrottleMs',
+      100,
+    );
   }
 
   // -----------------------------------------------------------------
@@ -135,6 +144,10 @@ export class ExtensionConfig {
     this.graphLayoutOrientation = config.get<'TB' | 'LR' | 'BT' | 'RL'>(
       'graph.layoutOrientation',
       this.graphLayoutOrientation,
+    );
+    this.liveSyncSelectionThrottleMs = config.get<number>(
+      'liveSync.selectionThrottleMs',
+      this.liveSyncSelectionThrottleMs,
     );
   }
 }

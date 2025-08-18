@@ -4,8 +4,12 @@ import { relative } from 'path';
 import { env, l10n, Range, ThemeIcon, Uri, window, workspace } from 'vscode';
 
 import { EXTENSION_ID, ExtensionConfig } from '../configs';
-import { FileType, isFileTypeSupported, parseJSONContent } from '../helpers';
-import { normalizeToJsonString } from '../helpers/normalize.helper';
+import {
+  FileType,
+  isFileTypeSupported,
+  normalizeToJsonString,
+  parseJSONContent,
+} from '../helpers';
 import { NodeModel } from '../models';
 
 /**

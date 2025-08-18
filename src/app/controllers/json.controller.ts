@@ -277,6 +277,13 @@ export class JsonController {
 
     panel.title = displayName;
 
+    // Track the previewed path so selection sync can filter to the active document
+    try {
+      JSONProvider.setPreviewedPath(path);
+    } catch {
+      // ignore
+    }
+
     setTimeout(() => {
       panel.webview.postMessage({
         command: 'update',

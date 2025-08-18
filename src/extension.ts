@@ -29,6 +29,7 @@ import {
   JsonController,
   TransformController,
 } from './app/controllers';
+import { getSelectionMapper } from './app/helpers';
 import { FeedbackProvider, FilesProvider, JSONProvider } from './app/providers';
 
 /**
@@ -157,9 +158,12 @@ export async function activate(context: vscode.ExtensionContext) {
 
       if (event.affectsConfiguration(EXTENSION_ID, resource?.uri)) {
         config.update(workspaceConfig);
+        // Reflect updated throttle setting immediately
+        selectionThrottleMs = config.liveSyncSelectionThrottleMs;
       }
     },
   );
+
   context.subscriptions.push(configChangeDisposable);
 
   // -----------------------------------------------------------------
@@ -891,16 +895,112 @@ export async function activate(context: vscode.ExtensionContext) {
   // -----------------------------------------------------------------
   // (Live Sync commands are registered above)
 
+  // Throttling + de-duplication state for selection messages
+  let selectionThrottleMs = config.liveSyncSelectionThrottleMs;
+  let lastSentNodeId: string | undefined;
+  let scheduledNodeId: string | undefined;
+  let selectionThrottleTimer: NodeJS.Timeout | undefined;
+  let lastSentAt = 0;
+
+  const scheduleSendSelection = (nodeId?: string) => {
+    // Coalesce to latest nodeId
+    scheduledNodeId = nodeId;
+    if (selectionThrottleTimer) {
+      return;
+    }
+    const now = Date.now();
+    const delay = Math.max(selectionThrottleMs - (now - lastSentAt), 0);
+    selectionThrottleTimer = setTimeout(() => {
+      selectionThrottleTimer = undefined;
+      const toSend = scheduledNodeId;
+      scheduledNodeId = undefined;
+      // Skip redundant sends
+      if (toSend === lastSentNodeId) {
+        return;
+      }
+      JSONProvider.applyGraphSelection(toSend);
+      lastSentNodeId = toSend;
+      lastSentAt = Date.now();
+    }, delay);
+  };
+
   // Listen to editor selection changes and forward to webview when Live Sync is enabled
   const selectionListener = vscode.window.onDidChangeTextEditorSelection(
-    (_event) => {
+    (event) => {
       if (!JSONProvider.liveSyncEnabled) {
         return;
       }
-      // TODO(Phase 1): Map the current selection (event.selections[0]) to a route-by-indices nodeId
-      // using jsonc-parser tolerant parsing and path derivation, then:
-      // JSONProvider.applyGraphSelection(derivedNodeId);
-      // For now, we do nothing until mapping is implemented.
+      if (!JSONProvider.currentProvider) {
+        return;
+      }
+      // Avoid feedback loop when selection is being set programmatically from webview
+      if (JSONProvider.suppressEditorSelectionEvent) {
+        return;
+      }
+
+      const editor = event.textEditor;
+      const doc = editor?.document;
+      if (!editor || !doc) {
+        return;
+      }
+
+      // Only sync when the active editor's document matches the previewed path
+      const previewPath = JSONProvider.previewedPath;
+      if (!previewPath || doc.uri.fsPath !== previewPath) {
+        return;
+      }
+
+      // Only propagate explicit mouse clicks (no hover/keyboard)
+      if (
+        event.kind &&
+        event.kind !== vscode.TextEditorSelectionChangeKind.Mouse
+      ) {
+        return;
+      }
+
+      // Use multi-format selection mapper
+      const mapper = getSelectionMapper(doc.languageId, doc.fileName);
+      if (!mapper) {
+        // Pause when no mapper available for this language/file
+        JSONProvider.setLiveSyncPaused(
+          true,
+          vscode.l10n.t(
+            'Unsupported file type for Live Sync selection mapping',
+          ),
+        );
+        return;
+      }
+
+      const sel = event.selections?.[0];
+      if (!sel) {
+        return;
+      }
+      const offset = doc.offsetAt(sel.active);
+      const text = doc.getText();
+      let nodeId: string | undefined;
+      try {
+        nodeId = mapper.nodeIdFromOffset(text, offset);
+      } catch {
+        // Pause on mapping error
+        JSONProvider.setLiveSyncPaused(
+          true,
+          vscode.l10n.t('Live Sync selection mapping failed'),
+        );
+        return;
+      }
+
+      // If paused, only resume and send when we can map successfully to a nodeId
+      if (JSONProvider.liveSyncPaused) {
+        if (typeof nodeId === 'string' && nodeId.length > 0) {
+          JSONProvider.setLiveSyncPaused(false);
+        } else {
+          // Still failing to map while paused; skip sending
+          return;
+        }
+      }
+
+      // Send nodeId (undefined means clear) with throttling and dedup
+      scheduleSendSelection(nodeId);
     },
   );
 
