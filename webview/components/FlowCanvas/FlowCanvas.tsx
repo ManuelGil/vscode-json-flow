@@ -277,7 +277,7 @@ export const FlowCanvas = memo(function FlowCanvas() {
   const finalNodes = workerNodes || nodes;
   const finalEdges = workerEdges || edges;
   // Live Sync: wire selection synchronization (Phase 1)
-  useEditorSync({
+  const { paused: liveSyncPaused, pauseReason } = useEditorSync({
     selectedNodeId: selectedNode?.id ?? null,
     onApplyGraphSelection: (nodeId?: string) => {
       if (!nodeId) {
@@ -342,6 +342,27 @@ export const FlowCanvas = memo(function FlowCanvas() {
         <Background {...backgroundProps} />
         {graphReady && !isWorkerProcessing && <FlowMinimap />}
       </ReactFlow>
+      {liveSyncPaused && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 300,
+            pointerEvents: 'none',
+          }}
+        >
+          <div
+            className="mx-auto mt-2 w-fit max-w-[90%] rounded bg-yellow-100 px-3 py-1 text-yellow-900 shadow"
+            style={{ pointerEvents: 'none' }}
+            title={pauseReason || 'Live Sync paused'}
+          >
+            <strong>Live Sync paused</strong>
+            {pauseReason ? `: ${pauseReason}` : ''}
+          </div>
+        </div>
+      )}
       {!graphReady && (
         <div
           style={{

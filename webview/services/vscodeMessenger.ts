@@ -26,6 +26,9 @@ const messageSchema = z.discriminatedUnion('command', [
   z.object({
     command: z.literal('graphSelectionChanged'),
     nodeId: z.string().optional(),
+    origin: z.enum(['webview', 'extension']).optional(),
+    nonce: z.string().optional(),
+    path: z.string().optional(),
   }),
 ]);
 

@@ -22,6 +22,10 @@ export interface VscodeMessage {
   orientation?: Direction;
   path?: string;
   fileName?: string;
+  /** Optional origin marker to help prevent feedback loops */
+  origin?: 'webview' | 'extension';
+  /** Optional per-message nonce for correlation */
+  nonce?: string;
   [key: string]: unknown;
 }
 
@@ -64,8 +68,14 @@ export type IncomingVscodeMessage =
   | {
       command: 'liveSyncState';
       enabled: boolean;
+      paused?: boolean;
+      reason?: string;
+      origin?: 'webview' | 'extension';
+      nonce?: string;
     }
   | {
       command: 'applyGraphSelection';
       nodeId?: string; // route by indices, e.g., "root-0-2-5"
+      origin?: 'webview' | 'extension';
+      nonce?: string;
     };

@@ -1,8 +1,9 @@
 import type { IncomingVscodeMessage } from '@webview/services/types';
 import type { OutgoingVscodeMessage } from '@webview/services/vscodeMessenger';
-import { vscodeService } from '@webview/services/vscodeService';
+import { vscodeMessenger } from '@webview/services/vscodeMessenger';
 import vscodeSyncService from '@webview/services/vscodeSyncService';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useFlowState } from '../context/FlowContext';
 
 interface UseEditorSyncOptions {
   selectedNodeId?: string | null;
@@ -14,7 +15,17 @@ export function useEditorSync({
   onApplyGraphSelection,
 }: UseEditorSyncOptions) {
   const [liveSyncEnabled, setLiveSyncEnabled] = useState(false);
+  const [liveSyncPaused, setLiveSyncPaused] = useState(false);
+  const [pauseReason, setPauseReason] = useState<string | undefined>(undefined);
   const lastSentNodeIdRef = useRef<string | null | undefined>(undefined);
+  const lastOutNonceRef = useRef<string | undefined>(undefined);
+  const { path } = useFlowState();
+
+  const makeNonce = useCallback(
+    () =>
+      `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`,
+    [],
+  );
 
   // Listen to VSCode messages for Live Sync state and selection apply
   useEffect(() => {
@@ -22,9 +33,19 @@ export function useEditorSync({
       switch (msg.command) {
         case 'liveSyncState': {
           setLiveSyncEnabled(!!msg.enabled);
+          // Optional paused state + reason for banner UI
+          setLiveSyncPaused(!!msg.paused);
+          setPauseReason(msg.reason);
           break;
         }
         case 'applyGraphSelection': {
+          // Ignore mirrored updates originating from this webview
+          if (msg.origin === 'webview') {
+            break;
+          }
+          if (msg.nonce && msg.nonce === lastOutNonceRef.current) {
+            break;
+          }
           if (onApplyGraphSelection) {
             onApplyGraphSelection(msg.nodeId);
           }
@@ -50,21 +71,39 @@ export function useEditorSync({
     }
 
     lastSentNodeIdRef.current = selectedNodeId ?? null;
-    const msg: OutgoingVscodeMessage = {
-      command: 'graphSelectionChanged',
+    const nonce = makeNonce();
+    lastOutNonceRef.current = nonce;
+    vscodeMessenger.batchPostMessage('graphSelectionChanged', {
       nodeId: selectedNodeId ?? undefined,
-    } as OutgoingVscodeMessage;
-    vscodeService.sendMessage(msg);
-  }, [selectedNodeId, liveSyncEnabled]);
+      origin: 'webview',
+      nonce,
+      path: path || undefined,
+    });
+  }, [selectedNodeId, liveSyncEnabled, makeNonce, path]);
 
-  const forceSendSelection = useCallback((nodeId?: string) => {
-    lastSentNodeIdRef.current = nodeId ?? null;
-    const msg: OutgoingVscodeMessage = {
-      command: 'graphSelectionChanged',
-      nodeId: nodeId ?? undefined,
-    } as OutgoingVscodeMessage;
-    vscodeService.sendMessage(msg);
-  }, []);
+  const forceSendSelection = useCallback(
+    (nodeId?: string) => {
+      lastSentNodeIdRef.current = nodeId ?? null;
+      const nonce = makeNonce();
+      lastOutNonceRef.current = nonce;
+      const msg: OutgoingVscodeMessage = {
+        command: 'graphSelectionChanged',
+        nodeId: nodeId ?? undefined,
+        origin: 'webview',
+        nonce,
+        path: path || undefined,
+      } as OutgoingVscodeMessage;
+      // Send immediately for explicit interactions
+      vscodeMessenger.sendMessage(msg);
+    },
+    [makeNonce, path],
+  );
 
-  return { liveSyncEnabled, setLiveSyncEnabled, forceSendSelection };
+  return {
+    liveSyncEnabled,
+    setLiveSyncEnabled,
+    forceSendSelection,
+    paused: liveSyncPaused,
+    pauseReason,
+  };
 }
