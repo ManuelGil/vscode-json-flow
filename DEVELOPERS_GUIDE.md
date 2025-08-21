@@ -41,12 +41,27 @@ The project follows a modular organization for maintainability and scalability:
 - **Purpose:** Manages the graphical user interface built with React and React Flow.
 - **Key Subfolders:**
   - `components/`: Contains reusable UI elements, including custom controls for JSON visualization.
-  - `helpers/`: Functions for tree generation and layout management.
-  - `hooks/`: Custom React hooks for managing state and layout behavior.
+  - `services/`: Core processing services including `jsonLayoutProcessor` (TreeMap generation) and `layoutService` (entitree-flex integration).
+  - `hooks/`: Custom React hooks including `useLayoutWorkerSafe` (worker wrapper with fallback) and `useLayoutWorkerMainThread` (main thread processing).
+  - `workers/`: Web Worker implementation for intensive JSON processing with automatic fallback mechanisms.
   - `lib/`: Shared utility functions for the webview.
-  - `types/`: Shared TypeScript types.
+  - `types/`: Shared TypeScript types and interfaces for TreeMap, processing options, and results.
 
-### 3. Additional Important Folders
+### 3. Current Architecture
+
+**JSON Processing Pipeline:**
+1. **Input:** Raw JSON data from editor or file
+2. **Processing:** `jsonLayoutProcessor` converts JSON to TreeMap structure
+3. **Layout:** `layoutService` uses entitree-flex to generate React Flow nodes/edges
+4. **Rendering:** React Flow displays interactive graph with zoom, pan, and customization
+
+**Worker Integration:**
+- **Primary Mode:** Web Worker handles intensive processing for large JSON files
+- **Fallback Mode:** Main thread processing when workers fail or are unavailable
+- **Safety Features:** Circuit breaker pattern, timeout handling, progress tracking, cancellation support
+- **Configuration:** Feature flags control worker behavior and processing limits
+
+### 4. Additional Important Folders
 
 - **schemas/**: JSON schema definitions for configuration validation.
 - **l10n/**: Localization files for internationalization.

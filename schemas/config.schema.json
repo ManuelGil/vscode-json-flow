@@ -75,12 +75,12 @@
 			],
 			"description": "Graph layout orientation. TB (top-bottom), LR (left-right), BT (bottom-top), RL (right-left)."
 		},
-		"jsonFlow.liveSync.selectionThrottleMs": {
+		"jsonFlow.liveSync.throttleMs": {
 			"type": "number",
 			"default": 100,
 			"minimum": 0,
 			"maximum": 1000,
-			"description": "Throttle delay (milliseconds) for editor-to-webview selection sync. Set 0 for immediate updates."
+			"description": "Throttle duration in milliseconds for Live Sync updates."
 		}
 	}
 }

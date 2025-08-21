@@ -8,7 +8,7 @@ import {
   FileType,
   isFileTypeSupported,
   normalizeToJsonString,
-  parseJSONContent,
+  parseJsonContent,
 } from '../helpers';
 import { NodeModel } from '../models';
 
@@ -178,7 +178,7 @@ export class FilesController {
         }
 
         // Parse JSON content
-        const jsonContent = parseJSONContent(
+        const jsonContent = parseJsonContent(
           document.getText(),
           fileType as FileType,
         );
@@ -253,7 +253,7 @@ export class FilesController {
     }
 
     // Parse JSON content
-    const jsonContent = parseJSONContent(text, fileType as FileType);
+    const jsonContent = parseJsonContent(text, fileType as FileType);
 
     // Check if the JSON content is null
     if (jsonContent === null) {

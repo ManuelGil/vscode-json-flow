@@ -152,13 +152,13 @@
 					"scope": "resource",
 					"description": "%jsonFlow.graph.layoutOrientation%"
 				},
-				"jsonFlow.liveSync.selectionThrottleMs": {
+				"jsonFlow.liveSync.throttleMs": {
 					"type": "number",
 					"default": 100,
 					"minimum": 0,
 					"maximum": 1000,
 					"scope": "resource",
-					"description": "%jsonFlow.liveSync.selectionThrottleMs%"
+					"description": "%jsonFlow.liveSync.throttleMs%"
 				}
 			}
 		},

@@ -11,7 +11,7 @@ This document outlines the future direction of JSON Flow, highlighting planned i
 - Next Release (2.2.0): Split View Toggle
 - Subsequent Releases
   - 2.3.0: Live Sync Phase 1 (Selection)
-  - 2.4.0: Live Sync Phase 2 (Editing, Multi-Format)
+  - 2.4.0: Live Sync Phase 2 (Editing, Gated Safe Formats)
   - 2.5.0: Theming & VS Code Tokens (High Contrast MVP)
   - 2.6.0: Graph Search/Filter (Phased Delivery)
   - 2.7.0: Webview i18n & Language Packs
@@ -33,29 +33,54 @@ Deliver a smooth and faithful visualization of structured data, enabling reactiv
 
 ---
 
-## Current State (2.1.x)
+## Current State (2.2.x) - **Completed Architecture**
 
-- Performance & Memory:
+- **Entitree-Flex Integration (Completed):**
+  - **JSON Processing Pipeline:** JSON data → `jsonLayoutProcessor` (TreeMap generation) → `layoutService` (entitree-flex layout) → React Flow nodes/edges
+  - **Strict Separation:** `jsonLayoutProcessor` generates only TreeMap data compatible with entitree-flex structure
+  - **Type Safety:** Comprehensive TypeScript interfaces ensure compatibility between TreeMap and entitree-flex
+
+- **Worker Architecture (Completed):**
+  - **Dual-Mode Processing:** Web Worker primary with automatic main-thread fallback
+  - **Circuit Breaker Pattern:** Automatic error detection and mode switching for reliability  
+  - **Safety Features:** Configurable processing limits, timeout handling, progress tracking, cancellation support
+  - **Feature Flags:** Extension configuration controls worker behavior and processing limits
+  - **Worker Simplification:** Streamlined worker creation and error handling with reduced complexity
+    - Simplified worker instantiation with fewer fallback strategies for better maintainability
+    - Improved error handling with automatic worker recreation on failure
+    - Removed complex cooldown and job promise management in favor of simpler patterns
+    - Enhanced logging for development environments
+
+- **Performance & Memory:**
   - Incremental batch rendering with adaptive auto-tuning.
   - Compact payloads via transferable TypedArrays and preallocation/pooling to reduce GC.
   - String interning and optional preallocation hints.
   - Throttled progress updates with coalescing.
   - Iterative traversal with cycle detection and timed cancellation checks.
-- Worker Resilience:
+
+- **Worker Resilience:**
   - Per-request tokens, `PROCESSING_CANCELED`, automatic worker recreation on errors.
-- UX Compatibility:
+  - **Robust Fallback:** `useLayoutWorkerSafe` hook with automatic main-thread processing when workers fail
+  - **Error Recovery:** Circuit breaker pattern prevents continuous worker failures
+
+- **UX Compatibility:**
   - React Flow virtualization disabled to keep full DOM for integrations.
   - User interactions disabled until `graphReady` during processing.
-- Post-processing:
+
+- **Post-processing:**
   - Non-destructive; preserves 100% of nodes and edges.
-- Key Decisions:
+
+- **Key Decisions:**
   - No artificial limits for large/deep files.
   - Preserve current DOM; no extra data attributes.
   - JSONC tolerant parsing (comments and trailing commas).
+  - **TreeMap Adherence:** All data processing strictly follows entitree-flex TreeMap structure.
 
 ---
 
-## Next Release (2.2.0): Split View Toggle
+## Current Release (2.2.0): Split View Toggle - **Available**
+
+**Status:** Split View functionality is available and working.
 
 Goal: open the source file and the JSON Flow webview side-by-side (two columns) with a toolbar toggle, and return to a single column with the same toggle.
 
@@ -101,9 +126,9 @@ Goal: open the source file and the JSON Flow webview side-by-side (two columns) 
 
 ---
 
-## Subsequent Releases
+## Next Releases (Priority Order)
 
-### 2.3.0: Live Sync Phase 1 (Selection)
+### 2.3.0: Live Sync Phase 1 (Selection) - **Next Priority**
 
 - Scope
   - Bidirectional selection sync on explicit click only (no hover).
@@ -136,6 +161,11 @@ Goal: open the source file and the JSON Flow webview side-by-side (two columns) 
   - `useEditorSync` hook to apply inbound selection (already scaffolded in `FlowCanvas.tsx`).
   - Emit `graphSelectionChanged` on node click.
 
+- **Architecture Integration:**
+  - **TreeMap Compatibility:** Selection mapping works with entitree-flex TreeMap structure and existing node IDs
+  - **Worker Support:** Selection sync compatible with both worker and main-thread processing modes
+  - **Fallback Safety:** Selection continues to work when worker processing falls back to main thread
+
 - Follow-up minors
   - Editor → Graph highlight from editor selection.
   - Graph → Editor: reveal text range on node click.
@@ -153,7 +183,7 @@ Goal: open the source file and the JSON Flow webview side-by-side (two columns) 
   - Multi-group/window focus changes; rapid click bursts (debounce/coalesce verified).
   - Live Sync pause/resume on syntax errors without event loops.
 
-### 2.4.0: Live Sync Phase 2 (Editing, Multi-Format)
+### 2.4.0: Live Sync Phase 2 (Editing, Gated Safe Formats) - **Planned**
 
 - Scope
   - Immediate reactive edits (no confirmation):
@@ -163,14 +193,15 @@ Goal: open the source file and the JSON Flow webview side-by-side (two columns) 
   - Preserve formatting/comments whenever possible; avoid DOM attribute changes.
   - Index-path is the addressing scheme for all edit operations.
   - Anti-loop via `requestId`/`source`; debounce/coalesce rapid ops.
-  - Respect per-format editing modes (see Multi-Format Editing Strategy & settings).
+  - Editing is gated to safe formats only: JSON/JSONC/JSON5 and INI/CFG/PROPERTIES/.env. All other formats are selection-only in 2.4.0; edits are disabled by default.
+  - Configuration simplification: single `jsonFlow.liveSync.throttleMs` replaces granular edit/per-format settings. Deprecated keys are ignored without error to preserve backward compatibility.
 
 - Message Contracts
   - Webview → Extension: `REQUEST_APPLY_JSON_EDIT` { op, indexPath, value?, key? }.
   - Extension → Webview: `EDITOR_DOC_CHANGED` diff/structural notification (optional compact form).
 
 - Extension Implementation
-  - TBD: apply minimal text edits using an internal edit engine (no external dependency) that aims to preserve comments/formatting; provide safe reprint fallback where needed.
+  - TBD: apply minimal text edits using an internal edit engine (no external dependency) that aims to preserve comments/formatting; provide safe reprint fallback where needed (for gated formats only).
   - Version checks (`document.version`) and anti-loop protections.
 
 - APIs & Operations
@@ -193,56 +224,47 @@ Goal: open the source file and the JSON Flow webview side-by-side (two columns) 
   - Edits reflected immediately in both views with formatting/comments preserved.
   - Entity tree compatibility: edit operations are addressed by index paths only; graph updates without requiring structural DOM changes.
   - No hard limits: apply minimal text edits even on very large files; operations throttle/coalesce to avoid UI jank while maintaining correctness.
+  - Edits are only available for gated formats; non-gated formats remain selection-only with no edit affordances.
 
 - Test Matrix
-  - JSON/JSONC with comments and trailing commas; deep nesting; large files.
-  - JSON5 in each edit mode (off/reprint/preserveIfPossible).
-  - YAML/TOML limited vs reprint paths; indentation and comment preservation.
-  - INI/CFG/PROPERTIES and .env line-based edits (set/add/remove) with comments retained.
-  - CSV/TSV cell edits and row/column add/remove honoring header/delimiters/quotes.
-  - XML/HCL limited edits with reprint fallback when necessary.
+  - JSON/JSONC: minimal edits on deep/large files with comments and trailing commas.
+  - JSON5: basic edits with tolerance verification; preserve formatting where feasible.
+  - INI/CFG/PROPERTIES and .env: line-based edits (set/add/remove) preserving comments and spacing.
+  - YAML/YML, TOML, XML, CSV/TSV, HCL: verify selection-only behavior; ensure edit operations are not offered and are ignored/no-ops if triggered.
 
-#### Multi-Format Strategy
+#### Editing Gating Strategy (2.4.0)
 
 - Goals
-  - Reuse existing format-specific helpers in `src/app/helpers/` to support Live Sync for: JSON, JSONC, JSON5, YAML/YML, TOML, INI/CFG/PROPERTIES, `.env`, XML, CSV, TSV, and HCL.
-  - Preserve formatting/comments wherever feasible; otherwise provide configurable, explicit fallback behaviors.
+  - Provide reliable editing only for safe formats: JSON/JSONC/JSON5 and INI/CFG/PROPERTIES/.env.
+  - Preserve formatting/comments wherever feasible; otherwise provide explicit, safe fallback behaviors.
 
 - Approach
   - Selection mapping always normalizes to JSON paths/index routes produced by the worker. No DOM attribute changes.
-  - Editing applies a format-specific text edit strategy. For formats lacking CST-aware minimal edit support, fall back to reprint or disable by default (configurable).
+  - Editing applies a format-specific text edit strategy only for gated formats. For non-gated formats, editing is disabled in 2.4.0 (selection-only). Future support may be revisited.
   - Implementation: per-format selection mappers located in `src/app/helpers/*-selection.helper.ts`, orchestrated by `src/app/helpers/selection-mapper.helper.ts`.
 
-- Format Support Matrix (initial)
-  - JSON/JSONC: Selection via internal tolerant mapper (no external dependency). Editing redesigned to use an internal minimal edit engine (WIP) with best-effort comment/format preservation; configurable reprint fallback. Scope of `setValue`, `add/remove`, and `renameKey` to follow the internal engine readiness.
-  - JSON5: read tolerant via `json5.parse`. Editing modes (configurable): `off` (default), `reprint` (lossy re-serialize), `preserveIfPossible` (best-effort heuristics).
-  - YAML/YML: parse via helper; apply best-effort minimal edits when possible, else `reprint`. Preserve indentation and comments where feasible.
-  - TOML: limited editing; prefer key/value updates and add/remove with best-effort preservation. Option to `reprint` for complex changes.
-  - INI/CFG/PROPERTIES: line-based minimal edits keyed by section/key; preserve comments and spacing. Support `setValue`, `add/remove`; no nested rename.
-  - .env: line-based key/value edits; preserve ordering/comments and quoting.
-  - CSV/TSV: cell-level edits; add/remove row or column; preserve delimiter/quoting rules and header when present.
-  - XML: basic element/attribute edits; best-effort formatting preservation; complex structural changes may `reprint`.
-  - HCL: key/value and list/object edits based on normalization; preservation best-effort, allow `reprint` fallback.
+- Format Support Matrix (2.4.0)
+  - JSON/JSONC: Selection via internal tolerant mapper (no external dependency). Editing uses an internal minimal edit engine (WIP) with best-effort comment/format preservation; safe reprint fallback when necessary.
+  - JSON5: tolerant read via `json5.parse`. Editing allowed with best-effort preservation; safe reprint fallback when necessary.
+  - INI/CFG/PROPERTIES and .env: line-based minimal edits keyed by section/key; preserve comments and spacing. Support `setValue`, `add/remove`; no nested rename.
+  - YAML/YML, TOML, XML, CSV/TSV, HCL: editing disabled (selection-only) in 2.4.0; may be revisited in future releases.
 
-- Planned Settings (per-format editing mode)
-  - `jsonFlow.liveSync.editMode.json5`: `"off" | "reprint" | "preserveIfPossible"` (default: `"off"`).
-  - `jsonFlow.liveSync.editMode.toml`: `"limited" | "reprint"` (default: `"limited"`).
-  - `jsonFlow.liveSync.editMode.xml`: `"limited" | "reprint" | "off"` (default: `"limited"`).
-  - `jsonFlow.liveSync.editMode.csvTsv`: `"cellsOnly" | "rowsAndColumns"` (default: `"cellsOnly"`).
-  - `jsonFlow.liveSync.editMode.iniEnv`: `"lineBased" | "off"` (default: `"lineBased"`).
+- Configuration Simplification
+  - Single setting: `jsonFlow.liveSync.throttleMs` (ms) governs event debounce/coalescing across Live Sync.
+  - Deprecated: per-format editing mode settings are removed. If present in user settings, they are ignored without error for backward compatibility.
+  - Future: a `jsonFlow.liveSync.profile` may be introduced to simplify common behaviors; not part of 2.4.0 scope.
 
 - Notes
   - All strategies maintain existing index-path mapping and compact payload contracts.
-  - Lossy paths (e.g., `reprint`) will be clearly indicated in the UI copy and release notes when enabled.
+  - Lossy paths (e.g., safe reprint) will be clearly indicated in the UI copy and release notes when applicable.
   - Import compatibility: `src/app/helpers/format-selection.helper.ts` re-exports the unified registry for existing consumers.
 
-### 2.5.0: Theming & VS Code Tokens (High Contrast MVP)
+### 2.5.0: Theming & VS Code Tokens (High Contrast MVP) - **Planned**
 
 - Current state
   - Theme runtime exists in `webview/components/ThemeProvider.tsx`:
     - Uses `matchMedia('(prefers-color-scheme: dark)')` to set `html.dark` or `html.light`.
     - Custom CSS variables defined in `webview/index.css` for light (`:root`) and dark (`.dark`).
-{{ ... }}
     - Accent palettes via classes (e.g., `neutral`, `blue`, ...).
     - Limited usage of VS Code tokens (e.g., `--vscode-progressBar-background` in `Loading.css`).
     - No explicit High Contrast handling yet.
@@ -283,7 +305,7 @@ Goal: open the source file and the JSON Flow webview side-by-side (two columns) 
   - High Contrast: borders/focus/minimap visibility across dense graphs; keyboard focus rings visible.
   - No DOM mutations beyond root classes; entity tree unaffected.
 
-### 2.6.0: Graph Search/Filter (Phased Delivery)
+### 2.6.0: Graph Search/Filter (Phased Delivery) - **Planned**
 
 - Scope (MVP)
   - Quick search by label substring (case-insensitive) using existing node labels.
@@ -313,7 +335,7 @@ Goal: open the source file and the JSON Flow webview side-by-side (two columns) 
   - Index refresh on expand/collapse and mount/unmount events; no stale IDs.
   - Theming/HC visuals remain legible; performance remains smooth.
 
-### 2.7.0: Webview i18n & Language Packs
+### 2.7.0: Webview i18n & Language Packs - **Planned**
 
 - Scope
   - Integrate runtime i18n in the webview using existing `l10n/bundle.l10n.*.json` files.
@@ -344,7 +366,7 @@ Goal: open the source file and the JSON Flow webview side-by-side (two columns) 
   - Validation script flags missing/unused keys; CI passes; contribution guide clarity.
   - Multi-group/session consistency and persistence where applicable.
 
-### 2.8.0: Workspace Graph Phase 1 (Indexing & Navigation)
+### 2.8.0: Workspace Graph Phase 1 (Indexing & Navigation) - **Future**
 
 - Scope
   - Index and visualize references across workspace files for supported formats (JSON/JSONC/JSON5, YAML/YML, TOML, XML, HCL, etc.).
@@ -385,7 +407,7 @@ Goal: open the source file and the JSON Flow webview side-by-side (two columns) 
   - Rapid file changes (create/move/delete); debounced reindex without losing consistency.
   - Workspace Trust disabled: no network access; clear degraded behavior messaging.
 
-### 2.9.0: Workspace Graph Phase 2 (Cross-file Live Sync & Overlay)
+### 2.9.0: Workspace Graph Phase 2 (Cross-file Live Sync & Overlay) - **Future**
 
 - Scope
   - Cross-file Live Sync: selection/edits in one file immediately reflect in the graph and open/reveal the target if necessary.
@@ -393,7 +415,7 @@ Goal: open the source file and the JSON Flow webview side-by-side (two columns) 
   - Reference edge overlay with density toggle; no DOM mutations.
 
 - Decisions & Rules
-  - Respect Workspace Trust; no network access from the webview. Remote resolution opt‑in (if applicable) with cache and timeouts.
+  - Respect Workspace Trust; no network access from the webview. Remote resolution opt-in (if applicable) with cache and timeouts.
   - Address via `(uri, indexPath)` for all cross-file operations.
   - Anti-loop with `requestId`; debounce/coalesce selection/edit events.
 

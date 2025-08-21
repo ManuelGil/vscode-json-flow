@@ -10,7 +10,7 @@ import {
 } from 'vscode';
 
 import { EXTENSION_DISPLAY_NAME, ExtensionConfig } from '../configs';
-import { FileType, isFileTypeSupported, parseJSONContent } from '../helpers';
+import { FileType, isFileTypeSupported, parseJsonContent } from '../helpers';
 import { normalizeToJsonString } from '../helpers/normalize.helper';
 import { JSONProvider } from '../providers';
 
@@ -77,7 +77,7 @@ export class JsonController {
       }
 
       // Parse JSON content
-      const parsedJsonData = parseJSONContent(
+      const parsedJsonData = parseJsonContent(
         document.getText(),
         fileType as FileType,
       );
@@ -162,7 +162,7 @@ export class JsonController {
     }
 
     // Parse JSON content
-    const parsedJsonData = parseJSONContent(text, fileType as FileType);
+    const parsedJsonData = parseJsonContent(text, fileType as FileType);
 
     // Check if the JSON content is null
     if (parsedJsonData === null) {
@@ -231,7 +231,7 @@ export class JsonController {
             ? await response.json()
             : await response.text();
 
-          const parsedJsonData = parseJSONContent(
+          const parsedJsonData = parseJsonContent(
             typeof data === 'string' ? data : JSON.stringify(data),
             'json',
           );

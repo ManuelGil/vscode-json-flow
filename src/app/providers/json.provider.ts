@@ -25,6 +25,7 @@ import { getNonce, getSelectionMapper } from '../helpers';
  * @example
  * JSONProvider.createPanel(extensionUri);
  */
+/* biome-ignore lint/style/useNamingConvention: Allow acronym class name used across extension APIs */
 export class JSONProvider {
   // -----------------------------------------------------------------
   // Properties
@@ -46,21 +47,66 @@ export class JSONProvider {
    */
   static isSplitView: boolean = false;
 
-  /** Tracks whether Live Sync is enabled */
+  /**
+   * Tracks whether Live Sync is enabled
+   */
   static liveSyncEnabled: boolean = false;
 
-  /** Tracks whether Live Sync is paused due to an error */
+  /**
+   * Tracks whether Live Sync is paused due to an error
+   */
   static liveSyncPaused: boolean = false;
-  /** Optional pause reason to display in the webview */
+
+  /**
+   * Optional pause reason to display in the webview
+   */
   static liveSyncPauseReason: string | undefined;
 
-  /** Guard to prevent feedback loop when applying selection from webview */
+  /**
+   * Tracks the last time a worker health check was successful
+   * Used to detect and recover from worker failures
+   */
+  static lastWorkerHealthCheckTime: number | undefined;
+
+  /**
+   * Number of consecutive worker health check failures
+   */
+  static workerHealthCheckFailures: number = 0;
+
+  /**
+   * Maximum allowed time (ms) between successful worker health checks
+   * If exceeded, will trigger recovery actions
+   */
+  static workerHealthCheckThresholdMs: number = 10000; // 10 seconds default
+
+  /**
+   * Guard to prevent feedback loop when applying selection from webview
+   */
   static suppressEditorSelectionEvent: boolean = false;
 
-  /** Path of the document currently previewed in the webview (fsPath) */
+  /**
+   * Optional throttle duration from host to align webview batching
+   */
+  static hostThrottleMs: number | undefined;
+
+  /**
+   * Extension configuration that should be synchronized with the webview
+   */
+  static configState: Record<string, unknown> = {};
+
+  /**
+   * Last applied nodeId from inbound message to de-duplicate
+   */
+  static lastAppliedNodeId: string | undefined;
+
+  /**
+   * Path of the document currently previewed in the webview (fsPath)
+   */
   static previewedPath: string | undefined;
 
-  /** Event fired when provider state changes (split view or live sync) */
+  /**
+   * Event fired when provider state changes (split view or live sync)
+   */
   private static _onStateChanged = new EventEmitter<{
     isSplitView?: boolean;
     liveSyncEnabled?: boolean;
@@ -75,6 +121,12 @@ export class JSONProvider {
    * Tracks whether the provider has been disposed to prevent double-dispose.
    */
   private _isDisposed: boolean = false;
+
+  /**
+   * Tracks whether the webview HTML has been initialized to avoid reloading
+   * the entire webview on reveal/focus changes, which causes flicker.
+   */
+  private _htmlInitialized: boolean = false;
 
   // -----------------------------------------------------------------
   // Constructor
@@ -94,30 +146,65 @@ export class JSONProvider {
     // Dispose resources when the panel is closed.
     this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
 
+    // Start health check monitoring system
+    this._initializeHealthCheckSystem();
+
     // Listen for messages from the webview (extend as needed for interactivity).
     this._panel.webview.onDidReceiveMessage(
       (message) => {
         switch (message?.command ?? message?.type) {
+          case 'healthCheck': {
+            // Immediately respond to health check pings with a pong
+            if (message.type === 'ping') {
+              // Record successful health check
+              JSONProvider.lastWorkerHealthCheckTime = Date.now();
+              JSONProvider.workerHealthCheckFailures = 0;
+
+              this._panel.webview.postMessage({
+                command: 'healthCheck',
+                type: 'pong',
+                timestamp: JSONProvider.lastWorkerHealthCheckTime,
+                id: message.id,
+                origin: 'extension',
+              });
+            }
+            break;
+          }
           case 'graphSelectionChanged': {
             if (!JSONProvider.liveSyncEnabled) {
               break;
             }
-            // Inbound guards: only accept messages from webview origin
+            // Inbound guards: only accept messages from webview origin.
+            // For backward compatibility with 2.2.1, we still accept messages when origin is omitted,
+            // but we log a warning to encourage explicit origin usage going forward.
             if (message?.origin && message.origin !== 'webview') {
               break;
             }
-            // If message includes a path, it must match the previewedPath
+            if (!message?.origin) {
+              console.warn(
+                '[JSON Flow] Inbound selection message without origin; accepting for compatibility',
+              );
+            }
+            // If message includes a path, it must match the previewedPath, with Windows-insensitive comparison.
             const maybePath = (message as { path?: string } | undefined)?.path;
-            if (
-              typeof maybePath === 'string' &&
-              JSONProvider.previewedPath &&
-              maybePath !== JSONProvider.previewedPath
-            ) {
-              break;
+            if (typeof maybePath === 'string' && JSONProvider.previewedPath) {
+              const a = maybePath;
+              const b = JSONProvider.previewedPath;
+              const samePath =
+                process.platform === 'win32'
+                  ? a.toLowerCase() === b.toLowerCase()
+                  : a === b;
+              if (!samePath) {
+                break;
+              }
             }
             try {
               const nodeId = message?.nodeId as string | undefined;
               if (!nodeId) {
+                break;
+              }
+              // De-duplication: ignore if the same nodeId was just applied from a previous inbound message.
+              if (JSONProvider.lastAppliedNodeId === nodeId) {
                 break;
               }
               const editor = window.activeTextEditor;
@@ -147,6 +234,7 @@ export class JSONProvider {
                 new Range(start, end),
                 TextEditorRevealType.InCenterIfOutsideViewport,
               );
+              JSONProvider.lastAppliedNodeId = nodeId;
             } finally {
               // Release suppression on next tick to avoid immediate event
               setTimeout(() => {
@@ -181,6 +269,13 @@ export class JSONProvider {
         JSONProvider._onStateChanged.fire({
           isSplitView: JSONProvider.isSplitView,
         });
+
+        // BUGFIX v2.3.2: Ensure worker health check is performed when panel becomes visible
+        // This helps recover from potential worker issues when the panel is hidden/shown
+        if (this._panel.visible) {
+          // Schedule a health check ping
+          this._scheduleWorkerHealthCheck();
+        }
       },
       null,
       this._disposables,
@@ -213,10 +308,6 @@ export class JSONProvider {
     column: ViewColumn = ViewColumn.One,
   ): WebviewPanel {
     if (JSONProvider.currentProvider) {
-      JSONProvider.currentProvider._panel.webview.postMessage({
-        command: 'clear',
-      });
-
       JSONProvider.currentProvider._panel.reveal(column);
       JSONProvider.isSplitView = column === ViewColumn.Beside;
       // Reflect split state in context for menus/UX
@@ -236,6 +327,7 @@ export class JSONProvider {
           enabled: JSONProvider.liveSyncEnabled,
           paused: JSONProvider.liveSyncPaused,
           reason: JSONProvider.liveSyncPauseReason,
+          throttleMs: JSONProvider.hostThrottleMs,
           origin: 'extension',
           nonce: getNonce(),
         });
@@ -260,6 +352,9 @@ export class JSONProvider {
       'jsonFlow.splitView',
       JSONProvider.isSplitView,
     );
+
+    // Sync initial configuration state with the new webview
+    JSONProvider.syncConfigState();
     // Notify listeners
     JSONProvider._onStateChanged.fire({
       isSplitView: JSONProvider.isSplitView,
@@ -271,6 +366,7 @@ export class JSONProvider {
         enabled: JSONProvider.liveSyncEnabled,
         paused: JSONProvider.liveSyncPaused,
         reason: JSONProvider.liveSyncPauseReason,
+        throttleMs: JSONProvider.hostThrottleMs,
         origin: 'extension',
         nonce: getNonce(),
       });
@@ -312,6 +408,7 @@ export class JSONProvider {
         enabled: JSONProvider.liveSyncEnabled,
         paused: JSONProvider.liveSyncPaused,
         reason: JSONProvider.liveSyncPauseReason,
+        throttleMs: JSONProvider.hostThrottleMs,
         origin: 'extension',
         nonce: getNonce(),
       });
@@ -370,8 +467,8 @@ export class JSONProvider {
         }
       }
     }
-
-    this._disposables = undefined;
+    // Keep a valid array reference to avoid undefined access after disposal.
+    this._disposables = [];
   }
 
   // -----------------------------------------------------------------
@@ -388,6 +485,7 @@ export class JSONProvider {
         enabled,
         paused: JSONProvider.liveSyncPaused,
         reason: JSONProvider.liveSyncPauseReason,
+        throttleMs: JSONProvider.hostThrottleMs,
         origin: 'extension',
         nonce: getNonce(),
       });
@@ -408,6 +506,7 @@ export class JSONProvider {
         enabled: JSONProvider.liveSyncEnabled,
         paused: JSONProvider.liveSyncPaused,
         reason: JSONProvider.liveSyncPauseReason,
+        throttleMs: JSONProvider.hostThrottleMs,
         origin: 'extension',
         nonce: getNonce(),
       });
@@ -416,10 +515,93 @@ export class JSONProvider {
     }
   }
 
+  /**
+   * Attempts to recover from a failed Live Sync state by resetting the paused state
+   * and notifying the webview. Can be called periodically or in response to user actions.
+   *
+   * @returns True if recovery was attempted, false if not needed (not in paused state)
+   */
+  static tryRecoverLiveSync(): boolean {
+    // If not paused, no recovery needed
+    if (!JSONProvider.liveSyncPaused) {
+      return false;
+    }
+
+    try {
+      // Reset the pause state
+      JSONProvider.liveSyncPaused = false;
+      JSONProvider.liveSyncPauseReason = undefined;
+
+      // Notify webview of recovered state
+      JSONProvider.postMessageToWebview({
+        command: 'liveSyncState',
+        enabled: JSONProvider.liveSyncEnabled,
+        paused: false,
+        reason: undefined,
+        throttleMs: JSONProvider.hostThrottleMs,
+        origin: 'extension',
+        nonce: getNonce(),
+      });
+
+      return true;
+    } catch {
+      // If recovery fails, restore paused state
+      JSONProvider.liveSyncPaused = true;
+      return false;
+    }
+  }
+
   /** Post a message to the active webview panel, if present */
   static postMessageToWebview(message: unknown) {
     if (JSONProvider.currentProvider) {
       JSONProvider.currentProvider._panel.webview.postMessage(message);
+    }
+  }
+
+  /**
+   * Updates the configuration state and synchronizes it with the webview
+   * This should be called whenever relevant extension configuration changes
+   *
+   * @param config Configuration object with settings to synchronize
+   * @param broadcast Whether to broadcast to the webview immediately
+   */
+  static updateConfigState(
+    config: Record<string, unknown>,
+    broadcast = true,
+  ): void {
+    // Merge the new config with existing state
+    JSONProvider.configState = { ...JSONProvider.configState, ...config };
+
+    if (broadcast && JSONProvider.currentProvider) {
+      try {
+        JSONProvider.postMessageToWebview({
+          command: 'configUpdate',
+          config: JSONProvider.configState,
+          origin: 'extension',
+          nonce: getNonce(),
+        });
+      } catch {
+        // ignore transmission errors
+      }
+    }
+  }
+
+  /**
+   * Sends the full current configuration state to the webview
+   * Useful when a webview is first created or reconnected
+   */
+  static syncConfigState(): void {
+    if (JSONProvider.currentProvider) {
+      try {
+        JSONProvider.postMessageToWebview({
+          command: 'configSync',
+          config: JSONProvider.configState,
+          origin: 'extension',
+          nonce: getNonce(),
+        });
+      } catch {
+        // ignore transmission errors
+      }
     }
   }
 
@@ -445,6 +627,11 @@ export class JSONProvider {
     JSONProvider.previewedPath = undefined;
     JSONProvider.liveSyncPaused = false;
     JSONProvider.liveSyncPauseReason = undefined;
+    JSONProvider.hostThrottleMs = undefined;
+    JSONProvider.lastAppliedNodeId = undefined;
+    JSONProvider.lastWorkerHealthCheckTime = undefined;
+    JSONProvider.workerHealthCheckFailures = 0;
+    JSONProvider.configState = {};
   }
 
   /** Tell the webview to apply selection to a graph node by ID (route-by-indices) */
@@ -462,7 +649,134 @@ export class JSONProvider {
 
   /** Update the path of the document currently previewed (used for sync filtering) */
   static setPreviewedPath(path?: string) {
+    // If the previewed path changes, clear lastAppliedNodeId so we don't suppress
+    // the first selection on the new document due to de-duplication.
+    const prev = JSONProvider.previewedPath;
     JSONProvider.previewedPath = path;
+    if (prev !== path) {
+      JSONProvider.lastAppliedNodeId = undefined;
+    }
+  }
+
+  /**
+   * Initializes the health check monitoring system for the worker
+   * Sets up periodic health checks and recovery mechanisms
+   */
+  private _initializeHealthCheckSystem(): void {
+    // Initialize last health check time to now
+    JSONProvider.lastWorkerHealthCheckTime = Date.now();
+    JSONProvider.workerHealthCheckFailures = 0;
+
+    // Schedule first health check
+    this._scheduleWorkerHealthCheck();
+
+    // Set up periodic health check monitoring (every 5 seconds)
+    const healthMonitorId = setInterval(() => {
+      // Check if panel is still active
+      if (!this._panel || this._isDisposed) {
+        clearInterval(healthMonitorId);
+        return;
+      }
+
+      // If visible, verify worker health
+      if (this._panel.visible) {
+        this._verifyWorkerHealth();
+      }
+    }, 5000);
+
+    // Ensure health monitor is disposed with provider
+    this._disposables.push({
+      dispose: () => clearInterval(healthMonitorId),
+    });
+  }
+
+  /**
+   * Schedules a worker health check by sending a ping message
+   * This proactively checks if the worker is responsive
+   */
+  private _scheduleWorkerHealthCheck(): void {
+    // Only send if panel is active and visible
+    if (!this._panel || !this._panel.visible || this._isDisposed) {
+      return;
+    }
+
+    try {
+      // Send ping with unique ID to verify worker responsiveness
+      this._panel.webview.postMessage({
+        command: 'healthCheck',
+        type: 'ping',
+        timestamp: Date.now(),
+        id: `hc-${Date.now()}`,
+        origin: 'extension',
+      });
+    } catch (error) {
+      console.warn('Worker health check failed:', error);
+      // Record failure
+      JSONProvider.workerHealthCheckFailures += 1;
+    }
+  }
+
+  /**
+   * Verifies worker health by checking time since last successful health check
+   * Triggers recovery actions if necessary
+   */
+  private _verifyWorkerHealth(): void {
+    const now = Date.now();
+    const lastCheck = JSONProvider.lastWorkerHealthCheckTime || 0;
+
+    // If last check is too old, worker might be unresponsive
+    if (now - lastCheck > JSONProvider.workerHealthCheckThresholdMs) {
+      console.warn(
+        `Worker health check threshold exceeded: ${now - lastCheck}ms since last response`,
+      );
+
+      // Increment failure count
+      JSONProvider.workerHealthCheckFailures += 1;
+
+      // Recovery actions based on failure count
+      if (JSONProvider.workerHealthCheckFailures >= 3) {
+        // After multiple failures, try more aggressive recovery
+        this._attemptWorkerRecovery();
+      } else {
+        // First attempt: just try another health check
+        this._scheduleWorkerHealthCheck();
+      }
+    } else {
+      // Worker seems healthy, schedule next check
+      this._scheduleWorkerHealthCheck();
+    }
+  }
+
+  /**
+   * Attempts to recover from worker failures using increasingly aggressive strategies
+   */
+  private _attemptWorkerRecovery(): void {
+    console.warn(
+      `Attempting worker recovery after ${JSONProvider.workerHealthCheckFailures} failures`,
+    );
+
+    try {
+      // First, try to reset the worker state with a reset message
+      this._panel.webview.postMessage({
+        command: 'resetWorker',
+        origin: 'extension',
+      });
+
+      // If failures persist beyond a threshold, try refreshing the webview
+      if (JSONProvider.workerHealthCheckFailures >= 5) {
+        console.warn('Worker recovery: refreshing webview HTML...');
+
+        // Force HTML reload
+        this._htmlInitialized = false;
+        this._update();
+
+        // Reset failure counter
+        JSONProvider.workerHealthCheckFailures = 0;
+        JSONProvider.lastWorkerHealthCheckTime = Date.now();
+      }
+    } catch (error) {
+      console.error('Worker recovery attempt failed:', error);
+    }
   }
 
   /**
@@ -471,8 +785,13 @@ export class JSONProvider {
    */
   private _update(): void {
     const webview = this._panel.webview;
-
+    // Only set the HTML once per panel lifecycle to prevent full reloads
+    // when the panel gains focus or is revealed again.
+    if (this._htmlInitialized) {
+      return;
+    }
     this._panel.webview.html = this._getHtmlForWebview(webview);
+    this._htmlInitialized = true;
   }
 
   /**
@@ -492,6 +811,22 @@ export class JSONProvider {
       Uri.joinPath(this._extensionUri, './dist', 'main.css'),
     );
 
+    // Base URI for resolving relative paths (e.g., workers) to the dist/ folder
+    const baseUri = webview.asWebviewUri(
+      Uri.joinPath(this._extensionUri, './dist'),
+    );
+
+    // Resolve the JsonLayoutWorker script within the built assets folder using a stable name
+    // Vite is configured to emit worker assets under assets/[name].js
+    const jsonLayoutWorkerUri = webview.asWebviewUri(
+      Uri.joinPath(
+        this._extensionUri,
+        './dist',
+        'assets',
+        'JsonLayoutWorker-worker.js',
+      ),
+    );
+
     // Use a nonce to only allow a specific script to be run.
     const nonce = getNonce();
 
@@ -507,11 +842,24 @@ export class JSONProvider {
     -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'none'; font-src ${webview.cspSource} data:; style-src ${webview.cspSource} 'unsafe-inline';
-      img-src ${webview.cspSource} data:; script-src 'nonce-${nonce}' ${webview.cspSource}; worker-src ${webview.cspSource} blob:;"
+      content="
+        default-src 'none';
+        font-src ${webview.cspSource} data:;
+        style-src ${webview.cspSource} 'unsafe-inline';
+        img-src ${webview.cspSource} data:;
+        script-src 'nonce-${nonce}' ${webview.cspSource};
+        worker-src ${webview.cspSource};
+        connect-src ${webview.cspSource};
+        frame-ancestors 'none';
+        form-action 'none';
+        base-uri ${webview.cspSource};
+        manifest-src 'none';
+      "
     />
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <base href="${baseUri}/" />
 
     <link href="${styleMainUri}" rel="stylesheet" />
 
@@ -519,6 +867,39 @@ export class JSONProvider {
   </head>
   <body>
     <div id="root"></div>
+    <!-- Expose worker URL for safe instantiation inside the webview -->
+    <script nonce="${nonce}">
+      // Make the worker URL available to the webview JS (read-only exposure)
+      window.__jsonFlowWorkerUrl = ${JSON.stringify(jsonLayoutWorkerUri.toString())};
+      
+      // Add health check handler to listen for extension health check requests
+      window.addEventListener('message', (event) => {
+        const message = event.data;
+        // Handle health check pings from extension
+        if (message && (message.command === 'healthCheck' || message.type === 'ping')) {
+          // Respond immediately to confirm worker connectivity
+          const vscode = acquireVsCodeApi();
+          vscode.postMessage({
+            command: 'healthCheck',
+            type: 'pong',
+            timestamp: Date.now(),
+            id: message.id,
+            origin: 'webview'
+          });
+        }
+        // Handle worker reset requests
+        if (message && message.command === 'resetWorker') {
+          try {
+            // Tell any active worker instances to clean up
+            window.dispatchEvent(new CustomEvent('json-worker-reset', {
+              detail: { reason: 'extension-requested-reset' }
+            }));
+          } catch (e) {
+            console.error('Worker reset failed:', e);
+          }
+        }
+      });
+    </script>
     <script type="module" nonce="${nonce}" src="${scriptUri}"></script>
     <script nonce="${nonce}">
       window.addEventListener('contextmenu', (e) => {

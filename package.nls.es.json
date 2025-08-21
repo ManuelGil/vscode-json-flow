@@ -1,12 +1,13 @@
 {
 	"jsonFlow.enable": "Habilitar JSON Flow",
-	"jsonFlow.files.includedFilePatterns": "Patrones glob para incluir. Por defecto se incluyen formatos comunes: json, jsonc, json5, yaml/yml, xml, csv/tsv, toml, ini, properties, env, hcl, cfg.",
+	"jsonFlow.files.includedFilePatterns": "Identificadores de tipo de archivo (extensiones) para incluir. Por defecto se incluyen formatos comunes: json, jsonc, json5, yaml/yml, xml, csv/tsv, toml, ini, properties, env, hcl, cfg.",
 	"jsonFlow.files.excludedFilePatterns": "Patrones glob para excluir. Por defecto: node_modules, dist, out, build, vendor.",
 	"jsonFlow.files.maxSearchRecursionDepth": "Profundidad máxima de recursión para la búsqueda de archivos. Por defecto: `0`.",
 	"jsonFlow.files.supportsHiddenFiles": "Admite archivos ocultos. Por defecto: `true`.",
 	"jsonFlow.files.preserveGitignoreSettings": "Mantener la configuración de `.gitignore`. Por defecto: `false`.",
 	"jsonFlow.files.includeFilePath": "Mostrar la ruta del archivo junto al nombre en la lista de archivos generados.",
 	"jsonFlow.graph.layoutOrientation": "Orientación del gráfico. TB (arriba-abajo), LR (izquierda-derecha), BT (abajo-arriba), RL (derecha-izquierda).",
+	"jsonFlow.liveSync.throttleMs": "Duración de la espera en milisegundos para las actualizaciones de Live Sync.",
 	"jsonFlow.files.refreshList": "Actualizar lista",
 	"jsonFlow.files.openFile": "Abrir archivo",
 	"jsonFlow.files.convertToJson": "Convertir a formato JSON",
@@ -31,6 +32,5 @@
 	"jsonFlow.view.disableLiveSync": "Desactivar Live Sync",
 	"jsonFlow.menu.explorer.label": "JSON Flow",
 	"jsonFlow.menu.editor.label": "JSON Flow",
-	"jsonFlow.activitybar.title": "JSON Flow",
-	"jsonFlow.liveSync.selectionThrottleMs": "Retardo de limitación (milisegundos) para la sincronización de selección del editor a la vista web. Establecer 0 para actualizaciones inmediatas."
+	"jsonFlow.activitybar.title": "JSON Flow"
 }

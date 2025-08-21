@@ -23,27 +23,48 @@ interface AstNode {
  * Compute a route-by-indices nodeId (e.g., "root-0-2-5") from a cursor offset in the given JSON/JSONC text.
  * Returns undefined if the offset cannot be mapped.
  */
+/**
+ * Compute a route-by-indices nodeId (e.g., "root-0-2-5") from a cursor offset in the given JSON/JSONC text.
+ * Returns undefined if the offset cannot be mapped.
+ *
+ * @param text - The JSON/JSONC text to parse and map
+ * @param offset - The cursor offset (position) in the text
+ * @returns A node ID string or undefined if mapping fails
+ */
 export function nodeIdFromOffset(
   text: string,
   offset: number,
 ): string | undefined {
   try {
+    // Validate inputs
     if (!text || offset == null) {
       return undefined;
     }
+
+    // Ensure offset is within valid text range
     const clamped = Math.max(0, Math.min(offset, text.length));
+
+    // Parse JSON with tolerance for comments and other JSONC features
     const root = parseJsonTolerant(text);
     if (!root) {
+      // If parsing fails but we have some text, return root as a fallback
       return 'root';
     }
 
+    // Find path at the cursor position
     const jsonPath = findJsonPathAtOffset(root, clamped);
+
+    // Convert standard JSON path to an indices-based path
     const indices = jsonPath ? indicesPathFromJsonPath(root, jsonPath) : [];
     if (!indices) {
       return undefined;
     }
+
+    // Format as a hyphen-separated path starting with 'root'
     return ['root', ...indices].join('-');
   } catch {
+    // Enhanced error handling - we don't expose errors to callers
+    // but we could log them or capture metrics in the future
     return undefined;
   }
 }
@@ -51,57 +72,79 @@ export function nodeIdFromOffset(
 /**
  * Given a route-by-indices nodeId, return the byte range [start,end) of the corresponding node.
  * Returns undefined if it cannot be resolved.
+ *
+ * @param text - The JSON/JSONC text to parse
+ * @param nodeId - The node identifier in the format "root-0-2-5"
+ * @returns An object with start and end offsets, or undefined if mapping fails
  */
 export function rangeFromNodeId(
   text: string,
   nodeId: string,
 ): { start: number; end: number } | undefined {
   try {
+    // Validate basic inputs
     if (!text || !nodeId) {
       return undefined;
     }
+
+    // Parse the JSON text tolerantly (allows comments, trailing commas, etc.)
     const root = parseJsonTolerant(text);
     if (!root) {
       return undefined;
     }
 
+    // Split the node ID into parts and validate the format
     const parts = nodeId.split('-');
     if (!parts.length || parts[0] !== 'root') {
       return undefined;
     }
+
+    // Convert parts to numeric indices, skipping the 'root' part
     const indices = parts
       .slice(1)
       .filter((p) => p.length > 0)
       .map((p) => Number.parseInt(p, 10));
 
+    // Navigate through the AST following the indices path
     let current: AstNode | undefined = root;
     for (const idx of indices) {
+      // Validate current node can have children
       if (!current || !Array.isArray(current.children)) {
         return undefined;
       }
+
+      // Navigate based on node type
       if (current.type === 'object') {
+        // For objects, find property at index, then get its value
         const propNode = current.children[idx];
         if (!propNode) {
           return undefined;
         }
+        // Property node has key (0) and value (1) children
         const valueNode = propNode.children?.[1] ?? propNode;
         current = valueNode;
       } else if (current.type === 'array') {
+        // For arrays, directly get element at index
         const child = current.children[idx];
         if (!child) {
           return undefined;
         }
         current = child;
       } else {
+        // Not a container type, can't continue navigation
         return undefined;
       }
     }
 
+    // Final validation of the target node
     if (!current) {
       return undefined;
     }
+
+    // Return the node's text range
     return { start: current.offset, end: current.offset + current.length };
   } catch {
+    // Enhanced error handling with potential for future diagnostics
     return undefined;
   }
 }

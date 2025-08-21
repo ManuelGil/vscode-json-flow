@@ -43,7 +43,7 @@ export const entitreeSettings = {
   targetsAccessor: 'children',
 };
 
-export type Direction = 'TB' | 'LR';
+export type Direction = 'TB' | 'LR' | 'BT' | 'RL';
 
 export type StateType = {
   json: Record<string, Tree> | null;

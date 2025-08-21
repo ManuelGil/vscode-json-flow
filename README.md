@@ -25,7 +25,7 @@
 - **Split View + Live Sync (roadmap)** to mirror selection and edits between editor and graph.
 - **Works across VS Code family** (VS Code, VSCodium, WindSurf, Cursor) on Windows, macOS, and Linux.
 - **Private by design**: 100% local processing, no telemetry, no uploads.
-- **Built for scale**: Incremental rendering for large/complex data; no hard size caps.
+- **Built for scale**: entitree-flex layout engine; Web Worker processing with intelligent main-thread fallback; circuit breaker safety guards; no hard size caps.
 
 ---
 
@@ -73,6 +73,9 @@ Exploring complex data structures in code or configuration files can be cumberso
   - [Split View](#split-view)
     - [Editor Toolbar and Status Bar](#editor-toolbar-and-status-bar)
     - [Views \& Activity Bar](#views--activity-bar)
+  - [Live Sync (Selection)](#live-sync-selection)
+    - [Unified Live Sync Throttle](#unified-live-sync-throttle)
+    - [Diagnostics](#diagnostics)
   - [Requirements \& Limitations](#requirements--limitations)
   - [Security \& Privacy](#security--privacy)
   - [Commands \& Menus](#commands--menus)
@@ -95,6 +98,7 @@ Exploring complex data structures in code or configuration files can be cumberso
   - [Usage Guidelines](#usage-guidelines)
   - [Troubleshooting](#troubleshooting)
   - [Internationalization (i18n)](#internationalization-i18n)
+    - [i18n maintenance](#i18n-maintenance)
   - [Additional Resources](#additional-resources)
   - [Community Invitation](#community-invitation)
   - [Contributing](#contributing)
@@ -113,6 +117,8 @@ Exploring complex data structures in code or configuration files can be cumberso
 
 - **Node-Based Graphs**: Render complex, nested structures as interactive graphs using XYFlow and React.
 - **Dynamic Exploration**: Zoom, pan, expand/collapse nodes, and inspect properties in real time.
+- **Entitree-Flex Integration**: All JSON data processed through TreeMap format for consistent graph structure and reliable layout calculation.
+- **Worker-First Processing**: Intensive JSON processing handled by Web Workers with automatic fallback to main thread for reliability.
 
 ### File Conversion & Management
 
@@ -141,14 +147,14 @@ Exploring complex data structures in code or configuration files can be cumberso
 ### Advanced Configuration
 
 - **Enable/Disable Extension**: Activate or deactivate the extension. Key: `jsonFlow.enable` (`boolean`, default value: `true`).
-- **Included File Patterns**: Specify glob patterns to include files in operations. Key: `jsonFlow.files.includedFilePatterns` (`array`, default value: `["json", "jsonc", ...]`).
+- **Included File Patterns**: Specify file type identifiers (extensions) to include in operations. Key: `jsonFlow.files.includedFilePatterns` (`array`, default value: `["json", "jsonc", ...]`).
 - **Excluded File Patterns**: Specify glob patterns to exclude files or folders. Key: `jsonFlow.files.excludedFilePatterns` (`array`, default value: `["**/node_modules/**", ...]`).
 - **Max Search Recursion Depth**: Limits the maximum folder depth when searching for files. Key: `jsonFlow.files.maxSearchRecursionDepth` (`number`, default value: `0` for unlimited).
 - **Supports Hidden Files**: Includes hidden files (such as `.env`) in searches and views. Key: `jsonFlow.files.supportsHiddenFiles` (`boolean`, default value: `true`).
 - **Preserve Gitignore Settings**: Respects rules defined in `.gitignore` when searching or listing files. Key: `jsonFlow.files.preserveGitignoreSettings` (`boolean`, default value: `false`).
 - **Include File Path in Views**: Displays the full file path in views. Key: `jsonFlow.files.includeFilePath` (`boolean`, default value: `true`).
 - **Graph Layout Orientation**: Defines the orientation of the graph in visualizations. Key: `jsonFlow.graph.layoutOrientation` (`string`, options: `TB`, `LR`, `BT`, `RL`; default value: `TB`).
-- **Live Sync Selection Throttle (ms)**: Delay for propagating selection changes between the editor and the graph when Live Sync is enabled. Key: `jsonFlow.liveSync.selectionThrottleMs` (`number`, range: `0–1000`, default value: `100`). A value of `0` disables the delay.
+- **Live Sync Throttle (ms)**: Throttle duration for Live Sync updates. Key: `jsonFlow.liveSync.throttleMs` (`number`, default value: `100`, min: `0`, max: `1000`).
 
 ### Architecture Overview
 
@@ -171,9 +177,10 @@ JSON Flow is organized into two main parts: the **Extension Backend** and the **
 **How it works:**
 
 1. When you open a supported file, the backend parses and processes the data.
-2. The backend sends the processed data to the frontend webview.
-3. The frontend displays the data as an interactive graph, allowing you to explore and manipulate it visually.
-4. User actions in the UI (such as conversion or export) are communicated back to the backend when necessary.
+2. **JSON Processing Pipeline**: Raw JSON → `jsonLayoutProcessor` (TreeMap generation) → `layoutService` (entitree-flex layout) → React Flow nodes/edges
+3. **Worker Architecture**: Primary processing via Web Worker with automatic main-thread fallback for reliability
+4. The frontend displays the data as an interactive graph with incremental rendering for large datasets.
+5. User actions in the UI (such as conversion or export) are communicated back to the backend when necessary.
 
 This separation ensures that all data processing is secure and local, while the user interface remains fast and highly interactive.
 
@@ -213,7 +220,12 @@ flowchart TB
 - **src/app/providers/**: Decoupled and documented providers for files, feedback, and JSON views, following SOLID principles.
 - **src/app/controllers/**: Business logic separated from the UI and providers.
 - **src/app/configs/**: Centralized configuration and constants.
-- **webview/**: Reactive UI (Atomic Design), hooks, and providers for the webview.
+- **webview/**: Reactive UI with current architecture:
+  - **services/**: `jsonLayoutProcessor` (TreeMap generation), `layoutService` (entitree-flex integration)
+  - **hooks/**: `useLayoutWorkerSafe` (worker wrapper with fallback), `useLayoutWorkerMainThread` (main thread processing)
+  - **workers/**: Web Worker implementation with automatic fallback mechanisms
+  - **components/**: React components following Atomic Design principles
+  - **types/**: TypeScript interfaces for TreeMap, processing options, and worker communication
 - **Barrel Files**: Use of `index.ts` for consistent and clean imports in helpers and other modules.
 
 #### Design Philosophy
@@ -419,6 +431,8 @@ For more detailed guidance, see the [Official Documentation](https://github.com/
 
 JSON Flow can be customized to fit your workflow. Add or edit the following settings in your `.vscode/settings.json` file:
 
+For quick guidance, see [Settings Tips](USAGE_GUIDE.md#settings-tips) and the [Appendix: Configuration Reference](USAGE_GUIDE.md#8-appendix-configuration-reference) in the Usage Guide.
+
 ```jsonc
 {
   "jsonFlow.enable": true,
@@ -437,8 +451,7 @@ JSON Flow can be customized to fit your workflow. Add or edit the following sett
   "jsonFlow.files.preserveGitignoreSettings": false,
   "jsonFlow.files.includeFilePath": true,
   "jsonFlow.graph.layoutOrientation": "TB",
-  // Delay (ms) for selection synchronization in Live Sync (0–1000)
-  "jsonFlow.liveSync.selectionThrottleMs": 100
+  "jsonFlow.liveSync.throttleMs": 100
 }
 ```
 
@@ -449,7 +462,8 @@ JSON Flow can be customized to fit your workflow. Add or edit the following sett
 - `jsonFlow.files.maxSearchRecursionDepth` (`number`, default: `0`): Controls the maximum depth for recursive file searches. A value of `0` disables the limit.
 - `jsonFlow.files.supportsHiddenFiles` (`boolean`, default: `true`): Determines if hidden files (e.g., `.env`) are included in search results and file views.
 - `jsonFlow.files.preserveGitignoreSettings` (`boolean`, default: `false`): Toggles whether to respect rules defined in `.gitignore` files during file searches.
-- `jsonFlow.graph.layoutOrientation` (`string`, default: `"TB"`): Orientation of the graph. Options: `TB` (top-bottom), `LR` (left-right), `BT` (bottom-top), `RL` (right-left`).
+- `jsonFlow.graph.layoutOrientation` (`string`, default: `"TB"`): Orientation of the graph. Options: `TB` (top-bottom), `LR` (left-right), `BT` (bottom-top), `RL` (right-left).
+- `jsonFlow.liveSync.throttleMs` (`number`, default: `100`): Throttle in milliseconds for Live Sync updates (0-1000).
 
 After editing, restart your editor to apply changes.
 
@@ -547,7 +561,7 @@ Use the following scripts to validate localization keys:
 ```bash
 # Check used keys vs translation bundles
 npm run -s l10n:check
-  
+
 # Validate NLS manifest keys
 npm run -s nls:check
 ```

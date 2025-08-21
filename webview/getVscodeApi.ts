@@ -13,9 +13,18 @@ interface VsCodeApi {
 let vscodeInstance: VsCodeApi | null = null;
 
 /**
- * Gets the VSCode API instance, implementing the singleton pattern
- * Creates a new instance only on first call and returns cached instance thereafter
- * @returns VSCode API instance
+ * Gets the VSCode API instance, implementing the singleton pattern.
+ * Creates a new instance only on first call and returns cached instance thereafter.
+ * Provides mock implementation in development mode for testing.
+ *
+ * @returns VSCode API instance with postMessage, setState, and getState methods
+ * @throws {Error} When VSCode API is not available and not in development mode
+ *
+ * @example
+ * ```typescript
+ * const vscode = getVscodeApi();
+ * vscode.postMessage({ type: 'ready' });
+ * ```
  */
 export function getVscodeApi() {
   if (import.meta.env.DEV) {

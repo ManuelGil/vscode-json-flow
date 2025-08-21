@@ -6,7 +6,7 @@ import {
 } from 'quicktype-core';
 import { l10n, Range, Uri, window, workspace } from 'vscode';
 
-import { FileType, isFileTypeSupported, parseJSONContent } from '../helpers';
+import { FileType, isFileTypeSupported, parseJsonContent } from '../helpers';
 import { normalizeToJsonString } from '../helpers/normalize.helper';
 import { NodeModel } from '../models';
 
@@ -59,7 +59,7 @@ export class TransformController {
       }
     }
 
-    const jsonContent = parseJSONContent(
+    const jsonContent = parseJsonContent(
       document.getText(),
       fileType as FileType,
     );
@@ -123,7 +123,7 @@ export class TransformController {
       }
     }
 
-    const jsonContent = parseJSONContent(text, fileType as FileType);
+    const jsonContent = parseJsonContent(text, fileType as FileType);
 
     if (jsonContent === null) {
       return;
@@ -164,7 +164,7 @@ export class TransformController {
       }
     }
 
-    const jsonContent = parseJSONContent(
+    const jsonContent = parseJsonContent(
       document.getText(),
       fileType as FileType,
     );
@@ -286,7 +286,7 @@ export class TransformController {
     }
 
     // Parse JSON content
-    const jsonContent = parseJSONContent(text, fileType as FileType);
+    const jsonContent = parseJsonContent(text, fileType as FileType);
 
     // Check if the JSON content is null
     if (jsonContent === null) {

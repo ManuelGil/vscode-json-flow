@@ -29,6 +29,12 @@ This document provides an overview of the key design decisions made during the d
   - The `webview/` folder encapsulates the graphical interface using React and React Flow.
   - This ensures a modular and modern front-end experience for JSON visualization.
 
+- **Entitree-Flex Integration:**
+  - **JSON Processing Pipeline:** JSON data → TreeMap generation → entitree-flex layout → React Flow nodes/edges
+  - **Strict Separation:** `jsonLayoutProcessor` generates only TreeMap data, `layoutService` handles all React Flow conversions
+  - **Worker Architecture:** Dual-mode processing with automatic fallback from Web Worker to main thread
+  - **Type Safety:** Comprehensive TypeScript interfaces ensure compatibility between TreeMap and entitree-flex structures
+
 ---
 
 ## 2. Key Features
@@ -36,10 +42,17 @@ This document provides an overview of the key design decisions made during the d
 - **JSON Visualization:**
   - Users can preview JSON structures graphically through the webview.
   - Decisions were made to integrate React Flow for an intuitive drag-and-drop experience.
+  - **TreeMap Architecture:** All JSON data is processed into TreeMap format compatible with entitree-flex before visualization
 
 - **Customizable Controls:**
   - The webview includes controls for zooming, rotating layouts, and toggling interactivity.
   - These features enhance usability for diverse workflows.
+
+- **Robust Processing System:**
+  - **Worker-First Approach:** Web Workers handle intensive JSON processing with automatic main-thread fallback
+  - **Circuit Breaker Pattern:** Automatic error detection and mode switching for reliability
+  - **Safety Features:** Configurable processing limits, timeout handling, and cancellation support
+  - **Incremental Rendering:** Large datasets are processed and rendered progressively
 
 ---
 
@@ -80,6 +93,12 @@ This document provides an overview of the key design decisions made during the d
 
 - **Graphical Complexity:**
   - Advanced visual features, like conditional rendering, were deprioritized for the initial release to ensure stability.
+
+- **Architecture Constraints:**
+  - **Strict TreeMap Adherence:** All data must conform to entitree-flex TreeMap structure for consistency
+  - **Processing Overhead:** Dual-mode worker/main-thread architecture adds complexity but ensures reliability
+  - **Memory vs Performance:** Incremental processing trades memory efficiency for responsive UI updates
+  - **Type Safety vs Flexibility:** Comprehensive TypeScript typing provides safety at the cost of some dynamic features
 
 ---
 

@@ -75,10 +75,10 @@ export const isFileTypeSupported = (value: unknown): value is FileType => {
  * Delegates parsing to modular helpers. Centralizes error handling for consistency.
  *
  * @example
- * const obj = parseJSONContent('{ "foo": 1 }', 'json');
+ * const obj = parseJsonContent('{ "foo": 1 }', 'json');
  * if (obj) { console.log(obj.foo); }
  */
-export const parseJSONContent = (
+export const parseJsonContent = (
   content: string,
   type: FileType,
 ): object | null => {

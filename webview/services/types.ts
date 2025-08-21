@@ -70,6 +70,7 @@ export type IncomingVscodeMessage =
       enabled: boolean;
       paused?: boolean;
       reason?: string;
+      throttleMs?: number;
       origin?: 'webview' | 'extension';
       nonce?: string;
     }

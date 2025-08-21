@@ -1,38 +1,38 @@
 import * as yaml from 'yaml';
 import type { SelectionMapper, TextRange } from '../interfaces';
 
-type YRange = [number, number, number];
-type YWithRange = { range?: YRange };
-type YWithItems = { items?: unknown[] };
-type YWithPairs = { pairs?: unknown[] };
-type YWithType = { type?: unknown };
-type YWithValue = { value?: unknown };
-type YWithKey = { key?: { value?: unknown } };
+type YamlRange = [number, number, number];
+type YamlWithRange = { range?: YamlRange };
+type YamlWithItems = { items?: unknown[] };
+type YamlWithPairs = { pairs?: unknown[] };
+type YamlWithType = { type?: unknown };
+type YamlWithValue = { value?: unknown };
+type YamlWithKey = { key?: { value?: unknown } };
 
 // Type predicates and safe accessors for YAML CST/AST nodes
-function isMap(node: unknown): node is YWithType & YWithItems {
-  return Boolean(node) && (node as YWithType).type === 'MAP';
+function isMap(node: unknown): node is YamlWithType & YamlWithItems {
+  return Boolean(node) && (node as YamlWithType).type === 'MAP';
 }
-function isSeq(node: unknown): node is YWithType & YWithItems {
-  return Boolean(node) && (node as YWithType).type === 'SEQ';
+function isSeq(node: unknown): node is YamlWithType & YamlWithItems {
+  return Boolean(node) && (node as YamlWithType).type === 'SEQ';
 }
 function getItems(node: unknown): unknown[] | undefined {
-  const items = (node as YWithItems | undefined)?.items;
+  const items = (node as YamlWithItems | undefined)?.items;
   return Array.isArray(items) ? items : undefined;
 }
 function getPairs(node: unknown): unknown[] | undefined {
-  const pairs = (node as YWithPairs | undefined)?.pairs;
+  const pairs = (node as YamlWithPairs | undefined)?.pairs;
   return Array.isArray(pairs) ? pairs : undefined;
 }
 function getValue(node: unknown): unknown | undefined {
-  return (node as YWithValue | undefined)?.value;
+  return (node as YamlWithValue | undefined)?.value;
 }
 function getKeyValue(node: unknown): unknown | undefined {
-  return (node as YWithKey | undefined)?.key?.value;
+  return (node as YamlWithKey | undefined)?.key?.value;
 }
-function getRange(node: unknown): YRange | undefined {
-  const r = (node as YWithRange | undefined)?.range;
-  return Array.isArray(r) ? (r as YRange) : undefined;
+function getRange(node: unknown): YamlRange | undefined {
+  const r = (node as YamlWithRange | undefined)?.range;
+  return Array.isArray(r) ? (r as YamlRange) : undefined;
 }
 
 /**
