@@ -8,7 +8,8 @@ import {
   TreeItem,
 } from 'vscode';
 
-import { FilesController } from '../controllers';
+import type { FilesController } from '../controllers';
+import { logger } from '../helpers';
 import { NodeModel } from '../models';
 
 /**
@@ -205,7 +206,12 @@ export class FilesProvider implements TreeDataProvider<NodeModel> {
       });
 
     if (errors.length > 0) {
-      console.error('Errors processing file types:', errors);
+      logger.error('Failed to process some file types', undefined, {
+        errorCount: errors.length,
+        errors: errors.map((err: unknown) =>
+          err instanceof Error ? err.message : String(err),
+        ),
+      });
     }
     const nodes = results.filter(
       (node): node is NodeModel => node !== undefined,

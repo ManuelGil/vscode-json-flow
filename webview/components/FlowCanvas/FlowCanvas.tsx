@@ -267,11 +267,23 @@ export const FlowCanvas = memo(function FlowCanvas() {
     lastDirectionRef.current = flowData.orientation;
 
     if (import.meta.env.DEV) {
-      logger.log('Processing dataset');
+      logger.log('[FlowCanvas] ===== STARTING NEW PROCESSING =====');
+      logger.log('[FlowCanvas] JSON data changed, triggering worker processing', {
+        orientation: flowData.orientation,
+        dataType: typeof jsonData,
+        path: flowData.path,
+        fileName: flowData.fileName,
+      });
     }
     processWithWorker(jsonData, {
       direction: flowData.orientation === 'TB' ? 'vertical' : 'horizontal',
+      compact: true, // Enable compact transferable payloads for better performance
+      autoTune: true, // Enable adaptive batching optimization
+      preallocate: true, // Enable preallocation hints for large datasets
     });
+    if (import.meta.env.DEV) {
+      logger.log('[FlowCanvas] Worker processing initiated');
+    }
   }, [flowData.data, flowData.orientation, isValidTree, processWithWorker]);
 
   const finalNodes = workerNodes || nodes;

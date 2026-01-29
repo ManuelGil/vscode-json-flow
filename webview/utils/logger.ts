@@ -6,6 +6,8 @@
  */
 const isDev = !!import.meta.env?.DEV;
 
+const isDebugEnabled = true;
+
 function makeLogger(method: 'log' | 'info' | 'warn' | 'error') {
   return (...args: unknown[]) => {
     if (isDev) {

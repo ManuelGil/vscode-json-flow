@@ -15,7 +15,7 @@ import {
 } from 'vscode';
 
 import { EXTENSION_DISPLAY_NAME, EXTENSION_ID } from '../configs';
-import { getNonce, getSelectionMapper } from '../helpers';
+import { getNonce, logger } from '../helpers';
 
 /**
  * JSONProvider manages the JSON preview webview panel for the VSCode JSON Flow extension.
@@ -449,9 +449,12 @@ export class JSONProvider {
     if (this._panel) {
       try {
         this._panel.dispose();
-      } catch (error: unknown) {
-        // Ignore errors if already disposed
-        console.error('Error disposing webview panel:', error);
+      } catch (error) {
+        // Log disposal error for debugging but continue cleanup
+        logger.error('Failed to dispose webview panel', error, {
+          panelTitle: this._panel?.title,
+          viewType: JSONProvider.viewType
+        });
       }
     }
 
@@ -461,9 +464,11 @@ export class JSONProvider {
       if (disposable && typeof disposable.dispose === 'function') {
         try {
           disposable.dispose();
-        } catch (error: unknown) {
-          // Ignore errors if already disposed
-          console.error('Error disposing disposable:', error);
+        } catch (error) {
+          // Log disposal error but continue with remaining disposables
+          logger.error('Failed to dispose resource', error, {
+            remainingDisposables: this._disposables.length
+          });
         }
       }
     }
@@ -811,20 +816,9 @@ export class JSONProvider {
       Uri.joinPath(this._extensionUri, './dist', 'main.css'),
     );
 
-    // Base URI for resolving relative paths (e.g., workers) to the dist/ folder
-    const baseUri = webview.asWebviewUri(
-      Uri.joinPath(this._extensionUri, './dist'),
-    );
-
-    // Resolve the JsonLayoutWorker script within the built assets folder using a stable name
-    // Vite is configured to emit worker assets under assets/[name].js
-    const jsonLayoutWorkerUri = webview.asWebviewUri(
-      Uri.joinPath(
-        this._extensionUri,
-        './dist',
-        'assets',
-        'JsonLayoutWorker-worker.js',
-      ),
+    // Convert worker path to webview URI for proper loading in VS Code webview context
+    const workerUri = webview.asWebviewUri(
+      Uri.joinPath(this._extensionUri, './dist', 'assets', 'JsonLayoutWorker-worker.js'),
     );
 
     // Use a nonce to only allow a specific script to be run.
@@ -842,19 +836,8 @@ export class JSONProvider {
     -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="
-        default-src 'none';
-        font-src ${webview.cspSource} data:;
-        style-src ${webview.cspSource} 'unsafe-inline';
-        img-src ${webview.cspSource} data:;
-        script-src 'nonce-${nonce}' ${webview.cspSource};
-        worker-src ${webview.cspSource};
-        connect-src ${webview.cspSource};
-        frame-ancestors 'none';
-        form-action 'none';
-        base-uri ${webview.cspSource};
-        manifest-src 'none';
-      "
+      content="default-src 'none'; font-src ${webview.cspSource} data:; style-src ${webview.cspSource} 'unsafe-inline';
+      img-src ${webview.cspSource} data:; script-src 'nonce-${nonce}' ${webview.cspSource}; worker-src ${webview.cspSource} blob:; connect-src ${webview.cspSource} https:;"
     />
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -867,38 +850,9 @@ export class JSONProvider {
   </head>
   <body>
     <div id="root"></div>
-    <!-- Expose worker URL for safe instantiation inside the webview -->
     <script nonce="${nonce}">
-      // Make the worker URL available to the webview JS (read-only exposure)
-      window.__jsonFlowWorkerUrl = ${JSON.stringify(jsonLayoutWorkerUri.toString())};
-      
-      // Add health check handler to listen for extension health check requests
-      window.addEventListener('message', (event) => {
-        const message = event.data;
-        // Handle health check pings from extension
-        if (message && (message.command === 'healthCheck' || message.type === 'ping')) {
-          // Respond immediately to confirm worker connectivity
-          const vscode = acquireVsCodeApi();
-          vscode.postMessage({
-            command: 'healthCheck',
-            type: 'pong',
-            timestamp: Date.now(),
-            id: message.id,
-            origin: 'webview'
-          });
-        }
-        // Handle worker reset requests
-        if (message && message.command === 'resetWorker') {
-          try {
-            // Tell any active worker instances to clean up
-            window.dispatchEvent(new CustomEvent('json-worker-reset', {
-              detail: { reason: 'extension-requested-reset' }
-            }));
-          } catch (e) {
-            console.error('Worker reset failed:', e);
-          }
-        }
-      });
+      // Inject worker URL into global scope for webview context
+      window.__VSCODE_WORKER_URL__ = '${workerUri}';
     </script>
     <script type="module" nonce="${nonce}" src="${scriptUri}"></script>
     <script nonce="${nonce}">

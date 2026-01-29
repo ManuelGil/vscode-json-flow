@@ -10,7 +10,12 @@ import {
 } from 'vscode';
 
 import { EXTENSION_DISPLAY_NAME, ExtensionConfig } from '../configs';
-import { FileType, isFileTypeSupported, parseJsonContent } from '../helpers';
+import {
+  FileType,
+  isFileTypeSupported,
+  logger,
+  parseJSONContent,
+} from '../helpers';
 import { normalizeToJsonString } from '../helpers/normalize.helper';
 import { JSONProvider } from '../providers';
 
@@ -98,7 +103,11 @@ export class JsonController {
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      console.error('Error opening JSON preview:', errorMessage);
+
+      logger.error('Failed to open JSON preview', error, {
+        uri: uri.fsPath,
+        column: column,
+      });
 
       window.showErrorMessage(
         l10n.t('Failed to open JSON preview: {0}', errorMessage),

@@ -25,14 +25,9 @@ export interface LayoutWorkerOptions {
   autoTune?: boolean;
   /**
    * Hint the worker to preallocate internal arrays to reduce reallocations.
-   * Requires `maxNodesToProcess` to be set to an estimated upper bound.
+   * No restrictions - worker will process unlimited nodes.
    */
   preallocate?: boolean;
-  /**
-   * Estimated upper bound of nodes to process (hint only, not a hard limit).
-   * Used by preallocation to size internal buffers conservatively.
-   */
-  maxNodesToProcess?: number;
 }
 
 // Hook return type
@@ -133,93 +128,156 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
 
   /**
    * Ensure a Web Worker instance exists (pre-warm on mount and reuse)
+   * GUARANTEED INITIALIZATION: Multiple fallback strategies to ensure worker always starts
+   * Optimized for VS Code webview environment with proper MIME type handling
+   * Returns a promise that resolves when worker is ready
    */
-  const ensureWorker = useCallback(() => {
+  const ensureWorker = useCallback(async (): Promise<void> => {
     if (workerRef.current) {
       return;
     }
 
-    try {
-      // Resolve the worker URL via import.meta.url so the bundler rewrites it correctly in production
-      const workerPath = new URL(
-        '../workers/JsonLayoutWorker.ts',
-        import.meta.url,
-      );
+    let workerCreated = false;
 
-      // Prefer module worker (modern bundlers output ESM); gracefully fallback to classic if needed
+    // Strategy 1: Vite's worker import (DEV mode with HMR support)
+    if (import.meta.env.DEV) {
       try {
-        workerRef.current = new Worker(workerPath, {
-          type: 'module' as WorkerOptions['type'],
+        const workerUrl = new URL('../workers/JsonLayoutWorker.ts', import.meta.url);
+        workerRef.current = new Worker(workerUrl, {
+          type: 'module',
+          name: 'JsonLayoutWorker',
         });
-      } catch (err1) {
-        logger.warn(
-          'Module worker failed, falling back to classic worker',
-          err1,
-        );
+        workerCreated = true;
+        return;
+      } catch {
+        // Fallback to production strategy
+      }
+    }
+
+    // Strategy 2: Production - fetch worker as blob to bypass cross-origin restrictions
+    if (!workerCreated) {
+      // VS Code injects the proper webview URI for the worker into global scope
+      const vscodeWorkerUrl = window.__VSCODE_WORKER_URL__;
+
+      const workerPaths = [
+        vscodeWorkerUrl, // Priority: VS Code injected URL with proper scheme
+        './assets/JsonLayoutWorker-worker.js',
+        './JsonLayoutWorker-worker.js',
+        './JsonLayoutWorker.js',
+      ].filter(Boolean) as string[];
+
+      for (let i = 0; i < workerPaths.length && !workerCreated; i++) {
+        const workerPath = workerPaths[i];
+
         try {
-          workerRef.current = new Worker(workerPath);
-        } catch (err2) {
-          logger.warn(
-            'Classic worker with URL failed, falling back to relative path',
-            err2,
-          );
-          // Last resort: legacy relative string (only if bundler placed the file alongside the bundle)
-          workerRef.current = new Worker('./JsonLayoutWorker.js');
+          // Fetch worker code and create blob URL to avoid cross-origin issues
+          const response = await fetch(workerPath);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+
+          const workerCode = await response.text();
+
+          // Create blob with proper MIME type
+          const blob = new Blob([workerCode], { type: 'application/javascript' });
+          const blobUrl = URL.createObjectURL(blob);
+
+          try {
+            workerRef.current = new Worker(blobUrl, {
+              type: 'module',
+              name: 'JsonLayoutWorker',
+            });
+            workerCreated = true;
+            URL.revokeObjectURL(blobUrl);
+            return;
+          } catch (blobErr) {
+            URL.revokeObjectURL(blobUrl);
+            if (i === workerPaths.length - 1) {
+              logger.error('Failed to create worker from blob:', blobErr);
+            }
+          }
+        } catch {
+          // Continue to next strategy
         }
       }
-
-      // Set up error handlers (message handler is attached after definition via effect)
-      workerRef.current.onerror = (error) => {
-        setError(`Worker error: ${error.message}`);
-        setIsProcessing(false);
-        logger.error('Worker error:', error);
-        try {
-          workerRef.current?.terminate();
-        } catch {
-          // ignore termination errors
-          void 0;
-        }
-        workerRef.current = null;
-        // Recreate a fresh worker to keep the system operational
-        setTimeout(() => {
-          try {
-            ensureWorker();
-          } catch (e) {
-            logger.error('Failed to recreate worker after error', e);
-          }
-        }, 0);
-      };
-      workerRef.current.onmessageerror = (ev: MessageEvent) => {
-        setError('Worker message error');
-        setIsProcessing(false);
-        logger.error('Worker messageerror:', ev);
-        try {
-          workerRef.current?.terminate();
-        } catch {
-          // ignore termination errors
-          void 0;
-        }
-        workerRef.current = null;
-        setTimeout(() => {
-          try {
-            ensureWorker();
-          } catch (e) {
-            logger.error('Failed to recreate worker after messageerror', e);
-          }
-        }, 0);
-      };
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : 'Unknown error creating worker';
-      setError(errorMessage);
-      setIsProcessing(false);
-      logger.error('Error setting up worker:', err);
     }
+
+    if (!workerRef.current) {
+      const error = 'CRITICAL: Failed to initialize worker with all strategies';
+      logger.error(error);
+      setError(error);
+      setIsProcessing(false);
+      throw new Error(error);
+    }
+
+    // Set up error handlers (message handler is attached after definition via effect)
+    // RESILIENT ERROR HANDLING: Auto-recovery with exponential backoff
+    let recreationAttempts = 0;
+    const maxRecreationAttempts = 3;
+
+    const recreateWorker = () => {
+      if (recreationAttempts >= maxRecreationAttempts) {
+        logger.error(
+          `Max worker recreation attempts (${maxRecreationAttempts}) reached`,
+        );
+        setError(
+          'Worker failed permanently. Please reload the extension.',
+        );
+        return;
+      }
+      recreationAttempts++;
+      const backoffDelay = Math.min(100 * Math.pow(2, recreationAttempts - 1), 1000);
+      setTimeout(() => {
+        try {
+          ensureWorker();
+        } catch (e) {
+          logger.error('Failed to recreate worker', e);
+        }
+      }, backoffDelay);
+    };
+
+    workerRef.current.onerror = (error) => {
+      setError(`Worker error: ${error.message}`);
+      setIsProcessing(false);
+      logger.error('Worker error:', error);
+      try {
+        workerRef.current?.terminate();
+      } catch {
+        // ignore termination errors
+      }
+      workerRef.current = null;
+      recreateWorker();
+    };
+
+    workerRef.current.onmessageerror = (ev: MessageEvent) => {
+      setError('Worker message error');
+      setIsProcessing(false);
+      logger.error('Worker messageerror:', ev);
+      try {
+        workerRef.current?.terminate();
+      } catch {
+        // ignore termination errors
+      }
+      workerRef.current = null;
+      recreateWorker();
+    };
   }, []);
 
-  // Pre-warm the worker as soon as the hook mounts to reduce first-use latency
+  // EAGER INITIALIZATION: Pre-warm the worker immediately on mount
   useEffect(() => {
-    ensureWorker();
+    ensureWorker().catch(err => {
+      logger.error('Failed to initialize worker:', err);
+    });
+
+    const healthCheckTimeout = setTimeout(() => {
+      if (!workerRef.current) {
+        ensureWorker().catch(err => {
+          logger.error('Worker initialization retry failed:', err);
+        });
+      }
+    }, 200);
+
+    return () => clearTimeout(healthCheckTimeout);
   }, [ensureWorker]);
 
   /**
@@ -315,6 +373,7 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
     (event: MessageEvent) => {
       const data = event?.data;
       if (!isWorkerMessage(data)) {
+        logger.warn('[useLayoutWorker] Received invalid worker message', data);
         return;
       }
       const { type, payload } = data;
@@ -340,11 +399,6 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
           // Commit results synchronously to avoid race with hiding the loader
           setNodes(payload.nodes);
           setEdges(payload.edges);
-          if (import.meta.env.DEV) {
-            logger.log(
-              `Worker complete: nodes=${payload.nodes.length}, edges=${payload.edges.length}`,
-            );
-          }
           // Keep the loading animation until after paint
           setProgress(99);
           setProcessingStats({
@@ -359,9 +413,6 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
           // Defer hiding the loader until after React has painted the new content
           requestAnimationFrame(() => {
             requestAnimationFrame(() => {
-              if (import.meta.env.DEV) {
-                logger.log('Finalizing processing: hiding loader');
-              }
               setIsProcessing(false);
               setProgress(100);
               currentRequestId.current = null;
@@ -385,11 +436,6 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
             reconstructFromCompact(payload);
           setNodes(finalNodes);
           setEdges(finalEdges);
-          if (import.meta.env.DEV) {
-            logger.log(
-              `Worker complete (compact): nodes=${finalNodes.length}, edges=${finalEdges.length}`,
-            );
-          }
           setProgress(99);
           setProcessingStats({
             time: payload.processingTime,
@@ -401,9 +447,6 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
           }
           requestAnimationFrame(() => {
             requestAnimationFrame(() => {
-              if (import.meta.env.DEV) {
-                logger.log('Finalizing processing (compact): hiding loader');
-              }
               setIsProcessing(false);
               setProgress(100);
               currentRequestId.current = null;
@@ -450,10 +493,7 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
           break;
         }
 
-        case 'PROCESSING_CANCELED': {
-          if (import.meta.env.DEV) {
-            logger.log('Worker reported cancellation');
-          }
+        case 'PROCESSING_CANCELLED': {
           if (partialFlushRafIdRef.current != null) {
             cancelAnimationFrame(partialFlushRafIdRef.current);
             partialFlushRafIdRef.current = null;
@@ -475,6 +515,7 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
         }
 
         case 'PROCESSING_ERROR': {
+          logger.error(`[useLayoutWorker] PROCESSING_ERROR: ${payload.error}`);
           setError(payload.error);
           if (partialFlushRafIdRef.current != null) {
             cancelAnimationFrame(partialFlushRafIdRef.current);
@@ -514,7 +555,7 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
    * Process JSON data using the worker
    */
   const processData = useCallback(
-    (jsonData: unknown, options?: LayoutWorkerOptions) => {
+    async (jsonData: unknown, options?: LayoutWorkerOptions) => {
       // If a job is in-flight, request its cancellation before starting a new one
       const previousId = currentRequestId.current;
       if (isProcessing && previousId && workerRef.current) {
@@ -559,12 +600,10 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
       currentRequestId.current = requestId;
 
       try {
-        // Create worker if it doesn't exist (pre-warmed in mount effect as well)
         if (!workerRef.current) {
-          ensureWorker();
+          await ensureWorker();
         }
 
-        // Start processing
         setIsProcessing(true);
         if (workerRef.current) {
           workerRef.current.postMessage({

@@ -29,7 +29,7 @@ import {
   JsonController,
   TransformController,
 } from './app/controllers';
-import { getSelectionMapper } from './app/helpers';
+import { logger } from './app/helpers';
 import { FeedbackProvider, FilesProvider, JSONProvider } from './app/providers';
 
 /**
@@ -274,20 +274,21 @@ export async function activate(context: vscode.ExtensionContext) {
         }
       })
       .catch((error: unknown) => {
-        if (error instanceof Error) {
-          console.error('Error checking for updates:', error.message);
-        } else {
-          console.error(
-            'An unknown error occurred while checking for updates:',
-            error,
-          );
-        }
-        const message = vscode.l10n.t("We couldn't check for updates");
+        logger.error('Failed to check for extension updates', error, {
+          extensionId: EXTENSION_ID,
+          publisher: EXTENSION_USER_PUBLISHER,
+        });
+        const message = vscode.l10n.t(
+          'Failed to check for new version of the extension',
+        );
         vscode.window.showErrorMessage(message);
       });
-  } catch (error: unknown) {
-    // Only log fatal errors that occur during the update check process
-    console.error('Fatal error while checking for extension updates:', error);
+  } catch (error) {
+    // Log fatal errors that occur during the update check process
+    logger.error('Fatal error initializing extension update check', error, {
+      extensionId: EXTENSION_ID,
+      phase: 'initialization',
+    });
   }
 
   // -----------------------------------------------------------------
