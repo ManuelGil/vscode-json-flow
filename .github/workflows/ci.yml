@@ -1,0 +1,56 @@
+# CI for VS Code Extension
+# -----------------------
+# This workflow runs on Pull Requests targeting the main branch.
+# It ensures that the extension installs dependencies correctly
+# and that the TypeScript sources compile without errors.
+#
+# Scope:
+# - Node.js version is defined by .nvmrc
+# - Dependencies are managed with pnpm
+# - Only compilation is verified (no tests are executed)
+
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  compile:
+    # Ubuntu provides a stable and widely supported environment
+    # for building and compiling VS Code extensions.
+    runs-on: ubuntu-latest
+
+    steps:
+      # Fetch the repository contents for the workflow run
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Install pnpm and make it available in the environment.
+      # pnpm also manages its own dependency store cache.
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      # Configure the Node.js runtime using the version
+      # specified in the .nvmrc file.
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "pnpm"
+          cache-dependency-path: "pnpm-lock.yaml"
+
+      # Install dependencies exactly as defined in pnpm-lock.yaml.
+      # The workflow will fail if the lockfile and package.json
+      # are not in sync.
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Compile the VS Code extension.
+      # This step typically runs the TypeScript compiler and
+      # validates the project configuration.
+      - name: Compile extension
+        run: pnpm compile
