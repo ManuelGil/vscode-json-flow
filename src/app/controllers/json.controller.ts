@@ -250,7 +250,7 @@ export class JsonController {
           );
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
-          window.showErrorMessage(l10n.t('Error fetching JSON: {0}', [msg]));
+          window.showErrorMessage(l10n.t('Error fetching JSON: {0}', msg));
         } finally {
           clearTimeout(timeout);
         }
