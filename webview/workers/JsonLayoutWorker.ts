@@ -7,6 +7,7 @@
 /// <reference lib="webworker" />
 
 import type { JsonValue } from '@webview/types';
+import { buildPointer, POINTER_ROOT } from '@shared/node-pointer';
 // Define types for messages
 import type { Edge, Node } from '@xyflow/react';
 
@@ -365,7 +366,8 @@ function processJsonData(
       data: JsonValue;
       parentId: string | null;
       depth: number;
-      index: number | string;
+      index: number;
+      rawKey: string;
     };
 
     const visited = new WeakSet<object>();
@@ -375,16 +377,18 @@ function processJsonData(
       data: JsonValue,
       parentId: string | null,
       depth: number,
-      index: number | string,
+      index: number,
+      rawKey: string,
     ): StackItem => {
       const item = stackPool.pop() || ({} as StackItem);
       item.data = data;
       item.parentId = parentId;
       item.depth = depth;
       item.index = index;
+      item.rawKey = rawKey;
       return item;
     };
-    stack.push(allocStackItem(parsedData, null, 0, 0));
+    stack.push(allocStackItem(parsedData, null, 0, 0, ''));
     let processedItems = 0;
     let lastCancelCheck = performance.now();
     const cancelCheckInterval = 16; // ms
@@ -392,7 +396,7 @@ function processJsonData(
     while (stack.length > 0) {
       // Pop last for DFS order
       const current = stack.pop() as StackItem;
-      const { data, parentId, depth, index } = current;
+      const { data, parentId, depth, index, rawKey } = current;
 
       // Cooperative cancellation checks (time-based and flag-based)
       if (processingCanceled) {
@@ -407,9 +411,9 @@ function processJsonData(
         }
       }
 
-      // Generate unique ID using route-by-indices format consistent with
-      // the extension host selection mappers (e.g., root-0-2-5).
-      const nodeId = parentId ? `${parentId}-${index}` : 'root';
+      // Generate unique ID using JSON Pointer format consistent with
+      // the extension host selection mappers (e.g., /foo/bar/0).
+      const nodeId = parentId ? buildPointer(parentId, rawKey) : POINTER_ROOT;
 
       if (Array.isArray(data)) {
         // Array node
@@ -423,7 +427,7 @@ function processJsonData(
             options?.spacing ?? 200,
           ),
           data: {
-            label: parentId ? intern(String(index)) : ROOT_ARRAY_LABEL,
+            label: parentId ? intern(rawKey) : ROOT_ARRAY_LABEL,
             type: STR_ARRAY as WorkerNodeData['type'],
             childrenCount: data.length,
             depth,
@@ -435,14 +439,21 @@ function processJsonData(
           visited.add(data);
           // Push children in reverse order so they are processed in natural order (0..n-1)
           for (let i = data.length - 1; i >= 0; i--) {
-            const childId = `${nodeId}-${i}`;
+            const childKey = String(i);
+            const childId = buildPointer(nodeId, childKey);
             edges.push({
-              id: `edge-${nodeId}-${childId}`,
+              id: intern(`e-${childId}`),
               source: nodeId,
               target: childId,
             });
             stack.push(
-              allocStackItem(data[i] as JsonValue, nodeId, depth + 1, i),
+              allocStackItem(
+                data[i] as JsonValue,
+                nodeId,
+                depth + 1,
+                i,
+                childKey,
+              ),
             );
           }
         }
@@ -466,7 +477,7 @@ function processJsonData(
             options?.spacing ?? 200,
           ),
           data: {
-            label: parentId ? intern(String(index)) : ROOT_OBJECT_LABEL,
+            label: parentId ? intern(rawKey) : ROOT_OBJECT_LABEL,
             type: STR_OBJECT as WorkerNodeData['type'],
             childrenCount: keys.length,
             depth,
@@ -478,15 +489,13 @@ function processJsonData(
           // Push children in reverse order for natural processing order
           for (let i = keys.length - 1; i >= 0; i--) {
             const key = keys[i];
-            const childIndex = i; // maintain numeric index for id stability
-            const childId = `${nodeId}-${childIndex}`;
+            const childId = buildPointer(nodeId, key);
             edges.push({
-              id: `edge-${nodeId}-${childId}`,
+              id: intern(`e-${childId}`),
               source: nodeId,
               target: childId,
             });
-            // Note: we pass the value, label remains computed at render time using index for consistency
-            stack.push(allocStackItem(obj[key], nodeId, depth + 1, childIndex));
+            stack.push(allocStackItem(obj[key], nodeId, depth + 1, i, key));
           }
         }
       } else {
@@ -502,7 +511,7 @@ function processJsonData(
           ),
           data: {
             label: intern(
-              parentId ? `${index}: ${String(data)}` : String(data),
+              parentId ? `${rawKey}: ${String(data)}` : String(data),
             ),
             type: (data === null
               ? STR_NULL
