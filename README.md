@@ -13,7 +13,7 @@
 
 **JSON Flow** is a robust and feature-rich extension for Visual Studio Code and all editors based on the VSCode platform (including VSCodium, WindSurf, Cursor, and others). It enables interactive visualization, conversion, and management of structured data files such as JSON, YAML, XML, CSV, and more. Leveraging a node-based graph interface and advanced data transformation tools, JSON Flow streamlines the process of exploring, converting, and generating code from complex data structures. This extension is tailored for developers, data engineers, and analysts seeking enhanced clarity, productivity, and efficiency in their daily workflows.
 
-![JSON Flow Demo](https://raw.githubusercontent.com/ManuelGil/vscode-json-flow/main/images/json-flow-1.gif)
+![JSON Flow Demo](https://raw.githubusercontent.com/ManuelGil/vscode-json-flow/main/assets/images/json-flow-1.gif)
 
 ---
 
@@ -22,7 +22,6 @@
 - **Interactive graphs** for JSON and other structured formats (YAML, XML, CSV, TOML, INI, ENV, JSON5/JSONC).
 - **One-click conversions** between JSON and popular formats; copy as JSON anywhere.
 - **Code generation** from JSON (TypeScript, Go, JSON Schema, and more).
-- **Split View + Live Sync (roadmap)** to mirror selection and edits between editor and graph.
 - **Works across VS Code family** (VS Code, VSCodium, WindSurf, Cursor) on Windows, macOS, and Linux.
 - **Private by design**: 100% local processing, no telemetry, no uploads.
 - **Built for scale**: entitree-flex layout engine; Web Worker processing with intelligent main-thread fallback; circuit breaker safety guards; no hard size caps.
@@ -34,10 +33,8 @@
 - **Offline-first & open source (MIT)**: Processing happens locally in VS Code. Codebase is open for audit and contributions.
 - **VS Code-native UX**: Activity Bar views, Explorer context menus, editor title actions, and keybindings for a smooth workflow.
 - **Broad multi-format scope**: JSON/JSONC/JSON5, YAML, XML, CSV/TSV, TOML, INI, .env, HCL, and more with unified operations.
-- **Split View today, Live Sync tomorrow**: Toggle split view now; selection and edit synchronization are on the roadmap (see versions 2.3-2.4).
 - **Code generation built-in**: Generate TypeScript, Go, JSON Schema and more directly from JSON.
 - **Workspace-ready**: Supports untrusted and virtual workspaces (limited), respects ignore rules, and is configurable per workspace.
-- **Accessibility & theming roadmap**: High Contrast and token-aware theming improvements planned (see 2.5.0).
 
 ## Why JSON Flow?
 
@@ -73,9 +70,6 @@ Exploring complex data structures in code or configuration files can be cumberso
   - [Split View](#split-view)
     - [Editor Toolbar and Status Bar](#editor-toolbar-and-status-bar)
     - [Views \& Activity Bar](#views--activity-bar)
-  - [Live Sync (Selection)](#live-sync-selection)
-    - [Unified Live Sync Throttle](#unified-live-sync-throttle)
-    - [Diagnostics](#diagnostics)
   - [Requirements \& Limitations](#requirements--limitations)
   - [Security \& Privacy](#security--privacy)
   - [Commands \& Menus](#commands--menus)
@@ -99,8 +93,6 @@ Exploring complex data structures in code or configuration files can be cumberso
   - [Troubleshooting](#troubleshooting)
   - [Internationalization (i18n)](#internationalization-i18n)
     - [i18n maintenance](#i18n-maintenance)
-  - [Additional Resources](#additional-resources)
-  - [Community Invitation](#community-invitation)
   - [Contributing](#contributing)
   - [Code of Conduct](#code-of-conduct)
   - [Changelog](#changelog)
@@ -269,10 +261,6 @@ Notes:
   - `Feedback` (`jsonFlow.feedbackView`): Quick links to Extension Website, Report an Issue, and Rate Us.
 - **Welcome Content**: The Files view shows a helpful message when no files match or on first use.
 
-Additional note:
-
-- The Live Sync status appears only when Split View is active. This feature is staged per the Roadmap and may evolve.
-
 ---
 
 ## Requirements & Limitations
@@ -341,9 +329,6 @@ Notes:
 
 **Q: Where can I report bugs or request features?**
 A: Please use the [GitHub Issues page](https://github.com/ManuelGil/vscode-json-flow/issues).
-
-**Q: Is there support for custom node types or plugins?**
-A: Plugin support is planned for future releases. See the Roadmap for details.
 
 **Q: How can I contribute translations?**
 A: See the Internationalization section for instructions on adding new languages.
@@ -565,61 +550,6 @@ npm run -s l10n:check
 # Validate NLS manifest keys
 npm run -s nls:check
 ```
-
----
-
-## Additional Resources
-
-- [Official Documentation & Wiki](https://github.com/ManuelGil/vscode-json-flow/wiki)
-- [Usage Guide](https://github.com/ManuelGil/vscode-json-flow/blob/main/USAGE_GUIDE.md)
-- [Feature Requests & Bug Reports](https://github.com/ManuelGil/vscode-json-flow/issues)
-- [Troubleshooting Guide](https://github.com/ManuelGil/vscode-json-flow/blob/main/TROUBLESHOOTING.md)
-- [Roadmap](https://github.com/ManuelGil/vscode-json-flow/blob/main/ROADMAP.md)
-- [Changelog](https://github.com/ManuelGil/vscode-json-flow/blob/main/CHANGELOG.md)
-- [About](https://github.com/ManuelGil/vscode-json-flow/blob/main/ABOUT.md)
-- [Developers Guide](https://github.com/ManuelGil/vscode-json-flow/blob/main/DEVELOPERS_GUIDE.md)
-- [Contribution Guidelines](https://github.com/ManuelGil/vscode-json-flow/blob/main/CONTRIBUTING.md)
-
-If your question or issue is not addressed, please open a new issue on GitHub with a detailed description and reproduction steps.
-
----
-
-## Community Invitation
-
-We invite the community to collaborate on implementing versions 2.3.0 and onward as defined in the `ROADMAP.md`. Contributions in code, documentation, testing, and technical discussion are welcome.
-
-- **Priority scope**
-  - 2.3.0 - Live Sync Phase 1 (Selection)
-  - 2.4.0 - Live Sync Phase 2 (Editing, Multi-Format)
-  - 2.5.0 - Theming & VS Code Tokens (High Contrast MVP)
-  - 2.6.0 - Graph Search/Filter (Phased Delivery)
-  - 2.7.0 - Webview i18n & Language Packs
-  - 2.8.0 - Workspace Graph Phase 1 (Indexing & Navigation)
-  - 2.9.0 - Workspace Graph Phase 2 (Cross-file Live Sync & Overlay)
-
-- **How to participate**
-  - Review the relevant sections in `ROADMAP.md` and select a task aligned with your expertise.
-  - Open an Issue to propose your approach or claim a task before submitting a Pull Request.
-  - Keep PRs focused and reasonably sized; include a clear description and relevant documentation notes.
-
-- **Criteria and guidelines**
-  - Follow `(uri, indexPath)` addressing and avoid DOM mutations in the webview.
-  - Use VS Code APIs and respect Workspace Trust.
-  - Be mindful of performance (debounce/coalescing) and avoid event loops.
-  - Align changes with the relevant roadmap section.
-
-- **Good first contributions**
-  - Parsing helpers or targeted indexing rules for a specific format.
-  - UX refinements for navigation (Go to Definition/Find Usages/Peek) and overlay controls.
-  - Message type definitions and debounce/anti-loop hardening for Editor ↔ Webview events.
-  - i18n validation scripts or documentation improvements.
-
-- **Links**
-  - Roadmap: [ROADMAP.md](https://github.com/ManuelGil/vscode-json-flow/blob/main/ROADMAP.md)
-  - Contribution Guide: [CONTRIBUTING.md](https://github.com/ManuelGil/vscode-json-flow/blob/main/CONTRIBUTING.md)
-  - Issues: [GitHub Issues](https://github.com/ManuelGil/vscode-json-flow/issues)
-
-We appreciate your time and contributions to the project.
 
 ---
 

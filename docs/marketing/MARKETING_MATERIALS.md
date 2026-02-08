@@ -108,8 +108,8 @@ JSON Flow is a Visual Studio Code extension designed to revolutionize how develo
 - **Logo:** `icon.png`
 - **Logo (Alternate):** `assets/logo.svg`
 - **Demo GIFs:**
-  - `images/json-flow-1.gif` (Interactive visualization demo)
-  - `images/json-flow-2.gif` (Customizable controls demo)
+  - `assets/images/json-flow-1.gif` (Interactive visualization demo)
+  - `assets/images/json-flow-2.gif` (Customizable controls demo)
 
 ---
 
