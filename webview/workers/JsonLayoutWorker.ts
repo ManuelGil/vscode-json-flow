@@ -7,9 +7,8 @@
 /// <reference lib="webworker" />
 
 import type { JsonValue } from '@webview/types';
-import { buildPointer, POINTER_ROOT } from '@shared/node-pointer';
-// Define types for messages
 import type { Edge, Node } from '@xyflow/react';
+import { buildPointer, POINTER_ROOT } from '../../src/shared/node-pointer';
 
 type WorkerNodeData = {
   label: string;

@@ -5,7 +5,7 @@
 		"outDir": "out",
 		"lib": ["ES2022", "DOM"],
 		"sourceMap": true,
-		"rootDir": ".",
+		"rootDir": "src",
 		/* Linting */
 		"strict": false /* enable all strict type-checking options */,
 		/* Additional Checks */
@@ -19,6 +19,6 @@
 			"@webview/*": ["./webview/*"]
 		}
 	},
-	"include": ["src/**/*", "shared/**/*"],
+	"include": ["src/**/*"],
 	"exclude": ["node_modules", ".vscode-test"]
 }

@@ -23,13 +23,11 @@
 		"baseUrl": ".",
 		"paths": {
 			"@src/*": ["./src/*"],
-			"@webview/*": ["./webview/*"],
-			"@shared/*": ["./shared/*"]
+			"@webview/*": ["./webview/*"]
 		}
 	},
 	"include": [
-		"webview/**/*",
-		"shared/**/*"
+		"webview/**/*"
 	],
 	"exclude": [
 		"node_modules"

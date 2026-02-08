@@ -1,5 +1,9 @@
-import { buildPointer, lastSegment, POINTER_ROOT } from '@shared/node-pointer';
 import type { JsonValue, TreeMap } from '@webview/types';
+import {
+  buildPointer,
+  lastSegment,
+  POINTER_ROOT,
+} from '../../src/shared/node-pointer';
 
 /**
  * Recursively generates a tree structure (TreeMap) from a JSON value.

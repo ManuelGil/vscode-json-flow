@@ -1,6 +1,10 @@
 // Internal tolerant implementation for JSON/JSONC (supports comments and trailing commas).
 // Avoids
-import { buildPointer, parsePointer, POINTER_ROOT } from 'shared/node-pointer';
+import {
+  buildPointer,
+  POINTER_ROOT,
+  parsePointer,
+} from '../../shared/node-pointer';
 
 type JsonNodeType =
   | 'object'

@@ -1,4 +1,8 @@
-import { buildPointer, parsePointer, POINTER_ROOT } from 'shared/node-pointer';
+import {
+  buildPointer,
+  POINTER_ROOT,
+  parsePointer,
+} from '../../shared/node-pointer';
 import type { SelectionMapper, TextRange } from '../interfaces';
 
 /**

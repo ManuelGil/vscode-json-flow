@@ -1,5 +1,9 @@
 import * as yaml from 'yaml';
-import { buildPointer, parsePointer, POINTER_ROOT } from 'shared/node-pointer';
+import {
+  buildPointer,
+  parsePointer,
+  POINTER_ROOT,
+} from '../../shared/node-pointer';
 import type { SelectionMapper, TextRange } from '../interfaces';
 
 type YamlRange = [number, number, number];

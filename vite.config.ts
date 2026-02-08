@@ -25,8 +25,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@src': path.resolve(__dirname, './src'),
-      '@webview': path.resolve(__dirname, './webview'),
-      '@shared': path.resolve(__dirname, './shared'),
+      '@webview': path.resolve(__dirname, './webview')
     },
   },
 });
