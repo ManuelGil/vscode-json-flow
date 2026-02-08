@@ -1,5 +1,6 @@
 // Internal tolerant implementation for JSON/JSONC (supports comments and trailing commas).
-// Avoids depending on 'jsonc-parser' while keeping the existing contract.
+// Avoids
+import { buildPointer, parsePointer, POINTER_ROOT } from 'shared/node-pointer';
 
 type JsonNodeType =
   | 'object'
@@ -20,16 +21,13 @@ interface AstNode {
 }
 
 /**
- * Compute a route-by-indices nodeId (e.g., "root-0-2-5") from a cursor offset in the given JSON/JSONC text.
- * Returns undefined if the offset cannot be mapped.
- */
-/**
- * Compute a route-by-indices nodeId (e.g., "root-0-2-5") from a cursor offset in the given JSON/JSONC text.
+ * Compute a JSON Pointer nodeId (e.g., "/foo/bar/0") from a cursor
+ * offset in the given JSON/JSONC text.
  * Returns undefined if the offset cannot be mapped.
  *
  * @param text - The JSON/JSONC text to parse and map
  * @param offset - The cursor offset (position) in the text
- * @returns A node ID string or undefined if mapping fails
+ * @returns A JSON Pointer node ID string, or undefined if mapping fails
  */
 export function nodeIdFromOffset(
   text: string,
@@ -48,33 +46,30 @@ export function nodeIdFromOffset(
     const root = parseJsonTolerant(text);
     if (!root) {
       // If parsing fails but we have some text, return root as a fallback
-      return 'root';
+      return POINTER_ROOT;
     }
 
-    // Find path at the cursor position
-    const jsonPath = findJsonPathAtOffset(root, clamped);
+    // Find path at the cursor position (key names for objects, indices for arrays)
+    const jsonPath = findJsonPathAtOffset(root, clamped) ?? [];
 
-    // Convert standard JSON path to an indices-based path
-    const indices = jsonPath ? indicesPathFromJsonPath(root, jsonPath) : [];
-    if (!indices) {
-      return undefined;
+    // Build the JSON Pointer by appending each path segment
+    let pointer: string = POINTER_ROOT;
+    for (const segment of jsonPath) {
+      pointer = buildPointer(pointer, String(segment));
     }
 
-    // Format as a hyphen-separated path starting with 'root'
-    return ['root', ...indices].join('-');
+    return pointer;
   } catch {
-    // Enhanced error handling - we don't expose errors to callers
-    // but we could log them or capture metrics in the future
     return undefined;
   }
 }
 
 /**
- * Given a route-by-indices nodeId, return the byte range [start,end) of the corresponding node.
- * Returns undefined if it cannot be resolved.
+ * Given a JSON Pointer nodeId, return the byte range [start,end) of the
+ * corresponding node. Returns undefined if it cannot be resolved.
  *
  * @param text - The JSON/JSONC text to parse
- * @param nodeId - The node identifier in the format "root-0-2-5"
+ * @param nodeId - The node identifier as a JSON Pointer (e.g., "/foo/bar/0")
  * @returns An object with start and end offsets, or undefined if mapping fails
  */
 export function rangeFromNodeId(
@@ -87,27 +82,23 @@ export function rangeFromNodeId(
       return undefined;
     }
 
+    // Parse the pointer into decoded segments (returns [] for root)
+    let segments: string[];
+    try {
+      segments = parsePointer(nodeId);
+    } catch {
+      return undefined;
+    }
+
     // Parse the JSON text tolerantly (allows comments, trailing commas, etc.)
     const root = parseJsonTolerant(text);
     if (!root) {
       return undefined;
     }
 
-    // Split the node ID into parts and validate the format
-    const parts = nodeId.split('-');
-    if (!parts.length || parts[0] !== 'root') {
-      return undefined;
-    }
-
-    // Convert parts to numeric indices, skipping the 'root' part
-    const indices = parts
-      .slice(1)
-      .filter((p) => p.length > 0)
-      .map((p) => Number.parseInt(p, 10));
-
-    // Navigate through the AST following the indices path
+    // Navigate through the AST following the pointer segments
     let current: AstNode | undefined = root;
-    for (const idx of indices) {
+    for (const segment of segments) {
       // Validate current node can have children
       if (!current || !Array.isArray(current.children)) {
         return undefined;
@@ -115,16 +106,25 @@ export function rangeFromNodeId(
 
       // Navigate based on node type
       if (current.type === 'object') {
-        // For objects, find property at index, then get its value
-        const propNode = current.children[idx];
-        if (!propNode) {
+        // For objects, find the property whose key matches the segment
+        let matched: AstNode | undefined;
+        for (const prop of current.children) {
+          const keyNode = prop.children?.[0];
+          if (keyNode && String(keyNode.value ?? '') === segment) {
+            matched = prop.children?.[1] ?? prop;
+            break;
+          }
+        }
+        if (!matched) {
           return undefined;
         }
-        // Property node has key (0) and value (1) children
-        const valueNode = propNode.children?.[1] ?? propNode;
-        current = valueNode;
+        current = matched;
       } else if (current.type === 'array') {
-        // For arrays, directly get element at index
+        // For arrays, parse the segment as a numeric index
+        const idx = Number.parseInt(segment, 10);
+        if (!Number.isInteger(idx) || idx < 0) {
+          return undefined;
+        }
         const child = current.children[idx];
         if (!child) {
           return undefined;
@@ -144,61 +144,8 @@ export function rangeFromNodeId(
     // Return the node's text range
     return { start: current.offset, end: current.offset + current.length };
   } catch {
-    // Enhanced error handling with potential for future diagnostics
     return undefined;
   }
-}
-
-/**
- * Convert a standard jsonc-parser JSONPath (keys and array indices) to a route-by-indices path.
- * Walks the AST to determine the zero-based index of each property within its parent object,
- * and keeps array indices as-is.
- */
-function indicesPathFromJsonPath(
-  root: AstNode,
-  jsonPath: (string | number)[],
-): number[] | undefined {
-  const indices: number[] = [];
-  let current: AstNode | undefined = root;
-
-  for (const seg of jsonPath) {
-    if (!current || !Array.isArray(current.children)) {
-      return undefined;
-    }
-
-    if (current.type === 'object') {
-      let foundIndex = -1;
-      for (let i = 0; i < current.children.length; i++) {
-        const prop = current.children[i];
-        const keyNode = prop?.children?.[0];
-        if (keyNode && keyNode.value === seg) {
-          foundIndex = i;
-          current = prop.children?.[1] ?? prop;
-          break;
-        }
-      }
-      if (foundIndex < 0) {
-        return undefined;
-      }
-      indices.push(foundIndex);
-    } else if (current.type === 'array') {
-      const idx =
-        typeof seg === 'number' ? seg : Number.parseInt(String(seg), 10);
-      if (!Number.isInteger(idx)) {
-        return undefined;
-      }
-      const child = current.children[idx];
-      if (!child) {
-        return undefined;
-      }
-      indices.push(idx);
-      current = child;
-    } else {
-      return undefined;
-    }
-  }
-
-  return indices;
 }
 
 function parseJsonTolerant(text: string): AstNode | undefined {

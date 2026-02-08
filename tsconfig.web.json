@@ -8,7 +8,7 @@
 			"DOM.Iterable"
 		],
 		"sourceMap": true,
-		"rootDir": "webview",
+		"rootDir": ".",
 		"useDefineForClassFields": true,
 		"skipLibCheck": true,
 		/* Bundler mode */
@@ -23,11 +23,13 @@
 		"baseUrl": ".",
 		"paths": {
 			"@src/*": ["./src/*"],
-			"@webview/*": ["./webview/*"]
+			"@webview/*": ["./webview/*"],
+			"@shared/*": ["./shared/*"]
 		}
 	},
 	"include": [
-		"webview/**/*"
+		"webview/**/*",
+		"shared/**/*"
 	],
 	"exclude": [
 		"node_modules"

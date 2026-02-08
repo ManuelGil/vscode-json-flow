@@ -407,8 +407,9 @@ function processJsonData(
         }
       }
 
-      // Generate unique ID consistent with the previous recursive scheme
-      const nodeId = parentId ? `${parentId}-${index}` : `node-${index}`;
+      // Generate unique ID using route-by-indices format consistent with
+      // the extension host selection mappers (e.g., root-0-2-5).
+      const nodeId = parentId ? `${parentId}-${index}` : 'root';
 
       if (Array.isArray(data)) {
         // Array node
