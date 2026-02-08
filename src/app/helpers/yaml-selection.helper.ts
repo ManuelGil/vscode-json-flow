@@ -1,4 +1,5 @@
 import * as yaml from 'yaml';
+import { buildPointer, parsePointer, POINTER_ROOT } from 'shared/node-pointer';
 import type { SelectionMapper, TextRange } from '../interfaces';
 
 type YamlRange = [number, number, number];
@@ -40,8 +41,8 @@ function getRange(node: unknown): YamlRange | undefined {
  *
  * Strategy:
  * - Parse YAML, walk the document to find the JSON-style path at a given offset.
- * - Convert that path into a route-by-indices array for a stable `nodeId`.
- * - Resolve a `nodeId` back to the YAML node and its `range`.
+ * - Build a JSON Pointer from the path segments.
+ * - Resolve a JSON Pointer nodeId back to the YAML node and its `range`.
  */
 export const yamlSelectionMapper: SelectionMapper = {
   nodeIdFromOffset(text: string, offset: number): string | undefined {
@@ -49,15 +50,17 @@ export const yamlSelectionMapper: SelectionMapper = {
       const doc = yaml.parseDocument(text);
       const root = doc.contents as unknown;
       if (!root) {
-        return 'root';
+        return POINTER_ROOT;
       }
 
       const path = findYamlJsonPathAtOffset(root, offset) ?? [];
-      const indices = indicesPathFromYamlPath(root, path);
-      if (!indices) {
-        return undefined;
+
+      // Build the JSON Pointer by appending each path segment
+      let pointer: string = POINTER_ROOT;
+      for (const segment of path) {
+        pointer = buildPointer(pointer, String(segment));
       }
-      return ['root', ...indices].join('-');
+      return pointer;
     } catch {
       return undefined;
     }
@@ -70,15 +73,13 @@ export const yamlSelectionMapper: SelectionMapper = {
         return undefined;
       }
 
-      const parts = nodeId.split('-');
-      if (!parts.length || parts[0] !== 'root') {
+      let segments: string[];
+      try {
+        segments = parsePointer(nodeId);
+      } catch {
         return undefined;
       }
-      const indices = parts
-        .slice(1)
-        .filter((p) => p.length > 0)
-        .map((p) => Number.parseInt(p, 10));
-      const node = yamlNodeFromIndices(root, indices);
+      const node = yamlNodeFromSegments(root, segments);
       const r = getRange(node);
       if (!node || !r) {
         return undefined;
@@ -137,67 +138,39 @@ function findYamlJsonPathAtOffset(
 }
 
 /**
- * Converts a JSON-style path (keys/indexes) to a stable indices path by walking the YAML tree.
+ * Returns the YAML node located by decoded pointer segments.
+ * For maps: matches by key name. For sequences: indexes by numeric position.
  */
-function indicesPathFromYamlPath(
+function yamlNodeFromSegments(
   root: unknown,
-  path: (string | number)[],
-): number[] | undefined {
-  const indices: number[] = [];
-  let current: unknown = root;
-  for (const seg of path) {
-    if (!current) {
-      return undefined;
-    }
-    if (isMap(current)) {
-      let foundIndex = -1;
-      const pairs = getItems(current) ?? [];
-      for (let i = 0; i < pairs.length; i++) {
-        const pair = pairs[i];
-        const key = getKeyValue(pair);
-        if (key === seg) {
-          foundIndex = i;
-          current = getValue(pair) ?? pair;
-          break;
-        }
-      }
-      if (foundIndex < 0) {
-        return undefined;
-      }
-      indices.push(foundIndex);
-    } else if (isSeq(current)) {
-      const idx =
-        typeof seg === 'number' ? seg : Number.parseInt(String(seg), 10);
-      if (!Number.isInteger(idx)) {
-        return undefined;
-      }
-      indices.push(idx);
-      const child = getItems(current)?.[idx];
-      current = (child && (getValue(child) ?? child)) || child;
-    } else {
-      return undefined;
-    }
-  }
-  return indices;
-}
-
-/**
- * Returns the YAML node located by a path of indices.
- */
-function yamlNodeFromIndices(
-  root: unknown,
-  indices: number[],
+  segments: string[],
 ): unknown | undefined {
   let cur: unknown = root;
-  for (const i of indices) {
+  for (const segment of segments) {
     if (!cur) {
       return undefined;
     }
     if (isMap(cur)) {
-      const pair = getItems(cur)?.[i];
-      cur = (getValue(pair) ?? pair) as unknown;
+      // Find the pair whose key matches the segment
+      const pairs = getItems(cur) ?? [];
+      let matched: unknown | undefined;
+      for (const pair of pairs) {
+        const key = getKeyValue(pair);
+        if (String(key ?? '') === segment) {
+          matched = getValue(pair) ?? pair;
+          break;
+        }
+      }
+      if (matched === undefined) {
+        return undefined;
+      }
+      cur = matched;
     } else if (isSeq(cur)) {
-      const item = getItems(cur)?.[i];
+      const idx = Number.parseInt(segment, 10);
+      if (!Number.isInteger(idx) || idx < 0) {
+        return undefined;
+      }
+      const item = getItems(cur)?.[idx];
       cur = (item && (getValue(item) ?? item)) as unknown;
     } else {
       return undefined;

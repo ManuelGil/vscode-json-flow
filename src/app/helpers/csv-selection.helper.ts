@@ -1,3 +1,4 @@
+import { buildPointer, parsePointer, POINTER_ROOT } from 'shared/node-pointer';
 import type { SelectionMapper, TextRange } from '../interfaces';
 import { detectDelimiter } from './detect-delimiter.helper';
 
@@ -5,7 +6,7 @@ import { detectDelimiter } from './detect-delimiter.helper';
  * Selection mapper for CSV-like delimited files.
  *
  * Heuristically detects the delimiter, then maps:
- * - editor offsets → node ids in the form `root-<row>-<col>`
+ * - editor offsets → node ids as JSON Pointers (`/<row>/<col>`)
  * - node ids → `TextRange` covering the cell content
  */
 export const csvSelectionMapper: SelectionMapper = {
@@ -32,7 +33,7 @@ export const csvSelectionMapper: SelectionMapper = {
       }
 
       if (rowIndex >= lines.length) {
-        return 'root';
+        return POINTER_ROOT;
       }
 
       const colIndex = columnIndexAtOffset(
@@ -41,10 +42,8 @@ export const csvSelectionMapper: SelectionMapper = {
         offset - running,
       );
 
-      if (rowIndex === 0) {
-        return ['root', 0, colIndex].join('-');
-      }
-      return ['root', rowIndex, colIndex].join('-');
+      const rowPointer = buildPointer(POINTER_ROOT, String(rowIndex));
+      return buildPointer(rowPointer, String(colIndex));
     } catch {
       return undefined;
     }
@@ -52,16 +51,14 @@ export const csvSelectionMapper: SelectionMapper = {
   rangeFromNodeId(text: string, nodeId: string): TextRange | undefined {
     try {
       const delimiter = detectDelimiter(text, [',', ';', '|', '\t']);
-      const parts = nodeId.split('-');
-      if (!parts.length || parts[0] !== 'root') {
+      let segments: string[];
+      try {
+        segments = parsePointer(nodeId);
+      } catch {
         return undefined;
       }
-      const indices = parts
-        .slice(1)
-        .map((p) => Number.parseInt(p, 10))
-        .filter((n) => Number.isFinite(n));
-      const row = indices[0] ?? 0;
-      const col = indices[1] ?? 0;
+      const row = Number.parseInt(segments[0] ?? '0', 10);
+      const col = Number.parseInt(segments[1] ?? '0', 10);
       const lines = text.split(/\r?\n/);
       const newlineLen = text.includes('\r\n')
         ? 2

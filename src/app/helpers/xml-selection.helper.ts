@@ -1,3 +1,4 @@
+import { buildPointer, parsePointer, POINTER_ROOT } from 'shared/node-pointer';
 import type { SelectionMapper, TextRange } from '../interfaces';
 
 // Pattern string for an XML start tag name capture
@@ -7,8 +8,8 @@ const XML_START_TAG_PATTERN = '<([A-Za-z_][\\w\\-\\.:]*)(\\s|>)';
  * Selection mapper for XML-like documents.
  *
  * Heuristic approach:
- * - Count start tags of the same name before the cursor to build `root-<index>`
- * - Resolve `root-<index>` to the range of the start tag `<name ...>`
+ * - Count start tags of the same name before the cursor to build `/<index>`
+ * - Resolve `/<index>` to the range of the start tag `<name ...>`
  */
 export const xmlSelectionMapper: SelectionMapper = {
   nodeIdFromOffset(text: string, offset: number): string | undefined {
@@ -16,7 +17,7 @@ export const xmlSelectionMapper: SelectionMapper = {
       // Find the nearest tag start before the offset
       const start = text.lastIndexOf('<', offset);
       if (start < 0) {
-        return 'root';
+        return POINTER_ROOT;
       }
       const end = text.indexOf('>', start + 1);
       if (end < 0) {
@@ -35,18 +36,20 @@ export const xmlSelectionMapper: SelectionMapper = {
       for (m = regex.exec(before); m; m = regex.exec(before)) {
         idx++;
       }
-      return ['root', idx].join('-');
+      return buildPointer(POINTER_ROOT, String(idx));
     } catch {
       return undefined;
     }
   },
   rangeFromNodeId(text: string, nodeId: string): TextRange | undefined {
     try {
-      const parts = nodeId.split('-');
-      if (!parts.length || parts[0] !== 'root') {
+      let segments: string[];
+      try {
+        segments = parsePointer(nodeId);
+      } catch {
         return undefined;
       }
-      const index = Number.parseInt(parts[1] ?? '0', 10);
+      const index = Number.parseInt(segments[0] ?? '0', 10);
 
       // Find the N-th start tag and return its span
       const regex = new RegExp(XML_START_TAG_PATTERN, 'g');
