@@ -22,7 +22,8 @@ export type FlowAction =
         fileName: string;
       };
     }
-  | { type: 'CLEAR' };
+  | { type: 'CLEAR' }
+  | { type: 'SET_ORIENTATION'; payload: { orientation: Direction } };
 
 /**
  * Reducer for the global flow state.
@@ -50,6 +51,11 @@ export function flowReducer(state: FlowState, action: FlowAction): FlowState {
         path: '',
         fileName: '',
       };
+    case 'SET_ORIENTATION':
+      if (state.orientation === action.payload.orientation) {
+        return state;
+      }
+      return { ...state, orientation: action.payload.orientation };
     default:
       return state;
   }

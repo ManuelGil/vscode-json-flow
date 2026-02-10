@@ -14,10 +14,24 @@ import { useFlowSettings } from '@webview/hooks/useFlowSettings';
 import { useTreeDataValidator } from '@webview/hooks/useTreeDataValidator';
 import { useVscodeMessageHandler } from '@webview/hooks/useVscodeMessageHandler';
 import { vscodeService } from '@webview/services/vscodeService';
-import type { TreeMap } from '@webview/types';
+import type { Direction, TreeMap } from '@webview/types';
 import * as logger from '@webview/utils/logger';
-import type { Connection, Edge, Node, ReactFlowInstance } from '@xyflow/react';
-import { addEdge, Background, ReactFlow, useViewport } from '@xyflow/react';
+import type {
+  Connection,
+  Edge,
+  EdgeChange,
+  Node,
+  NodeChange,
+  ReactFlowInstance,
+} from '@xyflow/react';
+import {
+  addEdge,
+  applyEdgeChanges,
+  applyNodeChanges,
+  Background,
+  ReactFlow,
+  useViewport,
+} from '@xyflow/react';
 import type { MouseEvent } from 'react';
 import {
   memo,
@@ -77,11 +91,11 @@ export const FlowCanvas = memo(function FlowCanvas() {
     nodes,
     edges,
     setEdges,
-    onNodesChange,
-    onEdgesChange,
     currentDirection,
     rotateLayout,
     collapsedNodes,
+    toggleNodeChildren,
+    descendantsCache,
   } = useFlowController(flowControllerParams);
 
   const { zoom } = useViewport();
@@ -89,10 +103,21 @@ export const FlowCanvas = memo(function FlowCanvas() {
   const { selectedNode, onNodeClick, clearSelection, selectNode } =
     useSelectedNode();
 
+  const onDirectionChange = useCallback(
+    (direction: Direction) => {
+      dispatch({
+        type: 'SET_ORIENTATION',
+        payload: { orientation: direction },
+      });
+    },
+    [dispatch],
+  );
+
   const { handleRotation, handleEdgeSettingsChange } = useFlowSettings(
     rotateLayout,
     flowData,
     setEdges,
+    onDirectionChange,
   );
 
   // Debounce heavy settings updates to avoid rapid recomputation/edge updates
@@ -251,7 +276,9 @@ export const FlowCanvas = memo(function FlowCanvas() {
       return;
     }
     const isJsonChanged = lastDataRef.current !== jsonData;
-    if (isJsonChanged) {
+    const isOrientationChanged =
+      lastDirectionRef.current !== flowData.orientation;
+    if (isJsonChanged || isOrientationChanged) {
       setGraphReady(false);
       didFitViewRef.current = false;
     }
@@ -260,32 +287,112 @@ export const FlowCanvas = memo(function FlowCanvas() {
     lastDirectionRef.current = flowData.orientation;
 
     processWithWorker(jsonData, {
-      direction: flowData.orientation === 'TB' ? 'vertical' : 'horizontal',
+      direction: flowData.orientation,
     });
   }, [flowData.data, flowData.orientation, isValidTree, processWithWorker]);
 
-  const finalNodes = workerNodes || nodes;
-  const finalEdges = workerEdges || edges;
-  // Live Sync: wire selection synchronization (Phase 1)
-  const { paused: liveSyncPaused, pauseReason } = useEditorSync({
-    selectedNodeId: selectedNode?.id ?? null,
-    onApplyGraphSelection: (nodeId?: string) => {
+  // Stable ref for toggleNodeChildren to avoid re-creating callbacks
+  const toggleChildrenRef =
+    useRef<(nodeId: string) => void>(toggleNodeChildren);
+  useEffect(() => {
+    toggleChildrenRef.current = toggleNodeChildren;
+  }, [toggleNodeChildren]);
+
+  // Named delegate so CustomNode receives a stable function reference
+  const handleToggleChildren = useCallback((nodeId: string) => {
+    if (nodeId) {
+      toggleChildrenRef.current(nodeId);
+    }
+  }, []);
+
+  // Unified render state: post-processed with collapse filtering and callbacks
+  const [renderNodes, setRenderNodes] = useState<Node[]>([]);
+  const [renderEdges, setRenderEdges] = useState<Edge[]>([]);
+
+  // Sync render state when layout source or collapse state changes
+  useEffect(() => {
+    const sourceNodes = workerNodes ?? nodes;
+    const sourceEdges = workerEdges ?? edges;
+
+    if (!sourceNodes?.length) {
+      setRenderNodes([]);
+      setRenderEdges([]);
+      return;
+    }
+
+    const visibleNodes = sourceNodes.filter(
+      (node) => !collapsedNodes.has(node.id),
+    );
+
+    setRenderNodes(
+      visibleNodes.map((node) => ({
+        ...node,
+        data: {
+          ...node.data,
+          onToggleChildren: handleToggleChildren,
+          isCollapsed: (descendantsCache.get(node.id) ?? []).some(
+            (descendantId) => collapsedNodes.has(descendantId),
+          ),
+        },
+      })),
+    );
+
+    setRenderEdges(
+      (sourceEdges ?? []).filter(
+        (edge) =>
+          !collapsedNodes.has(edge.source) && !collapsedNodes.has(edge.target),
+      ),
+    );
+  }, [
+    workerNodes,
+    nodes,
+    workerEdges,
+    edges,
+    collapsedNodes,
+    descendantsCache,
+    handleToggleChildren,
+  ]);
+
+  // Unified change handlers for ReactFlow interactivity (drag, select)
+  const onNodesChange = useCallback((changes: NodeChange[]) => {
+    setRenderNodes((nds) => applyNodeChanges(changes, nds));
+  }, []);
+
+  const onEdgesChange = useCallback((changes: EdgeChange[]) => {
+    setRenderEdges((eds) => applyEdgeChanges(changes, eds));
+  }, []);
+
+  // Keep a ref so the stable Live Sync callback always sees the latest nodes
+  const finalNodesRef = useRef<Node[]>([]);
+  finalNodesRef.current = renderNodes;
+
+  // Stable callback: depends only on selectNode (itself stable from useCallback)
+  const handleApplyGraphSelection = useCallback(
+    (nodeId?: string) => {
       if (!nodeId) {
         selectNode(null);
         return;
       }
       const target =
-        (finalNodes || []).find((n: Node) => n.id === nodeId) || null;
+        (finalNodesRef.current || []).find((n: Node) => n.id === nodeId) ||
+        null;
       selectNode(target);
     },
+    [selectNode],
+  );
+
+  // Live Sync: wire selection synchronization (Phase 1)
+  const { paused: liveSyncPaused, pauseReason } = useEditorSync({
+    selectedNodeId: selectedNode?.id ?? null,
+    onApplyGraphSelection: handleApplyGraphSelection,
   });
   // Render-only virtualization: defer edges until the graph is ready
-  const renderedEdges = graphReady ? finalEdges : [];
+  const renderedEdges = graphReady ? renderEdges : [];
   const reactFlowKey = useMemo(() => {
-    const n = workerNodes?.length ?? finalNodes?.length ?? 0;
-    const e = workerEdges?.length ?? finalEdges?.length ?? 0;
-    return `${n}:${e}:${currentDirection}`;
-  }, [workerNodes, workerEdges, finalNodes, finalEdges, currentDirection]);
+    const nodeCount = renderNodes.length;
+    const edgeCount = renderEdges.length;
+    return `${nodeCount}:${edgeCount}:${currentDirection}`;
+  }, [renderNodes, renderEdges, currentDirection]);
 
   if (
     !workerNodes &&
@@ -302,7 +409,7 @@ export const FlowCanvas = memo(function FlowCanvas() {
     <div className="relative h-screen w-screen">
       <ReactFlow
         key={reactFlowKey}
-        nodes={finalNodes}
+        nodes={renderNodes}
         edges={renderedEdges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}

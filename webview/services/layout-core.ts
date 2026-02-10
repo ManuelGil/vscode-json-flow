@@ -17,6 +17,15 @@ import { layoutFromMap } from 'entitree-flex';
 const NODE_HEIGHT = 36;
 const NODE_WIDTH = 160;
 
+/** Node count above which the O(n) linear layout replaces entitree-flex. */
+const LARGE_GRAPH_THRESHOLD = 2000;
+
+/** Horizontal spacing between siblings in the linear fallback layout (px). */
+const LINEAR_SIBLING_SPACING = 200;
+
+/** Vertical spacing between depth levels in the linear fallback layout (px). */
+const LINEAR_DEPTH_SPACING = 80;
+
 const SPACING = {
   firstDegreeSpacing: 30,
   nextAfterSpacing: 30,
@@ -39,6 +48,9 @@ interface EntitreeNode {
   y: number;
   isSpouse?: boolean;
   isSibling?: boolean;
+  children?: string[];
+  siblings?: string[];
+  spouses?: string[];
 }
 
 interface EntitreeSettings {
@@ -215,8 +227,138 @@ const createNode = (
 };
 
 /**
- * Calculates node and edge layouts for a tree using entitree-flex.
- * Returns React Flow compatible arrays.
+ * O(n) deterministic layout for large graphs.
+ *
+ * Uses a BFS traversal from the root to assign each node a depth level
+ * and a sibling index within that level.  Positions are computed as
+ * simple grid coordinates — no recursion, no expensive graph algorithms.
+ *
+ * The output shape is identical to the entitree-flex path so callers
+ * (worker, main thread) are unaware of the switch.
+ *
+ * @param tree - The tree data as a TreeMap.
+ * @param rootId - The root node ID.
+ * @param direction - The layout direction.
+ * @param edgeSettings - Edge appearance settings.
+ * @returns An object with arrays of nodes and edges.
+ */
+function layoutLinearSimple(
+  tree: TreeMap,
+  rootId: string,
+  direction: Direction,
+  edgeSettings: EdgeSettings,
+): { nodes: Node[]; edges: Edge[] } {
+  const horizontal = isHorizontal(direction);
+
+  // --- Pass 1: BFS to determine depth and traversal order ----------------
+  const depthMap = new Map<string, number>();
+  const bfsOrder: string[] = [];
+  const queue: string[] = [rootId];
+  depthMap.set(rootId, 0);
+
+  // Index-based iteration avoids O(n) Array.shift() cost.
+  let queueIdx = 0;
+  while (queueIdx < queue.length) {
+    const current = queue[queueIdx++];
+    bfsOrder.push(current);
+
+    const depth = depthMap.get(current)!;
+    const entry = tree[current];
+    if (!entry) {
+      continue;
+    }
+
+    for (const childId of entry.children ?? []) {
+      if (!depthMap.has(childId) && tree[childId]) {
+        depthMap.set(childId, depth + 1);
+        queue.push(childId);
+      }
+    }
+    for (const spouseId of entry.spouses ?? []) {
+      if (!depthMap.has(spouseId) && tree[spouseId]) {
+        depthMap.set(spouseId, depth);
+        queue.push(spouseId);
+      }
+    }
+    for (const siblingId of entry.siblings ?? []) {
+      if (!depthMap.has(siblingId) && tree[siblingId]) {
+        depthMap.set(siblingId, depth);
+        queue.push(siblingId);
+      }
+    }
+  }
+
+  // --- Pass 2: assign positions and build nodes / edges ------------------
+  const depthCounters = new Map<number, number>();
+  const nodes: Node[] = [];
+  const edges: Edge[] = [];
+
+  for (const nodeId of bfsOrder) {
+    const entry = tree[nodeId];
+    if (!entry) {
+      continue;
+    }
+
+    const depth = depthMap.get(nodeId) ?? 0;
+    const indexInDepth = depthCounters.get(depth) ?? 0;
+    depthCounters.set(depth, indexInDepth + 1);
+
+    const breadthPos = indexInDepth * LINEAR_SIBLING_SPACING;
+    const depthPos = depth * LINEAR_DEPTH_SPACING;
+    const posX = horizontal ? depthPos : breadthPos;
+    const posY = horizontal ? breadthPos : depthPos;
+
+    const nodeType = getNodeType(entry);
+    const linearNode: EntitreeNode = {
+      id: nodeId,
+      name: entry.name || nodeId,
+      x: posX,
+      y: posY,
+      isSpouse: entry.isSpouse,
+      isSibling: entry.isSibling,
+      children: entry.children,
+      siblings: entry.siblings,
+      spouses: entry.spouses,
+    };
+
+    nodes.push(createNode(linearNode, direction, nodeType, rootId, tree));
+
+    for (const childId of entry.children ?? []) {
+      if (depthMap.has(childId)) {
+        const childEntry = tree[childId];
+        const childType: NodeType = childEntry
+          ? getNodeType(childEntry)
+          : 'normal';
+        edges.push(
+          createEdge(nodeId, childId, direction, childType, edgeSettings),
+        );
+      }
+    }
+    for (const spouseId of entry.spouses ?? []) {
+      if (depthMap.has(spouseId)) {
+        edges.push(
+          createEdge(nodeId, spouseId, direction, 'spouse', edgeSettings),
+        );
+      }
+    }
+    for (const siblingId of entry.siblings ?? []) {
+      if (depthMap.has(siblingId)) {
+        edges.push(
+          createEdge(nodeId, siblingId, direction, 'sibling', edgeSettings),
+        );
+      }
+    }
+  }
+
+  return { nodes, edges };
+}
+
+/**
+ * Calculates node and edge layouts for a tree.
+ *
+ * For graphs with up to {@link LARGE_GRAPH_THRESHOLD} nodes the full
+ * entitree-flex algorithm is used.  Larger graphs are routed to an O(n)
+ * linear layout to prevent UI freezes.
  *
  * This is the single layout engine for the entire project.
  * Both the main thread (via layoutService wrapper) and the Web Worker
@@ -234,8 +376,13 @@ export function layoutElementsCore(
   direction: Direction = 'TB',
   edgeSettings: EdgeSettings = DEFAULT_EDGE_SETTINGS,
 ): { nodes: Node[]; edges: Edge[] } {
-  if (!tree || !rootId || Object.keys(tree).length === 0) {
+  const nodeCount = Object.keys(tree).length;
+  if (!tree || !rootId || nodeCount === 0) {
     return { nodes: [], edges: [] };
+  }
+
+  if (nodeCount > LARGE_GRAPH_THRESHOLD) {
+    return layoutLinearSimple(tree, rootId, direction, edgeSettings);
   }
 
   const { nodes: entitreeNodes, rels: entitreeEdges } = layoutFromMap(

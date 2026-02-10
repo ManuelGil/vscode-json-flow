@@ -38,6 +38,7 @@ export function useFlowSettings(
   rotateLayout: () => Direction,
   flowData: FlowData,
   setEdges: React.Dispatch<React.SetStateAction<Edge[]>>,
+  onDirectionChange?: (direction: Direction) => void,
 ) {
   /**
    * Handles layout direction change and updates VSCode state
@@ -65,9 +66,10 @@ export function useFlowSettings(
 
   const handleRotation = useCallback(() => {
     const newDirection = rotateLayout();
+    onDirectionChange?.(newDirection);
     // Use debounced version for VSCode communication
     debouncedUpdateOrientation(newDirection);
-  }, [rotateLayout, debouncedUpdateOrientation]);
+  }, [rotateLayout, debouncedUpdateOrientation, onDirectionChange]);
 
   /**
    * Handles edge settings changes

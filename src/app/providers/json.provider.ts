@@ -105,6 +105,12 @@ export class JSONProvider {
    */
   private _isDisposed: boolean = false;
 
+  /**
+   * Tracks previous visibility so _update() only fires on true
+   * hidden-to-visible transitions, not on every active-state change.
+   */
+  private _wasVisible: boolean = true;
+
   // -----------------------------------------------------------------
   // Constructor
   // -----------------------------------------------------------------
@@ -136,10 +142,6 @@ export class JSONProvider {
             // but we log a warning to encourage explicit origin usage going forward.
             if (message?.origin && message.origin !== 'webview') {
               break;
-            }
-            if (!message?.origin) {
-              // Accepted for backward compatibility with 2.2.1 clients
-              // that omit the origin field.
             }
             // If message includes a path, it must match the previewedPath, with Windows-insensitive comparison.
             const maybePath = (message as { path?: string } | undefined)?.path;
@@ -207,12 +209,16 @@ export class JSONProvider {
       this._disposables,
     );
 
-    // Update the webview when the panel becomes visible again.
+    // Update the webview only when transitioning from hidden to visible.
+    // onDidChangeViewState also fires on active-state changes (focus moves
+    // between editor groups) which must NOT reload the webview.
     this._panel.onDidChangeViewState(
       () => {
-        if (this._panel.visible) {
+        const nowVisible = this._panel.visible;
+        if (nowVisible && !this._wasVisible) {
           this._update();
         }
+        this._wasVisible = nowVisible;
         // Recompute split state based on current view column (non-One implies split)
         const isSplit = this._panel.viewColumn !== ViewColumn.One;
         JSONProvider.isSplitView = !!isSplit;

@@ -46,6 +46,7 @@ type UseFlowControllerReturn = {
   rotateLayout: () => Direction;
   collapsedNodes: Set<string>;
   toggleNodeChildren: (nodeId: string) => void;
+  descendantsCache: Map<string, string[]>;
 };
 
 /**
@@ -342,5 +343,6 @@ export function useFlowController({
     rotateLayout,
     collapsedNodes,
     toggleNodeChildren,
+    descendantsCache,
   };
 }

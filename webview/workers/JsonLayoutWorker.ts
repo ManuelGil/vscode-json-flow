@@ -16,7 +16,7 @@ import {
 } from '@webview/services/layout-core';
 
 type JsonLayoutOptions = {
-  direction?: 'horizontal' | 'vertical';
+  direction?: Direction;
   compact?: boolean;
 };
 
@@ -44,13 +44,11 @@ const TOTAL_STEPS = 3;
 const MIN_PROGRESS_INTERVAL = 33; // ms
 
 /**
- * Maps the worker direction option to a layout Direction constant.
- * Matches the inverse of FlowCanvas: 'vertical' -> 'TB', 'horizontal' -> 'LR'.
+ * Returns the layout Direction from the worker options.
+ * Defaults to 'TB' when no direction is provided.
  */
-function toDirection(
-  optionDir: 'horizontal' | 'vertical' | undefined,
-): Direction {
-  return optionDir === 'horizontal' ? 'LR' : 'TB';
+function toDirection(optionDir: Direction | undefined): Direction {
+  return optionDir ?? 'TB';
 }
 
 /**
@@ -76,10 +74,7 @@ function processJsonData(
     if (processingCanceled) {
       throw new Error('Processing canceled');
     }
-    const progress = Math.min(
-      Math.round((step / TOTAL_STEPS) * 100),
-      99,
-    );
+    const progress = Math.min(Math.round((step / TOTAL_STEPS) * 100), 99);
     const now = performance.now();
     if (
       progress < 99 &&

@@ -3,6 +3,7 @@
  * Custom hook for managing JSON layout Web Worker lifecycle and communication
  * Provides a clean interface for offloading heavy layout calculations to a background thread
  */
+import type { Direction } from '@webview/types';
 import type {
   WorkerMessage,
   WorkerProcessingCompleteCompact,
@@ -16,7 +17,7 @@ import { v4 as uuidv4 } from 'uuid'; // Ensure uuid is installed for request tra
 // Worker request options
 export interface LayoutWorkerOptions {
   spacing?: number;
-  direction?: 'horizontal' | 'vertical';
+  direction?: Direction;
   compact?: boolean;
   /**
    * Enable adaptive batching in the worker to minimize CPU while keeping UI responsive.
