@@ -385,14 +385,13 @@ export const FlowCanvas = memo(function FlowCanvas() {
   const { paused: liveSyncPaused, pauseReason } = useEditorSync({
     selectedNodeId: selectedNode?.id ?? null,
     onApplyGraphSelection: handleApplyGraphSelection,
+    path: flowData.path,
   });
   // Render-only virtualization: defer edges until the graph is ready
   const renderedEdges = graphReady ? renderEdges : [];
   const reactFlowKey = useMemo(() => {
-    const nodeCount = renderNodes.length;
-    const edgeCount = renderEdges.length;
-    return `${nodeCount}:${edgeCount}:${currentDirection}`;
-  }, [renderNodes, renderEdges, currentDirection]);
+    return `${currentDirection}:${flowData.data ? 'loaded' : 'empty'}`;
+  }, [currentDirection, flowData.data]);
 
   if (
     !workerNodes &&

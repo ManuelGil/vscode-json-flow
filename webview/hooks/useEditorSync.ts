@@ -3,23 +3,23 @@ import type { OutgoingVscodeMessage } from '@webview/services/vscodeMessenger';
 import { vscodeMessenger } from '@webview/services/vscodeMessenger';
 import vscodeSyncService from '@webview/services/vscodeSyncService';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useFlowState } from '../context/FlowContext';
 
 interface UseEditorSyncOptions {
   selectedNodeId?: string | null;
   onApplyGraphSelection?: (nodeId?: string) => void;
+  path?: string;
 }
 
 export function useEditorSync({
   selectedNodeId,
   onApplyGraphSelection,
+  path,
 }: UseEditorSyncOptions) {
   const [liveSyncEnabled, setLiveSyncEnabled] = useState(false);
   const [liveSyncPaused, setLiveSyncPaused] = useState(false);
   const [pauseReason, setPauseReason] = useState<string | undefined>(undefined);
   const lastSentNodeIdRef = useRef<string | null | undefined>(undefined);
   const lastOutNonceRef = useRef<string | undefined>(undefined);
-  const { path } = useFlowState();
 
   const makeNonce = useCallback(
     () =>
