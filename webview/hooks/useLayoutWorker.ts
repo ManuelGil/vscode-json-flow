@@ -314,6 +314,7 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
   const handleWorkerMessage = useCallback(
     (event: MessageEvent) => {
       const data = event?.data;
+
       if (!isWorkerMessage(data)) {
         return;
       }

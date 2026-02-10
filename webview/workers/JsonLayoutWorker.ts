@@ -8,6 +8,7 @@
 
 import type { JsonValue } from '@webview/types';
 import type { Edge, Node } from '@xyflow/react';
+import { GRAPH_ROOT_ID } from '../../src/shared/graph-identity';
 import { buildPointer, POINTER_ROOT } from '../../src/shared/node-pointer';
 
 type WorkerNodeData = {
@@ -157,6 +158,13 @@ function processJsonData(
     }
     currentStep++;
     updateProgress(currentStep);
+
+    // DEV-only: fail fast if the sentinel ever gets corrupted to a pointer.
+    if (import.meta.env.DEV && GRAPH_ROOT_ID.startsWith('/')) {
+      throw new Error(
+        'GRAPH_ROOT_ID must never start with "/". The graph identity domain and the JSON Pointer domain must remain disjoint.',
+      );
+    }
 
     // Step 2: Generate nodes with positions
     const nodes: Node<WorkerNodeData>[] = [];
@@ -412,7 +420,25 @@ function processJsonData(
 
       // Generate unique ID using JSON Pointer format consistent with
       // the extension host selection mappers (e.g., /foo/bar/0).
-      const nodeId = parentId ? buildPointer(parentId, rawKey) : POINTER_ROOT;
+      //
+      // ARCHITECTURAL INVARIANT (frozen):
+      // GRAPH_ROOT_ID and POINTER_ROOT belong to separate identity domains.
+      // They must never be merged.
+      // GRAPH_ROOT_ID must never start with '/'.
+      //
+      // The graph structural root uses GRAPH_ROOT_ID (a sentinel that is
+      // NOT a valid JSON Pointer) so it can never collide with the
+      // RFC 6901 pointer "/" which represents an empty-string key.
+      // Children of the graph root derive their pointers from
+      // POINTER_ROOT ("/"), not from GRAPH_ROOT_ID.
+      let nodeId: string;
+      if (!parentId) {
+        nodeId = GRAPH_ROOT_ID;
+      } else if (parentId === GRAPH_ROOT_ID) {
+        nodeId = buildPointer(POINTER_ROOT, rawKey);
+      } else {
+        nodeId = buildPointer(parentId, rawKey);
+      }
 
       if (Array.isArray(data)) {
         // Array node

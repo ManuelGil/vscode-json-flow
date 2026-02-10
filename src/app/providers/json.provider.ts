@@ -63,23 +63,6 @@ export class JSONProvider {
   static liveSyncPauseReason: string | undefined;
 
   /**
-   * Tracks the last time a worker health check was successful
-   * Used to detect and recover from worker failures
-   */
-  static lastWorkerHealthCheckTime: number | undefined;
-
-  /**
-   * Number of consecutive worker health check failures
-   */
-  static workerHealthCheckFailures: number = 0;
-
-  /**
-   * Maximum allowed time (ms) between successful worker health checks
-   * If exceeded, will trigger recovery actions
-   */
-  static workerHealthCheckThresholdMs: number = 10000; // 10 seconds default
-
-  /**
    * Guard to prevent feedback loop when applying selection from webview
    */
   static suppressEditorSelectionEvent: boolean = false;
@@ -146,30 +129,10 @@ export class JSONProvider {
     // Dispose resources when the panel is closed.
     this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
 
-    // Start health check monitoring system
-    this._initializeHealthCheckSystem();
-
     // Listen for messages from the webview (extend as needed for interactivity).
     this._panel.webview.onDidReceiveMessage(
       (message) => {
         switch (message?.command ?? message?.type) {
-          case 'healthCheck': {
-            // Immediately respond to health check pings with a pong
-            if (message.type === 'ping') {
-              // Record successful health check
-              JSONProvider.lastWorkerHealthCheckTime = Date.now();
-              JSONProvider.workerHealthCheckFailures = 0;
-
-              this._panel.webview.postMessage({
-                command: 'healthCheck',
-                type: 'pong',
-                timestamp: JSONProvider.lastWorkerHealthCheckTime,
-                id: message.id,
-                origin: 'extension',
-              });
-            }
-            break;
-          }
           case 'graphSelectionChanged': {
             if (!JSONProvider.liveSyncEnabled) {
               break;
@@ -269,13 +232,6 @@ export class JSONProvider {
         JSONProvider._onStateChanged.fire({
           isSplitView: JSONProvider.isSplitView,
         });
-
-        // BUGFIX v2.3.2: Ensure worker health check is performed when panel becomes visible
-        // This helps recover from potential worker issues when the panel is hidden/shown
-        if (this._panel.visible) {
-          // Schedule a health check ping
-          this._scheduleWorkerHealthCheck();
-        }
       },
       null,
       this._disposables,
@@ -629,8 +585,6 @@ export class JSONProvider {
     JSONProvider.liveSyncPauseReason = undefined;
     JSONProvider.hostThrottleMs = undefined;
     JSONProvider.lastAppliedNodeId = undefined;
-    JSONProvider.lastWorkerHealthCheckTime = undefined;
-    JSONProvider.workerHealthCheckFailures = 0;
     JSONProvider.configState = {};
   }
 
@@ -655,127 +609,6 @@ export class JSONProvider {
     JSONProvider.previewedPath = path;
     if (prev !== path) {
       JSONProvider.lastAppliedNodeId = undefined;
-    }
-  }
-
-  /**
-   * Initializes the health check monitoring system for the worker
-   * Sets up periodic health checks and recovery mechanisms
-   */
-  private _initializeHealthCheckSystem(): void {
-    // Initialize last health check time to now
-    JSONProvider.lastWorkerHealthCheckTime = Date.now();
-    JSONProvider.workerHealthCheckFailures = 0;
-
-    // Schedule first health check
-    this._scheduleWorkerHealthCheck();
-
-    // Set up periodic health check monitoring (every 5 seconds)
-    const healthMonitorId = setInterval(() => {
-      // Check if panel is still active
-      if (!this._panel || this._isDisposed) {
-        clearInterval(healthMonitorId);
-        return;
-      }
-
-      // If visible, verify worker health
-      if (this._panel.visible) {
-        this._verifyWorkerHealth();
-      }
-    }, 5000);
-
-    // Ensure health monitor is disposed with provider
-    this._disposables.push({
-      dispose: () => clearInterval(healthMonitorId),
-    });
-  }
-
-  /**
-   * Schedules a worker health check by sending a ping message
-   * This proactively checks if the worker is responsive
-   */
-  private _scheduleWorkerHealthCheck(): void {
-    // Only send if panel is active and visible
-    if (!this._panel || !this._panel.visible || this._isDisposed) {
-      return;
-    }
-
-    try {
-      // Send ping with unique ID to verify worker responsiveness
-      this._panel.webview.postMessage({
-        command: 'healthCheck',
-        type: 'ping',
-        timestamp: Date.now(),
-        id: `hc-${Date.now()}`,
-        origin: 'extension',
-      });
-    } catch (error) {
-      console.warn('Worker health check failed:', error);
-      // Record failure
-      JSONProvider.workerHealthCheckFailures += 1;
-    }
-  }
-
-  /**
-   * Verifies worker health by checking time since last successful health check
-   * Triggers recovery actions if necessary
-   */
-  private _verifyWorkerHealth(): void {
-    const now = Date.now();
-    const lastCheck = JSONProvider.lastWorkerHealthCheckTime || 0;
-
-    // If last check is too old, worker might be unresponsive
-    if (now - lastCheck > JSONProvider.workerHealthCheckThresholdMs) {
-      console.warn(
-        `Worker health check threshold exceeded: ${now - lastCheck}ms since last response`,
-      );
-
-      // Increment failure count
-      JSONProvider.workerHealthCheckFailures += 1;
-
-      // Recovery actions based on failure count
-      if (JSONProvider.workerHealthCheckFailures >= 3) {
-        // After multiple failures, try more aggressive recovery
-        this._attemptWorkerRecovery();
-      } else {
-        // First attempt: just try another health check
-        this._scheduleWorkerHealthCheck();
-      }
-    } else {
-      // Worker seems healthy, schedule next check
-      this._scheduleWorkerHealthCheck();
-    }
-  }
-
-  /**
-   * Attempts to recover from worker failures using increasingly aggressive strategies
-   */
-  private _attemptWorkerRecovery(): void {
-    console.warn(
-      `Attempting worker recovery after ${JSONProvider.workerHealthCheckFailures} failures`,
-    );
-
-    try {
-      // First, try to reset the worker state with a reset message
-      this._panel.webview.postMessage({
-        command: 'resetWorker',
-        origin: 'extension',
-      });
-
-      // If failures persist beyond a threshold, try refreshing the webview
-      if (JSONProvider.workerHealthCheckFailures >= 5) {
-        console.warn('Worker recovery: refreshing webview HTML...');
-
-        // Force HTML reload
-        this._htmlInitialized = false;
-        this._update();
-
-        // Reset failure counter
-        JSONProvider.workerHealthCheckFailures = 0;
-        JSONProvider.lastWorkerHealthCheckTime = Date.now();
-      }
-    } catch (error) {
-      console.error('Worker recovery attempt failed:', error);
     }
   }
 
@@ -871,34 +704,6 @@ export class JSONProvider {
     <script nonce="${nonce}">
       // Make the worker URL available to the webview JS (read-only exposure)
       window.__jsonFlowWorkerUrl = ${JSON.stringify(jsonLayoutWorkerUri.toString())};
-      
-      // Add health check handler to listen for extension health check requests
-      window.addEventListener('message', (event) => {
-        const message = event.data;
-        // Handle health check pings from extension
-        if (message && (message.command === 'healthCheck' || message.type === 'ping')) {
-          // Respond immediately to confirm worker connectivity
-          const vscode = acquireVsCodeApi();
-          vscode.postMessage({
-            command: 'healthCheck',
-            type: 'pong',
-            timestamp: Date.now(),
-            id: message.id,
-            origin: 'webview'
-          });
-        }
-        // Handle worker reset requests
-        if (message && message.command === 'resetWorker') {
-          try {
-            // Tell any active worker instances to clean up
-            window.dispatchEvent(new CustomEvent('json-worker-reset', {
-              detail: { reason: 'extension-requested-reset' }
-            }));
-          } catch (e) {
-            console.error('Worker reset failed:', e);
-          }
-        }
-      });
     </script>
     <script type="module" nonce="${nonce}" src="${scriptUri}"></script>
     <script nonce="${nonce}">
