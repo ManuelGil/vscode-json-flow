@@ -152,7 +152,8 @@ export function useFlowController({
   }, [treeData, treeRootId, isValidTreeData, currentDirection]);
 
   const toggleNodeChildrenRef = useRef<(nodeId: string) => void>(() => {
-    logger.warn('toggleNodeChildren called before initialization');
+    // No-op: replaced by real implementation during initialization
+    void 0;
   });
 
   /**

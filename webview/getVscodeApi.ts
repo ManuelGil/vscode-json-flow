@@ -2,8 +2,6 @@
  * VSCode API singleton instance
  * We only want to call acquireVsCodeApi() once as per VS Code recommendations
  */
-import * as logger from '@webview/utils/logger';
-
 interface VsCodeApi {
   postMessage: (message: unknown) => void;
   setState: (newState: unknown) => void;
@@ -29,16 +27,13 @@ let vscodeInstance: VsCodeApi | null = null;
 export function getVscodeApi() {
   if (import.meta.env.DEV) {
     return {
-      postMessage: (_msg: unknown) => {
-        logger.info('[MOCK VSCode] postMessage:', _msg);
+      postMessage: () => {
+        void 0;
       },
-      setState: (_state: unknown) => {
-        logger.info('[MOCK VSCode] setState:', _state);
+      setState: () => {
+        void 0;
       },
-      getState: () => {
-        logger.info('[MOCK VSCode] getState');
-        return undefined;
-      },
+      getState: () => undefined,
     };
   }
 

@@ -6,20 +6,10 @@
  */
 const isDev = !!import.meta.env?.DEV;
 
-function makeLogger(method: 'log' | 'info' | 'warn' | 'error') {
-  return (...args: unknown[]) => {
-    if (isDev) {
-      // eslint-disable-next-line no-console
-      console[method](...args);
-    }
-  };
-}
-
-/** Dev-only console.log */
-export const log = makeLogger('log');
-/** Dev-only console.info */
-export const info = makeLogger('info');
-/** Dev-only console.warn */
-export const warn = makeLogger('warn');
-/** Dev-only console.error */
-export const error = makeLogger('error');
+/** Dev-only console.error for unexpected-state diagnostics. */
+export const error = (...args: unknown[]): void => {
+  if (isDev) {
+    // eslint-disable-next-line no-console
+    console.error(...args);
+  }
+};

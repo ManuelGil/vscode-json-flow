@@ -40,7 +40,7 @@ export interface UseLayoutWorkerResult {
   processData: (jsonData: unknown, options?: LayoutWorkerOptions) => void;
   cancelProcessing: () => void;
   isProcessing: boolean;
-  progress: number;
+  progress: number | null;
   error: string | null;
   nodes: Node[] | null;
   edges: Edge[] | null;
@@ -59,7 +59,7 @@ export interface UseLayoutWorkerResult {
 export function useLayoutWorker(): UseLayoutWorkerResult {
   // State for worker processing
   const [isProcessing, setIsProcessing] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [nodes, setNodes] = useState<Node[] | null>(null);
   const [edges, setEdges] = useState<Edge[] | null>(null);
@@ -71,6 +71,18 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
   // Refs for worker instance and request tracking
   const workerRef = useRef<Worker | null>(null);
   const currentRequestId = useRef<string | null>(null);
+
+  // Stable ref for the message handler so ensureWorker can attach it
+  // without a circular dependency on handleWorkerMessage.
+  const handleWorkerMessageRef = useRef<((event: MessageEvent) => void) | null>(
+    null,
+  );
+
+  // Blob Worker refs: the script is fetched once via the asWebviewUri URL
+  // (allowed by CSP connect-src), then wrapped in a same-origin blob: URL
+  // so that `new Worker(blobUrl)` passes the browser same-origin check.
+  const workerBlobUrlRef = useRef<string | null>(null);
+  const workerBlobPromiseRef = useRef<Promise<string> | null>(null);
 
   // Throttle progress updates to one per frame to reduce re-renders
   const latestProgressRef = useRef(0);
@@ -120,106 +132,138 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
     }
   }, [flushPartials]);
 
-  // Initialize worker on first use
+  // Clean up worker, blob URL, and pending async timers on unmount
   useEffect(() => {
     return () => {
-      // Clean up worker on unmount
       if (workerRef.current) {
         workerRef.current.terminate();
         workerRef.current = null;
+      }
+      if (workerBlobUrlRef.current) {
+        URL.revokeObjectURL(workerBlobUrlRef.current);
+        workerBlobUrlRef.current = null;
+      }
+      if (progressRafIdRef.current != null) {
+        cancelAnimationFrame(progressRafIdRef.current);
+        progressRafIdRef.current = null;
+      }
+      if (partialFlushRafIdRef.current != null) {
+        cancelAnimationFrame(partialFlushRafIdRef.current);
+        partialFlushRafIdRef.current = null;
+      }
+      if (partialFlushTimeoutIdRef.current != null) {
+        clearTimeout(partialFlushTimeoutIdRef.current);
+        partialFlushTimeoutIdRef.current = null;
       }
     };
   }, []);
 
   /**
-   * Ensure a Web Worker instance exists (pre-warm on mount and reuse)
+   * Fetch the worker script (once) and return a same-origin blob: URL.
+   *
+   * VSCode webview origin is `vscode-webview://<uuid>` but asWebviewUri
+   * produces `https://file+.vscode-resource.vscode-cdn.net/...`.
+   * The Worker constructor enforces same-origin, so a direct URL fails.
+   * Fetching the script (allowed by CSP connect-src) and wrapping it in
+   * a blob: URL gives us a same-origin URL the Worker can load.
    */
-  const ensureWorker = useCallback(() => {
+  const getWorkerBlobUrl = useCallback(async (): Promise<string> => {
+    if (workerBlobUrlRef.current) {
+      return workerBlobUrlRef.current;
+    }
+
+    // Deduplicate concurrent calls — share one in-flight fetch
+    if (!workerBlobPromiseRef.current) {
+      workerBlobPromiseRef.current = (async (): Promise<string> => {
+        const scriptUrl = (
+          window as unknown as {
+            __jsonFlowWorkerUrl?: string;
+          }
+        ).__jsonFlowWorkerUrl;
+
+        if (!scriptUrl) {
+          throw new Error('Worker URL not injected by extension host');
+        }
+
+        const response = await fetch(scriptUrl);
+        if (!response.ok) {
+          throw new Error(
+            `Failed to fetch worker script: ${response.status} ${response.statusText}`,
+          );
+        }
+
+        const text = await response.text();
+        const blob = new Blob([text], { type: 'application/javascript' });
+        const blobUrl = URL.createObjectURL(blob);
+        workerBlobUrlRef.current = blobUrl;
+        return blobUrl;
+      })();
+    }
+
+    return workerBlobPromiseRef.current;
+  }, []);
+
+  /**
+   * Ensure a Web Worker instance exists (pre-warm on mount and reuse).
+   * Async because the first call fetches the worker script to create a
+   * same-origin blob: URL.
+   */
+  const ensureWorker = useCallback(async (): Promise<void> => {
     if (workerRef.current) {
       return;
     }
 
     try {
-      // Resolve the worker URL via import.meta.url so the bundler rewrites it correctly in production
-      const workerPath = new URL(
-        '../workers/JsonLayoutWorker.ts',
-        import.meta.url,
-      );
+      const blobUrl = await getWorkerBlobUrl();
 
-      // Prefer module worker (modern bundlers output ESM); gracefully fallback to classic if needed
-      try {
-        workerRef.current = new Worker(workerPath, {
-          type: 'module' as WorkerOptions['type'],
-        });
-      } catch (err1) {
-        logger.warn(
-          'Module worker failed, falling back to classic worker',
-          err1,
-        );
-        try {
-          workerRef.current = new Worker(workerPath);
-        } catch (err2) {
-          logger.warn(
-            'Classic worker with URL failed, falling back to relative path',
-            err2,
-          );
-          // Last resort: legacy relative string (only if bundler placed the file alongside the bundle)
-          workerRef.current = new Worker('./JsonLayoutWorker.js');
-        }
+      // Guard against concurrent ensureWorker calls both reaching this point
+      if (workerRef.current) {
+        return;
       }
 
-      // Set up error handlers (message handler is attached after definition via effect)
+      workerRef.current = new Worker(blobUrl);
+
+      // Attach message handler immediately to avoid losing early messages.
+      // The ref is kept in sync by the handleWorkerMessage effect below.
+      workerRef.current.onmessage = (event: MessageEvent) => {
+        handleWorkerMessageRef.current?.(event);
+      };
+
       workerRef.current.onerror = (error) => {
         setError(`Worker error: ${error.message}`);
         setIsProcessing(false);
-        logger.error('Worker error:', error);
-        try {
-          workerRef.current?.terminate();
-        } catch {
-          // ignore termination errors
-          void 0;
-        }
+        currentRequestId.current = null;
+        workerRef.current?.terminate();
         workerRef.current = null;
-        // Recreate a fresh worker to keep the system operational
-        setTimeout(() => {
-          try {
-            ensureWorker();
-          } catch (e) {
-            logger.error('Failed to recreate worker after error', e);
-          }
-        }, 0);
       };
-      workerRef.current.onmessageerror = (ev: MessageEvent) => {
+
+      workerRef.current.onmessageerror = () => {
         setError('Worker message error');
         setIsProcessing(false);
-        logger.error('Worker messageerror:', ev);
-        try {
-          workerRef.current?.terminate();
-        } catch {
-          // ignore termination errors
-          void 0;
-        }
+        currentRequestId.current = null;
+        workerRef.current?.terminate();
         workerRef.current = null;
-        setTimeout(() => {
-          try {
-            ensureWorker();
-          } catch (e) {
-            logger.error('Failed to recreate worker after messageerror', e);
-          }
-        }, 0);
       };
     } catch (err) {
       const errorMessage =
-        err instanceof Error ? err.message : 'Unknown error creating worker';
+        err instanceof Error ? err.message : 'Unknown worker init error';
+
       setError(errorMessage);
       setIsProcessing(false);
-      logger.error('Error setting up worker:', err);
     }
-  }, []);
+  }, [getWorkerBlobUrl]);
 
   // Pre-warm the worker as soon as the hook mounts to reduce first-use latency
   useEffect(() => {
-    ensureWorker();
+    let cancelled = false;
+    ensureWorker().catch((err: unknown) => {
+      if (!cancelled) {
+        logger.error('Failed to pre-warm worker:', err);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [ensureWorker]);
 
   /**
@@ -341,11 +385,6 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
           // Commit results synchronously to avoid race with hiding the loader
           setNodes(payload.nodes);
           setEdges(payload.edges);
-          if (import.meta.env.DEV) {
-            logger.log(
-              `Worker complete: nodes=${payload.nodes.length}, edges=${payload.edges.length}`,
-            );
-          }
           // Keep the loading animation until after paint
           setProgress(99);
           setProcessingStats({
@@ -357,11 +396,13 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
             cancelAnimationFrame(progressRafIdRef.current);
             progressRafIdRef.current = null;
           }
-          // Defer hiding the loader until after React has painted the new content
+          // Defer hiding the loader until after React has painted the new content.
+          // Scope to this requestId so a newer job is not clobbered.
+          const completedId = payload.requestId;
           requestAnimationFrame(() => {
             requestAnimationFrame(() => {
-              if (import.meta.env.DEV) {
-                logger.log('Finalizing processing: hiding loader');
+              if (currentRequestId.current !== completedId) {
+                return;
               }
               setIsProcessing(false);
               setProgress(100);
@@ -386,11 +427,6 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
             reconstructFromCompact(payload);
           setNodes(finalNodes);
           setEdges(finalEdges);
-          if (import.meta.env.DEV) {
-            logger.log(
-              `Worker complete (compact): nodes=${finalNodes.length}, edges=${finalEdges.length}`,
-            );
-          }
           setProgress(99);
           setProcessingStats({
             time: payload.processingTime,
@@ -400,10 +436,11 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
             cancelAnimationFrame(progressRafIdRef.current);
             progressRafIdRef.current = null;
           }
+          const completedCompactId = payload.requestId;
           requestAnimationFrame(() => {
             requestAnimationFrame(() => {
-              if (import.meta.env.DEV) {
-                logger.log('Finalizing processing (compact): hiding loader');
+              if (currentRequestId.current !== completedCompactId) {
+                return;
               }
               setIsProcessing(false);
               setProgress(100);
@@ -452,9 +489,6 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
         }
 
         case 'PROCESSING_CANCELED': {
-          if (import.meta.env.DEV) {
-            logger.log('Worker reported cancellation');
-          }
           if (partialFlushRafIdRef.current != null) {
             cancelAnimationFrame(partialFlushRafIdRef.current);
             partialFlushRafIdRef.current = null;
@@ -470,7 +504,7 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
             progressRafIdRef.current = null;
           }
           setIsProcessing(false);
-          setProgress(0);
+          setProgress(null);
           currentRequestId.current = null;
           break;
         }
@@ -492,7 +526,7 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
             progressRafIdRef.current = null;
           }
           setIsProcessing(false);
-          setProgress(0);
+          setProgress(null);
           currentRequestId.current = null;
           logger.error('Worker error:', payload.error);
           break;
@@ -504,11 +538,10 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
     [isWorkerMessage, reconstructFromCompact, schedulePartialFlush],
   );
 
-  // Attach the message handler once it's defined, and whenever it changes
+  // Keep the ref in sync so the stable onmessage wrapper inside ensureWorker
+  // always delegates to the latest handleWorkerMessage closure.
   useEffect(() => {
-    if (workerRef.current) {
-      workerRef.current.onmessage = handleWorkerMessage;
-    }
+    handleWorkerMessageRef.current = handleWorkerMessage;
   }, [handleWorkerMessage]);
 
   /**
@@ -518,14 +551,14 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
     (jsonData: unknown, options?: LayoutWorkerOptions) => {
       // If a job is in-flight, request its cancellation before starting a new one
       const previousId = currentRequestId.current;
-      if (isProcessing && previousId && workerRef.current) {
+      if (previousId && workerRef.current) {
         try {
           workerRef.current.postMessage({
             type: 'CANCEL',
             payload: { requestId: previousId },
           });
-        } catch (err) {
-          logger.warn('Failed to send CANCEL to worker', err);
+        } catch {
+          // Swallowed: worker may already be terminated
         }
         // Immediately clear the requestId to ignore any late messages from the previous job
         currentRequestId.current = null;
@@ -550,7 +583,7 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
 
       // Reset state before starting
       setError(null);
-      setProgress(0);
+      setProgress(null);
       setNodes(null);
       setEdges(null);
       setProcessingStats(null);
@@ -559,48 +592,64 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
       const requestId = uuidv4();
       currentRequestId.current = requestId;
 
-      try {
-        // Create worker if it doesn't exist (pre-warmed in mount effect as well)
-        if (!workerRef.current) {
-          ensureWorker();
-        }
+      // Kick off the async worker initialization + postMessage.
+      // The outer function stays sync (returns void) so callers in
+      // useEffect are not forced to handle a promise.
+      const startWorker = async (): Promise<void> => {
+        try {
+          // Create worker if it doesn't exist (pre-warmed in mount effect as well)
+          if (!workerRef.current) {
+            await ensureWorker();
+          }
 
-        // Start processing
-        setIsProcessing(true);
-        if (workerRef.current) {
-          workerRef.current.postMessage({
-            type: 'PROCESS_JSON',
-            payload: {
-              jsonData,
-              options,
-              requestId,
-            },
-          });
-        } else {
-          throw new Error('Worker is not initialized');
-        }
-      } catch (err) {
-        // Handle errors (e.g., worker creation failure)
-        const errorMessage =
-          err instanceof Error ? err.message : 'Unknown error creating worker';
-        setError(errorMessage);
-        setIsProcessing(false);
-        logger.error('Error setting up worker:', err);
+          // Guard: a newer processData call may have fired while we awaited
+          if (currentRequestId.current !== requestId) {
+            return;
+          }
 
-        // Fall back to synchronous processing on main thread
-        logger.warn(
-          'Web Worker failed, falling back to main thread processing',
-        );
-      }
+          // Start processing
+          setIsProcessing(true);
+          if (workerRef.current) {
+            workerRef.current.postMessage({
+              type: 'PROCESS_JSON',
+              payload: {
+                jsonData,
+                options,
+                requestId,
+              },
+            });
+          } else {
+            throw new Error('Worker is not initialized');
+          }
+        } catch (err) {
+          // Handle errors (e.g., worker creation failure)
+          const errorMessage =
+            err instanceof Error
+              ? err.message
+              : 'Unknown error creating worker';
+          setError(errorMessage);
+          setIsProcessing(false);
+          setProgress(null);
+          currentRequestId.current = null;
+          logger.error('Error setting up worker:', err);
+
+          // The worker failed — the error state is now visible to the UI.
+          // FlowCanvas falls back to useFlowController nodes via
+          // `finalNodes = workerNodes || nodes` so the graph still renders,
+          // but without worker-driven progress or layout optimizations.
+        }
+      };
+
+      startWorker();
     },
-    [isProcessing, ensureWorker],
+    [ensureWorker],
   );
 
   /**
    * Cancel current processing job
    */
   const cancelProcessing = useCallback(() => {
-    if (!isProcessing || !currentRequestId.current || !workerRef.current) {
+    if (!currentRequestId.current || !workerRef.current) {
       return;
     }
 
@@ -612,9 +661,9 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
     });
 
     setIsProcessing(false);
-    setProgress(0);
+    setProgress(null);
     currentRequestId.current = null;
-  }, [isProcessing]);
+  }, []);
 
   return {
     processData,

@@ -7,7 +7,7 @@ import {
 import { DEFAULT_SETTINGS } from '@webview/components/CustomControls/Settings';
 import { flowReducer } from '@webview/context/FlowContext';
 import { generateTree, getRootId } from '@webview/helpers/generateTree';
-import { sampleJsonData } from '@webview/helpers/mockData';
+import { createSampleJsonData } from '@webview/helpers/mockData';
 import { useFlowController, useLayoutWorker } from '@webview/hooks';
 import { useEditorSync } from '@webview/hooks/useEditorSync';
 import { useFlowSettings } from '@webview/hooks/useFlowSettings';
@@ -34,7 +34,8 @@ import { useSelectedNode } from './useSelectedNode';
 export const FlowCanvas = memo(function FlowCanvas() {
   const initialFlowState = useMemo(() => {
     const st = vscodeService.getStateOrDefaults();
-    const data = import.meta.env.DEV ? sampleJsonData : st.data;
+    const enableMock: boolean = import.meta.env.VITE_ENABLE_MOCK === 'true';
+    const data = enableMock ? createSampleJsonData() : st.data;
     return {
       data,
       treeData: data ? generateTree(data) : {},
@@ -213,19 +214,14 @@ export const FlowCanvas = memo(function FlowCanvas() {
       reactFlowInstanceRef.current &&
       !didFitViewRef.current
     ) {
-      if (import.meta.env.DEV) {
-        logger.log(
-          `Auto-fit after completion: nodes=${workerNodes.length}, edges=${workerEdges?.length ?? 0}`,
-        );
-      }
       requestAnimationFrame(() => {
         try {
           reactFlowInstanceRef.current?.fitView({
             padding: 0.2,
             includeHiddenNodes: true,
           });
-        } catch (e) {
-          logger.warn('fitView failed:', e);
+        } catch {
+          // Swallowed: fitView may fail when nodes are not yet rendered
         }
         didFitViewRef.current = true;
       });
@@ -235,9 +231,6 @@ export const FlowCanvas = memo(function FlowCanvas() {
     if (!isWorkerProcessing) {
       requestAnimationFrame(() => {
         const count = document.querySelectorAll('.react-flow__node').length;
-        if (import.meta.env.DEV) {
-          logger.log(`Rendered DOM nodes count: ${count}`);
-        }
         if (count > 0) {
           setGraphReady(true);
         }
@@ -266,9 +259,6 @@ export const FlowCanvas = memo(function FlowCanvas() {
     lastDataRef.current = jsonData;
     lastDirectionRef.current = flowData.orientation;
 
-    if (import.meta.env.DEV) {
-      logger.log('Processing dataset');
-    }
     processWithWorker(jsonData, {
       direction: flowData.orientation === 'TB' ? 'vertical' : 'horizontal',
     });
@@ -301,7 +291,7 @@ export const FlowCanvas = memo(function FlowCanvas() {
     !workerNodes &&
     (!isValidTree || !Array.isArray(nodes) || !Array.isArray(edges))
   ) {
-    return <Loading text="Preparing data..." />;
+    return <Loading />;
   }
 
   if (workerError) {
@@ -325,8 +315,8 @@ export const FlowCanvas = memo(function FlowCanvas() {
           reactFlowInstanceRef.current = instance;
           try {
             instance.fitView({ padding: 0.2, includeHiddenNodes: true });
-          } catch (e) {
-            logger.warn('initial fitView failed:', e);
+          } catch {
+            // Swallowed: fitView may fail during initial render
           }
           // Ensure the graph is ready after initial render
           requestAnimationFrame(() => {
@@ -363,7 +353,7 @@ export const FlowCanvas = memo(function FlowCanvas() {
           </div>
         </div>
       )}
-      {!graphReady && (
+      {isWorkerProcessing && (
         <div
           style={{
             position: 'absolute',
@@ -372,7 +362,7 @@ export const FlowCanvas = memo(function FlowCanvas() {
             pointerEvents: 'none',
           }}
         >
-          <Loading progress={workerProgress} text="Loading graph..." />
+          <Loading progress={workerProgress} />
         </div>
       )}
       {import.meta.env.DEV && processingStats && (

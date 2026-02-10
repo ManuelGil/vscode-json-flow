@@ -22,6 +22,9 @@ export default defineConfig({
       },
     },
   },
+  worker: {
+    format: 'iife'
+  },
   resolve: {
     alias: {
       '@src': path.resolve(__dirname, './src'),

@@ -105,12 +105,6 @@ export class JSONProvider {
    */
   private _isDisposed: boolean = false;
 
-  /**
-   * Tracks whether the webview HTML has been initialized to avoid reloading
-   * the entire webview on reveal/focus changes, which causes flicker.
-   */
-  private _htmlInitialized: boolean = false;
-
   // -----------------------------------------------------------------
   // Constructor
   // -----------------------------------------------------------------
@@ -144,9 +138,8 @@ export class JSONProvider {
               break;
             }
             if (!message?.origin) {
-              console.warn(
-                '[JSON Flow] Inbound selection message without origin; accepting for compatibility',
-              );
+              // Accepted for backward compatibility with 2.2.1 clients
+              // that omit the origin field.
             }
             // If message includes a path, it must match the previewedPath, with Windows-insensitive comparison.
             const maybePath = (message as { path?: string } | undefined)?.path;
@@ -618,13 +611,8 @@ export class JSONProvider {
    */
   private _update(): void {
     const webview = this._panel.webview;
-    // Only set the HTML once per panel lifecycle to prevent full reloads
-    // when the panel gains focus or is revealed again.
-    if (this._htmlInitialized) {
-      return;
-    }
-    this._panel.webview.html = this._getHtmlForWebview(webview);
-    this._htmlInitialized = true;
+    const html = this._getHtmlForWebview(webview);
+    this._panel.webview.html = html;
   }
 
   /**
@@ -650,14 +638,8 @@ export class JSONProvider {
     );
 
     // Resolve the JsonLayoutWorker script within the built assets folder using a stable name
-    // Vite is configured to emit worker assets under assets/[name].js
     const jsonLayoutWorkerUri = webview.asWebviewUri(
-      Uri.joinPath(
-        this._extensionUri,
-        './dist',
-        'assets',
-        'JsonLayoutWorker-worker.js',
-      ),
+      Uri.joinPath(this._extensionUri, './dist', 'JsonLayoutWorker.js'),
     );
 
     // Use a nonce to only allow a specific script to be run.
@@ -681,7 +663,7 @@ export class JSONProvider {
         style-src ${webview.cspSource} 'unsafe-inline';
         img-src ${webview.cspSource} data:;
         script-src 'nonce-${nonce}' ${webview.cspSource};
-        worker-src ${webview.cspSource};
+        worker-src blob: ${webview.cspSource};
         connect-src ${webview.cspSource};
         frame-ancestors 'none';
         form-action 'none';
