@@ -1,7 +1,4 @@
-import { getRootId } from '@webview/helpers';
-import type { TreeData, TreeMap } from '@webview/types';
-import type { Node } from '@xyflow/react';
-import { layoutElements } from './layoutService';
+import type { TreeData } from '@webview/types';
 
 /**
  * Recursively collects all descendant node IDs for a given node in a tree.
@@ -30,26 +27,4 @@ export function getAllDescendants(
   }
 
   return descendants;
-}
-
-/**
- * Generates an array of React Flow Node objects from a TreeMap.
- *
- * @param treeData - The tree data as a TreeMap.
- * @returns An array of Node objects for use in React Flow.
- *
- * @example
- * const nodes = generateNodes(treeData);
- */
-export function generateNodes(treeData: TreeMap): Node[] {
-  if (!Object.keys(treeData).length) {
-    return [];
-  }
-
-  const rootId = getRootId(treeData);
-  const { nodes } = layoutElements(treeData, rootId, 'TB');
-  return nodes.map((node) => ({
-    ...node,
-    position: node.position || { x: 0, y: 0 },
-  }));
 }

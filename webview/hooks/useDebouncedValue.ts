@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 /**
  * useDebouncedValue
@@ -10,36 +10,19 @@ import { useEffect, useRef, useState } from 'react';
  * @returns The debounced value
  */
 export function useDebouncedValue<T>(value: T, delay = 250): T {
-  // Initialize with the provided value
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
-  // Use ref to track if the component is mounted
-  const isMounted = useRef<boolean>(true);
-
   useEffect(() => {
-    // Ensure the delay is a positive number
     const safeDelay = typeof delay === 'number' && delay > 0 ? delay : 250;
 
-    // Set up the timer to update the debounced value
-    const handler = setTimeout(() => {
-      // Only update if the component is still mounted
-      if (isMounted.current) {
-        setDebouncedValue(value);
-      }
+    const timer = setTimeout(() => {
+      setDebouncedValue(value);
     }, safeDelay);
 
-    // Cleanup function to avoid memory leaks
     return () => {
-      clearTimeout(handler);
+      clearTimeout(timer);
     };
   }, [value, delay]);
-
-  // Mark component as unmounted in cleanup
-  useEffect(() => {
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
 
   return debouncedValue;
 }

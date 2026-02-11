@@ -2,7 +2,7 @@ import { DEFAULT_SETTINGS } from '@webview/components/CustomControls/Settings';
 import { useDebounce } from '@webview/hooks/useDebounce';
 import { vscodeService } from '@webview/services/vscodeService';
 import type { Direction, EdgeType, JsonValue, TreeMap } from '@webview/types';
-import { Edge, MarkerType } from '@xyflow/react';
+import { type BackgroundVariant, Edge, MarkerType } from '@xyflow/react';
 import { useCallback } from 'react';
 
 // Settings interface matches the one in CustomControls/Settings.tsx
@@ -10,7 +10,7 @@ interface Settings {
   edgeType: EdgeType;
   animated: boolean;
   hasArrow?: boolean;
-  backgroundVariant?: string;
+  backgroundVariant?: BackgroundVariant;
   color?: string;
 }
 

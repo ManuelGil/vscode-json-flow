@@ -39,8 +39,10 @@ export function ZoomControl() {
   const focusFirstNode = useCallback(() => {
     if (nodes.length > 0) {
       const node = nodes[0];
-      const x = node.position.x + (node.width ?? 0) / 2;
-      const y = node.position.y + (node.height ?? 0) / 2;
+      const width = node.measured?.width ?? 0;
+      const height = node.measured?.height ?? 0;
+      const x = node.position.x + width / 2;
+      const y = node.position.y + height / 2;
       setCenter(x, y, { zoom: 1.5, duration: 800 });
     }
   }, [nodes, setCenter]);
