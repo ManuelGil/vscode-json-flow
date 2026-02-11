@@ -76,7 +76,7 @@ export type IncomingVscodeMessage =
     }
   | {
       command: 'applyGraphSelection';
-      nodeId?: string; // route by indices, e.g., "root-0-2-5"
+      nodeId?: string;
       origin?: 'webview' | 'extension';
       nonce?: string;
     };

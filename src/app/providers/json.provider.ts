@@ -15,7 +15,7 @@ import {
 } from 'vscode';
 
 import { EXTENSION_DISPLAY_NAME, EXTENSION_ID } from '../configs';
-import { getNonce, logger } from '../helpers';
+import { getNonce, getSelectionMapper, logger } from '../helpers';
 
 /**
  * JSONProvider manages the JSON preview webview panel for the VSCode JSON Flow extension.
@@ -25,7 +25,6 @@ import { getNonce, logger } from '../helpers';
  * @example
  * JSONProvider.createPanel(extensionUri);
  */
-/* biome-ignore lint/style/useNamingConvention: Allow acronym class name used across extension APIs */
 export class JSONProvider {
   // -----------------------------------------------------------------
   // Properties
@@ -61,23 +60,6 @@ export class JSONProvider {
    * Optional pause reason to display in the webview
    */
   static liveSyncPauseReason: string | undefined;
-
-  /**
-   * Tracks the last time a worker health check was successful
-   * Used to detect and recover from worker failures
-   */
-  static lastWorkerHealthCheckTime: number | undefined;
-
-  /**
-   * Number of consecutive worker health check failures
-   */
-  static workerHealthCheckFailures: number = 0;
-
-  /**
-   * Maximum allowed time (ms) between successful worker health checks
-   * If exceeded, will trigger recovery actions
-   */
-  static workerHealthCheckThresholdMs: number = 10000; // 10 seconds default
 
   /**
    * Guard to prevent feedback loop when applying selection from webview
@@ -123,10 +105,10 @@ export class JSONProvider {
   private _isDisposed: boolean = false;
 
   /**
-   * Tracks whether the webview HTML has been initialized to avoid reloading
-   * the entire webview on reveal/focus changes, which causes flicker.
+   * Tracks previous visibility so _update() only fires on true
+   * hidden-to-visible transitions, not on every active-state change.
    */
-  private _htmlInitialized: boolean = false;
+  private _wasVisible: boolean = true;
 
   // -----------------------------------------------------------------
   // Constructor
@@ -146,30 +128,10 @@ export class JSONProvider {
     // Dispose resources when the panel is closed.
     this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
 
-    // Start health check monitoring system
-    this._initializeHealthCheckSystem();
-
     // Listen for messages from the webview (extend as needed for interactivity).
     this._panel.webview.onDidReceiveMessage(
       (message) => {
         switch (message?.command ?? message?.type) {
-          case 'healthCheck': {
-            // Immediately respond to health check pings with a pong
-            if (message.type === 'ping') {
-              // Record successful health check
-              JSONProvider.lastWorkerHealthCheckTime = Date.now();
-              JSONProvider.workerHealthCheckFailures = 0;
-
-              this._panel.webview.postMessage({
-                command: 'healthCheck',
-                type: 'pong',
-                timestamp: JSONProvider.lastWorkerHealthCheckTime,
-                id: message.id,
-                origin: 'extension',
-              });
-            }
-            break;
-          }
           case 'graphSelectionChanged': {
             if (!JSONProvider.liveSyncEnabled) {
               break;
@@ -179,11 +141,6 @@ export class JSONProvider {
             // but we log a warning to encourage explicit origin usage going forward.
             if (message?.origin && message.origin !== 'webview') {
               break;
-            }
-            if (!message?.origin) {
-              console.warn(
-                '[JSON Flow] Inbound selection message without origin; accepting for compatibility',
-              );
             }
             // If message includes a path, it must match the previewedPath, with Windows-insensitive comparison.
             const maybePath = (message as { path?: string } | undefined)?.path;
@@ -251,12 +208,16 @@ export class JSONProvider {
       this._disposables,
     );
 
-    // Update the webview when the panel becomes visible again.
+    // Update the webview only when transitioning from hidden to visible.
+    // onDidChangeViewState also fires on active-state changes (focus moves
+    // between editor groups) which must NOT reload the webview.
     this._panel.onDidChangeViewState(
       () => {
-        if (this._panel.visible) {
+        const nowVisible = this._panel.visible;
+        if (nowVisible && !this._wasVisible) {
           this._update();
         }
+        this._wasVisible = nowVisible;
         // Recompute split state based on current view column (non-One implies split)
         const isSplit = this._panel.viewColumn !== ViewColumn.One;
         JSONProvider.isSplitView = !!isSplit;
@@ -269,13 +230,6 @@ export class JSONProvider {
         JSONProvider._onStateChanged.fire({
           isSplitView: JSONProvider.isSplitView,
         });
-
-        // BUGFIX v2.3.2: Ensure worker health check is performed when panel becomes visible
-        // This helps recover from potential worker issues when the panel is hidden/shown
-        if (this._panel.visible) {
-          // Schedule a health check ping
-          this._scheduleWorkerHealthCheck();
-        }
       },
       null,
       this._disposables,
@@ -453,7 +407,7 @@ export class JSONProvider {
         // Log disposal error for debugging but continue cleanup
         logger.error('Failed to dispose webview panel', error, {
           panelTitle: this._panel?.title,
-          viewType: JSONProvider.viewType
+          viewType: JSONProvider.viewType,
         });
       }
     }
@@ -467,7 +421,7 @@ export class JSONProvider {
         } catch (error) {
           // Log disposal error but continue with remaining disposables
           logger.error('Failed to dispose resource', error, {
-            remainingDisposables: this._disposables.length
+            remainingDisposables: this._disposables.length,
           });
         }
       }
@@ -634,8 +588,6 @@ export class JSONProvider {
     JSONProvider.liveSyncPauseReason = undefined;
     JSONProvider.hostThrottleMs = undefined;
     JSONProvider.lastAppliedNodeId = undefined;
-    JSONProvider.lastWorkerHealthCheckTime = undefined;
-    JSONProvider.workerHealthCheckFailures = 0;
     JSONProvider.configState = {};
   }
 
@@ -664,139 +616,13 @@ export class JSONProvider {
   }
 
   /**
-   * Initializes the health check monitoring system for the worker
-   * Sets up periodic health checks and recovery mechanisms
-   */
-  private _initializeHealthCheckSystem(): void {
-    // Initialize last health check time to now
-    JSONProvider.lastWorkerHealthCheckTime = Date.now();
-    JSONProvider.workerHealthCheckFailures = 0;
-
-    // Schedule first health check
-    this._scheduleWorkerHealthCheck();
-
-    // Set up periodic health check monitoring (every 5 seconds)
-    const healthMonitorId = setInterval(() => {
-      // Check if panel is still active
-      if (!this._panel || this._isDisposed) {
-        clearInterval(healthMonitorId);
-        return;
-      }
-
-      // If visible, verify worker health
-      if (this._panel.visible) {
-        this._verifyWorkerHealth();
-      }
-    }, 5000);
-
-    // Ensure health monitor is disposed with provider
-    this._disposables.push({
-      dispose: () => clearInterval(healthMonitorId),
-    });
-  }
-
-  /**
-   * Schedules a worker health check by sending a ping message
-   * This proactively checks if the worker is responsive
-   */
-  private _scheduleWorkerHealthCheck(): void {
-    // Only send if panel is active and visible
-    if (!this._panel || !this._panel.visible || this._isDisposed) {
-      return;
-    }
-
-    try {
-      // Send ping with unique ID to verify worker responsiveness
-      this._panel.webview.postMessage({
-        command: 'healthCheck',
-        type: 'ping',
-        timestamp: Date.now(),
-        id: `hc-${Date.now()}`,
-        origin: 'extension',
-      });
-    } catch (error) {
-      console.warn('Worker health check failed:', error);
-      // Record failure
-      JSONProvider.workerHealthCheckFailures += 1;
-    }
-  }
-
-  /**
-   * Verifies worker health by checking time since last successful health check
-   * Triggers recovery actions if necessary
-   */
-  private _verifyWorkerHealth(): void {
-    const now = Date.now();
-    const lastCheck = JSONProvider.lastWorkerHealthCheckTime || 0;
-
-    // If last check is too old, worker might be unresponsive
-    if (now - lastCheck > JSONProvider.workerHealthCheckThresholdMs) {
-      console.warn(
-        `Worker health check threshold exceeded: ${now - lastCheck}ms since last response`,
-      );
-
-      // Increment failure count
-      JSONProvider.workerHealthCheckFailures += 1;
-
-      // Recovery actions based on failure count
-      if (JSONProvider.workerHealthCheckFailures >= 3) {
-        // After multiple failures, try more aggressive recovery
-        this._attemptWorkerRecovery();
-      } else {
-        // First attempt: just try another health check
-        this._scheduleWorkerHealthCheck();
-      }
-    } else {
-      // Worker seems healthy, schedule next check
-      this._scheduleWorkerHealthCheck();
-    }
-  }
-
-  /**
-   * Attempts to recover from worker failures using increasingly aggressive strategies
-   */
-  private _attemptWorkerRecovery(): void {
-    console.warn(
-      `Attempting worker recovery after ${JSONProvider.workerHealthCheckFailures} failures`,
-    );
-
-    try {
-      // First, try to reset the worker state with a reset message
-      this._panel.webview.postMessage({
-        command: 'resetWorker',
-        origin: 'extension',
-      });
-
-      // If failures persist beyond a threshold, try refreshing the webview
-      if (JSONProvider.workerHealthCheckFailures >= 5) {
-        console.warn('Worker recovery: refreshing webview HTML...');
-
-        // Force HTML reload
-        this._htmlInitialized = false;
-        this._update();
-
-        // Reset failure counter
-        JSONProvider.workerHealthCheckFailures = 0;
-        JSONProvider.lastWorkerHealthCheckTime = Date.now();
-      }
-    } catch (error) {
-      console.error('Worker recovery attempt failed:', error);
-    }
-  }
-
-  /**
    * Updates the webview HTML content for the panel.
    * Called internally after state or data changes, or when the panel is shown.
    */
   private _update(): void {
     const webview = this._panel.webview;
-    // Only set the HTML once per panel lifecycle to prevent full reloads
-    // when the panel gains focus or is revealed again.
-    if (this._htmlInitialized) {
-      return;
-    }
-    this._panel.webview.html = this._getHtmlForWebview(webview);
-    this._htmlInitialized = true;
+    const html = this._getHtmlForWebview(webview);
+    this._panel.webview.html = html;
   }
 
   /**
@@ -816,9 +642,14 @@ export class JSONProvider {
       Uri.joinPath(this._extensionUri, './dist', 'main.css'),
     );
 
-    // Convert worker path to webview URI for proper loading in VS Code webview context
-    const workerUri = webview.asWebviewUri(
-      Uri.joinPath(this._extensionUri, './dist', 'assets', 'JsonLayoutWorker-worker.js'),
+    // Base URI for resolving relative paths (e.g., workers) to the dist/ folder
+    const baseUri = webview.asWebviewUri(
+      Uri.joinPath(this._extensionUri, './dist'),
+    );
+
+    // Resolve the JsonLayoutWorker script within the built assets folder using a stable name
+    const jsonLayoutWorkerUri = webview.asWebviewUri(
+      Uri.joinPath(this._extensionUri, './dist', 'JsonLayoutWorker.js'),
     );
 
     // Use a nonce to only allow a specific script to be run.
@@ -836,8 +667,19 @@ export class JSONProvider {
     -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'none'; font-src ${webview.cspSource} data:; style-src ${webview.cspSource} 'unsafe-inline';
-      img-src ${webview.cspSource} data:; script-src 'nonce-${nonce}' ${webview.cspSource}; worker-src ${webview.cspSource} blob:; connect-src ${webview.cspSource} https:;"
+      content="
+        default-src 'none';
+        font-src ${webview.cspSource} data:;
+        style-src ${webview.cspSource} 'unsafe-inline';
+        img-src ${webview.cspSource} data:;
+        script-src 'nonce-${nonce}' ${webview.cspSource};
+        worker-src blob: ${webview.cspSource};
+        connect-src ${webview.cspSource};
+        frame-ancestors 'none';
+        form-action 'none';
+        base-uri ${webview.cspSource};
+        manifest-src 'none';
+      "
     />
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -851,8 +693,8 @@ export class JSONProvider {
   <body>
     <div id="root"></div>
     <script nonce="${nonce}">
-      // Inject worker URL into global scope for webview context
-      window.__VSCODE_WORKER_URL__ = '${workerUri}';
+      // Make the worker URL available to the webview JS (read-only exposure)
+      window.__jsonFlowWorkerUrl = ${JSON.stringify(jsonLayoutWorkerUri.toString())};
     </script>
     <script type="module" nonce="${nonce}" src="${scriptUri}"></script>
     <script nonce="${nonce}">

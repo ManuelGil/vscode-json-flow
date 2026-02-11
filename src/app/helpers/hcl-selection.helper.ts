@@ -1,3 +1,8 @@
+import {
+  buildPointer,
+  POINTER_ROOT,
+  parsePointer,
+} from '../../shared/node-pointer';
 import type { SelectionMapper, TextRange } from '../interfaces';
 
 // Pattern for an identifier at the start of a line (after optional whitespace)
@@ -7,8 +12,8 @@ const HCL_IDENTIFIER_AT_LINE_START = '^[\\s\\t]*[A-Za-z_][\\w\\-]*';
  * Selection mapper for HCL files.
  *
  * Uses a simple heuristic: counts identifier-like tokens at the beginning of lines
- * up to the current position. Produces node ids as `root-<index>` and resolves
- * them back to the line range where the N-th identifier appears.
+ * up to the current position. Produces node ids as JSON Pointers (`/<index>`) and
+ * resolves them back to the line range where the N-th identifier appears.
  */
 export const hclSelectionMapper: SelectionMapper = {
   nodeIdFromOffset(text: string, offset: number): string | undefined {
@@ -25,14 +30,16 @@ export const hclSelectionMapper: SelectionMapper = {
       idx++;
     }
 
-    return ['root', idx].join('-');
+    return buildPointer(POINTER_ROOT, String(idx));
   },
   rangeFromNodeId(text: string, nodeId: string): TextRange | undefined {
-    const parts = nodeId.split('-');
-    if (!parts.length || parts[0] !== 'root') {
+    let segments: string[];
+    try {
+      segments = parsePointer(nodeId);
+    } catch {
       return undefined;
     }
-    const index = Number.parseInt(parts[1] ?? '0', 10);
+    const index = Number.parseInt(segments[0] ?? '0', 10);
     // Find the N-th identifier at the start of a line
     const regex = new RegExp(HCL_IDENTIFIER_AT_LINE_START, 'gm');
     let count = -1;

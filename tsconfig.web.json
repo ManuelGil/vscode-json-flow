@@ -8,7 +8,7 @@
 			"DOM.Iterable"
 		],
 		"sourceMap": true,
-		"rootDir": "webview",
+		"rootDir": ".",
 		"useDefineForClassFields": true,
 		"skipLibCheck": true,
 		/* Bundler mode */

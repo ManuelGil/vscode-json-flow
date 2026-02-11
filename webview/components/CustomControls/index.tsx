@@ -1,4 +1,5 @@
 import type { Direction } from '@webview/types';
+import type { InternalNode } from '@xyflow/react';
 import { Panel } from '@xyflow/react';
 import {
   Tooltip,
@@ -29,6 +30,7 @@ type CustomControlsProps = {
   currentDirection: Direction;
   onLayoutRotate: () => void;
   onSettingsChange: (newSettings: typeof DEFAULT_SETTINGS) => void;
+  nodes: InternalNode[];
 };
 
 /**
@@ -48,6 +50,7 @@ export function CustomControls({
   currentDirection,
   onLayoutRotate,
   onSettingsChange,
+  nodes,
 }: CustomControlsProps) {
   return (
     <Panel className="flex justify-between gap-2" position="top-center">
@@ -72,7 +75,7 @@ export function CustomControls({
       />
       <ImageDownload />
       <ModeToggle />
-      <GoToSearch />
+      <GoToSearch nodes={nodes} />
       <Settings onSettingsChange={onSettingsChange} />
     </Panel>
   );

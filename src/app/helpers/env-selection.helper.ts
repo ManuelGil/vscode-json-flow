@@ -1,10 +1,15 @@
+import {
+  buildPointer,
+  POINTER_ROOT,
+  parsePointer,
+} from '../../shared/node-pointer';
 import type { SelectionMapper, TextRange } from '../interfaces';
 
 /**
  * Selection mapper for .env-like files (one key/value per line).
  *
  * Maps:
- * - editor offsets → node ids in the form `root-<row>`
+ * - editor offsets → node ids as JSON Pointers (`/<row>`)
  * - node ids → `TextRange` covering the entire line for that row
  */
 export const envSelectionMapper: SelectionMapper = {
@@ -16,20 +21,22 @@ export const envSelectionMapper: SelectionMapper = {
     for (let i = 0; i < lines.length; i++) {
       const len = lines[i].length + (i < lines.length - 1 ? newlineLen : 0);
       if (offset <= base + len) {
-        return ['root', i].join('-');
+        return buildPointer(POINTER_ROOT, String(i));
       }
       base += len;
     }
 
-    return 'root';
+    return POINTER_ROOT;
   },
   rangeFromNodeId(text: string, nodeId: string): TextRange | undefined {
-    const parts = nodeId.split('-');
-    if (!parts.length || parts[0] !== 'root') {
+    let segments: string[];
+    try {
+      segments = parsePointer(nodeId);
+    } catch {
       return undefined;
     }
 
-    const row = Number.parseInt(parts[1] ?? '0', 10);
+    const row = Number.parseInt(segments[0] ?? '0', 10);
     const lines = text.split(/\r?\n/);
     const newlineLen = text.includes('\r\n') ? 2 : text.includes('\n') ? 1 : 0;
 

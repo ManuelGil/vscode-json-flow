@@ -104,7 +104,8 @@ export class FilesController {
         );
         node.tooltip = l10n.t(
           'File: {0}\nPath: {1}\nHint: Click to open preview',
-          [filename ?? 'Untitled', path],
+          filename ?? 'Untitled',
+          path,
         );
         nodes.push(node);
       }
@@ -280,7 +281,10 @@ export class FilesController {
         // Show the message
         const message = l10n.t(
           'File Name: {0}\nLanguage: {1}\nLines: {2}\nVersion: {3}',
-          [fileName, languageId, lineCount, version],
+          fileName,
+          languageId,
+          lineCount,
+          version,
         );
 
         await window.showInformationMessage(message, { modal: true });
@@ -374,9 +378,7 @@ export class FilesController {
           ? { message: error.message, stack: error.stack }
           : { message: String(error) };
 
-      const message = l10n.t('Error finding files: {0}', [
-        errorDetails.message,
-      ]);
+      const message = l10n.t('Error finding files: {0}', errorDetails.message);
       window.showErrorMessage(message);
 
       return [];

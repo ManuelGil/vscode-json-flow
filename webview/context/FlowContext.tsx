@@ -1,6 +1,5 @@
 import { generateTree } from '@webview/helpers/generateTree';
 import type { Direction, JsonValue, TreeMap } from '@webview/types';
-import React, { createContext, Dispatch, useContext, useReducer } from 'react';
 
 export interface FlowState {
   data: JsonValue | null;
@@ -10,7 +9,6 @@ export interface FlowState {
   fileName: string;
 }
 
-// Actions for the global flow reducer
 // Actions that can be dispatched to the flow reducer
 export type FlowAction =
   | {
@@ -22,11 +20,14 @@ export type FlowAction =
         fileName: string;
       };
     }
-  | { type: 'CLEAR' };
+  | { type: 'CLEAR' }
+  | { type: 'SET_ORIENTATION'; payload: { orientation: Direction } };
 
 /**
  * Reducer for the global flow state.
- * Handles update and clear actions for the flow tree.
+ * Handles update, clear, and orientation actions for the flow tree.
+ *
+ * Used directly by FlowCanvas via useReducer (single source of truth).
  *
  * @param state - Current flow state.
  * @param action - Action to apply.
@@ -50,70 +51,12 @@ export function flowReducer(state: FlowState, action: FlowAction): FlowState {
         path: '',
         fileName: '',
       };
+    case 'SET_ORIENTATION':
+      if (state.orientation === action.payload.orientation) {
+        return state;
+      }
+      return { ...state, orientation: action.payload.orientation };
     default:
       return state;
   }
-}
-
-export const FlowStateContext = createContext<FlowState | undefined>(undefined);
-export const FlowDispatchContext = createContext<
-  Dispatch<FlowAction> | undefined
->(undefined);
-
-/**
- * Hook to access the global flow state.
- * Throws if used outside FlowProvider.
- */
-export function useFlowState(): FlowState {
-  const context = useContext(FlowStateContext);
-  if (context === undefined) {
-    throw new Error('useFlowState must be used within a FlowProvider');
-  }
-  return context;
-}
-
-/**
- * Hook to access the global flow dispatch.
- * Throws if used outside FlowProvider.
- */
-export function useFlowDispatch(): Dispatch<FlowAction> {
-  const context = useContext(FlowDispatchContext);
-  if (context === undefined) {
-    throw new Error('useFlowDispatch must be used within a FlowProvider');
-  }
-  return context;
-}
-
-/**
- * Provider component for the global flow context.
- * Initializes state and exposes state/dispatch via context providers.
- *
- * @param children - React children to wrap.
- * @param initialState - Optional initial state for the flow.
- */
-export function FlowProvider({
-  children,
-  initialState,
-}: {
-  children: React.ReactNode;
-  initialState?: FlowState;
-}) {
-  const [state, dispatch] = useReducer(
-    flowReducer,
-    initialState ?? {
-      data: null,
-      treeData: null,
-      orientation: 'TB',
-      path: '',
-      fileName: '',
-    },
-  );
-
-  return (
-    <FlowStateContext.Provider value={state}>
-      <FlowDispatchContext.Provider value={dispatch}>
-        {children}
-      </FlowDispatchContext.Provider>
-    </FlowStateContext.Provider>
-  );
 }

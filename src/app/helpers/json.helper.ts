@@ -116,10 +116,11 @@ export const parseJsonContent = (
       }
     }
   } catch (error: unknown) {
-    const message = l10n.t('Error parsing {0}: {1}', [
+    const message = l10n.t(
+      'Error parsing {0}: {1}',
       type.toUpperCase(),
       error instanceof Error ? error.message : String(error),
-    ]);
+    );
 
     window.showErrorMessage(message);
     return null;

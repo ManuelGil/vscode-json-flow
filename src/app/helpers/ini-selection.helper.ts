@@ -1,3 +1,8 @@
+import {
+  buildPointer,
+  POINTER_ROOT,
+  parsePointer,
+} from '../../shared/node-pointer';
 import type { SelectionMapper, TextRange } from '../interfaces';
 
 // Section headers like: [section]
@@ -8,9 +13,9 @@ const INI_KEY_RE = /^\s*[^#;\s].*?=/;
 /**
  * Selection mapper for INI/properties files with optional [sections].
  *
- * Produces node ids as:
- * - `root-<line>` when no section context is applicable
- * - `root-<sectionIndex>-<keyIndex>` when inside a section
+ * Produces node ids as JSON Pointers:
+ * - `/<line>` when no section context is applicable
+ * - `/<sectionIndex>/<keyIndex>` when inside a section
  *
  * Notes:
  * - Sections are detected by lines like `[section]`.
@@ -40,7 +45,7 @@ export const iniSelectionMapper: SelectionMapper = {
       }
     }
     if (sectionIndex < 0) {
-      return ['root', lineIndex].join('-');
+      return buildPointer(POINTER_ROOT, String(lineIndex));
     }
 
     let keyIdx = 0;
@@ -58,19 +63,22 @@ export const iniSelectionMapper: SelectionMapper = {
       }
     }
 
-    return ['root', sectionIndex, keyIdx].join('-');
+    const sectionPointer = buildPointer(POINTER_ROOT, String(sectionIndex));
+    return buildPointer(sectionPointer, String(keyIdx));
   },
   rangeFromNodeId(text: string, nodeId: string): TextRange | undefined {
     const lines = text.split(/\r?\n/);
     const newlineLen = text.includes('\r\n') ? 2 : text.includes('\n') ? 1 : 0;
 
-    const parts = nodeId.split('-');
-    if (!parts.length || parts[0] !== 'root') {
+    let segments: string[];
+    try {
+      segments = parsePointer(nodeId);
+    } catch {
       return undefined;
     }
 
-    const a = Number.parseInt(parts[1] ?? '-1', 10);
-    const b = Number.parseInt(parts[2] ?? '-1', 10);
+    const a = Number.parseInt(segments[0] ?? '-1', 10);
+    const b = Number.parseInt(segments[1] ?? '-1', 10);
     let startLine = 0;
 
     if (a < 0) {

@@ -33,6 +33,7 @@ import { z } from 'zod';
 interface Settings {
   edgeType: EdgeType;
   animated: boolean;
+  hasArrow: boolean;
   backgroundVariant: BackgroundVariant;
   color: Color;
 }
@@ -41,6 +42,7 @@ const settingsSchema = z.object({
   settings: z.object({
     edgeType: z.nativeEnum(EdgeType),
     animated: z.boolean(),
+    hasArrow: z.boolean(),
     backgroundVariant: z.nativeEnum(BackgroundVariant),
     color: z.enum(colors),
   }),
@@ -49,6 +51,7 @@ const settingsSchema = z.object({
 export const DEFAULT_SETTINGS: Settings = {
   edgeType: EdgeType.SmoothStep,
   animated: true,
+  hasArrow: false,
   backgroundVariant: BackgroundVariant.Lines,
   color: 'neutral',
 };
@@ -248,6 +251,27 @@ export function Settings({ onSettingsChange }: SettingsProps) {
                       </FormLabel>
                       <FormDescription>
                         Enable or disable edge animations
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="settings.hasArrow"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Edge Arrows</FormLabel>
+                      <FormDescription>
+                        Show directional arrows on edges
                       </FormDescription>
                     </div>
                     <FormControl>

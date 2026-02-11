@@ -198,10 +198,11 @@ export class FilesProvider implements TreeDataProvider<NodeModel> {
           fileType,
           children,
         );
-        node.tooltip = l10n.t('Group: {0}\nFiles: {1}\nHint: Click to expand', [
+        node.tooltip = l10n.t(
+          'Group: {0}\nFiles: {1}\nHint: Click to expand',
           fileType,
           children.length,
-        ]);
+        );
         return node;
       });
 

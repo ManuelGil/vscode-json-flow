@@ -1,0 +1,38 @@
+# Dependabot configuration
+# Valid, schema-safe configuration for pnpm-based Node.js projects.
+# Security updates are managed via GitHub repository settings (UI),
+# not via this file.
+
+version: 2
+
+updates:
+  - package-ecosystem: "npm" # pnpm is handled via the npm ecosystem
+    directory: "/"
+    target-branch: "main"
+
+    # Regular dependency updates
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+
+    # Limit noise and cognitive load
+    open-pull-requests-limit: 2
+
+    # Avoid automatic breaking changes
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
+
+    # PR hygiene
+    labels:
+      - "dependencies"
+
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+    # Keep PRs up to date with the base branch
+    rebase-strategy: "auto"

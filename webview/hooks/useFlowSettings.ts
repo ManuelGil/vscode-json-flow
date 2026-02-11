@@ -2,7 +2,7 @@ import { DEFAULT_SETTINGS } from '@webview/components/CustomControls/Settings';
 import { useDebounce } from '@webview/hooks/useDebounce';
 import { vscodeService } from '@webview/services/vscodeService';
 import type { Direction, EdgeType, JsonValue, TreeMap } from '@webview/types';
-import { Edge, MarkerType } from '@xyflow/react';
+import { type BackgroundVariant, Edge, MarkerType } from '@xyflow/react';
 import { useCallback } from 'react';
 
 // Settings interface matches the one in CustomControls/Settings.tsx
@@ -10,7 +10,7 @@ interface Settings {
   edgeType: EdgeType;
   animated: boolean;
   hasArrow?: boolean;
-  backgroundVariant?: string;
+  backgroundVariant?: BackgroundVariant;
   color?: string;
 }
 
@@ -38,6 +38,7 @@ export function useFlowSettings(
   rotateLayout: () => Direction,
   flowData: FlowData,
   setEdges: React.Dispatch<React.SetStateAction<Edge[]>>,
+  onDirectionChange?: (direction: Direction) => void,
 ) {
   /**
    * Handles layout direction change and updates VSCode state
@@ -65,9 +66,10 @@ export function useFlowSettings(
 
   const handleRotation = useCallback(() => {
     const newDirection = rotateLayout();
+    onDirectionChange?.(newDirection);
     // Use debounced version for VSCode communication
     debouncedUpdateOrientation(newDirection);
-  }, [rotateLayout, debouncedUpdateOrientation]);
+  }, [rotateLayout, debouncedUpdateOrientation, onDirectionChange]);
 
   /**
    * Handles edge settings changes

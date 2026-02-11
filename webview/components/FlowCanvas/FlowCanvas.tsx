@@ -7,17 +7,34 @@ import {
 import { DEFAULT_SETTINGS } from '@webview/components/CustomControls/Settings';
 import { flowReducer } from '@webview/context/FlowContext';
 import { generateTree, getRootId } from '@webview/helpers/generateTree';
-import { sampleJsonData } from '@webview/helpers/mockData';
+import { createSampleJsonData } from '@webview/helpers/mockData';
 import { useFlowController, useLayoutWorker } from '@webview/hooks';
 import { useEditorSync } from '@webview/hooks/useEditorSync';
 import { useFlowSettings } from '@webview/hooks/useFlowSettings';
 import { useTreeDataValidator } from '@webview/hooks/useTreeDataValidator';
 import { useVscodeMessageHandler } from '@webview/hooks/useVscodeMessageHandler';
 import { vscodeService } from '@webview/services/vscodeService';
-import type { TreeMap } from '@webview/types';
+import type { Direction, TreeMap } from '@webview/types';
 import * as logger from '@webview/utils/logger';
-import type { Connection, Edge, Node, ReactFlowInstance } from '@xyflow/react';
-import { addEdge, Background, ReactFlow, useViewport } from '@xyflow/react';
+import type {
+  Connection,
+  Edge,
+  EdgeChange,
+  InternalNode,
+  Node,
+  NodeChange,
+  ReactFlowInstance,
+} from '@xyflow/react';
+import {
+  addEdge,
+  applyEdgeChanges,
+  applyNodeChanges,
+  Background,
+  BackgroundVariant,
+  MarkerType,
+  ReactFlow,
+  useViewport,
+} from '@xyflow/react';
 import type { MouseEvent } from 'react';
 import {
   memo,
@@ -31,10 +48,40 @@ import {
 import Debug from '../Debug';
 import { NodeDetail } from '../NodeDetail/NodeDetail';
 import { useSelectedNode } from './useSelectedNode';
+/**
+ * Snapshot of edge appearance settings for re-application after worker sync.
+ */
+const GLOBAL_EDGE_COLOR: string = 'hsl(var(--foreground))';
+
+interface EdgeSettingsSnapshot {
+  edgeType: string;
+  animated: boolean;
+  hasArrow: boolean;
+}
+
+/**
+ * Applies edge appearance settings to a list of edges.
+ * Pure function used both for immediate settings changes and worker sync re-application.
+ */
+function applyEdgeSettingsToList(
+  edgeList: Edge[],
+  snapshot: EdgeSettingsSnapshot,
+): Edge[] {
+  return edgeList.map((edge) => ({
+    ...edge,
+    type: snapshot.edgeType || DEFAULT_SETTINGS.edgeType,
+    animated: snapshot.animated,
+    markerEnd: snapshot.hasArrow
+      ? { type: MarkerType.ArrowClosed, width: 20, height: 20 }
+      : undefined,
+  }));
+}
+
 export const FlowCanvas = memo(function FlowCanvas() {
   const initialFlowState = useMemo(() => {
     const st = vscodeService.getStateOrDefaults();
-    const data = import.meta.env.DEV ? sampleJsonData : st.data;
+    const enableMock: boolean = import.meta.env.VITE_ENABLE_MOCK === 'true';
+    const data = enableMock ? createSampleJsonData() : st.data;
     return {
       data,
       treeData: data ? generateTree(data) : {},
@@ -57,11 +104,25 @@ export const FlowCanvas = memo(function FlowCanvas() {
 
   const nodeTypes = useMemo(() => ({ custom: CustomNode }), []);
 
+  // Unified render state: post-processed with collapse filtering and callbacks
+  const [renderNodes, setRenderNodes] = useState<Node[]>([]);
+  const [renderEdges, setRenderEdges] = useState<Edge[]>([]);
+
   const settings = useMemo(() => {
     return localStorage.getItem('settings')
       ? JSON.parse(localStorage.getItem('settings')!)
       : DEFAULT_SETTINGS;
   }, []);
+
+  const [backgroundVariant, setBackgroundVariant] = useState<BackgroundVariant>(
+    settings.backgroundVariant ?? DEFAULT_SETTINGS.backgroundVariant,
+  );
+
+  const edgeSettingsRef = useRef<EdgeSettingsSnapshot>({
+    edgeType: settings.edgeType ?? DEFAULT_SETTINGS.edgeType,
+    animated: settings.animated ?? DEFAULT_SETTINGS.animated,
+    hasArrow: settings.hasArrow ?? false,
+  });
 
   const flowControllerParams = useMemo(
     () => ({
@@ -73,14 +134,11 @@ export const FlowCanvas = memo(function FlowCanvas() {
   );
 
   const {
-    nodes,
-    edges,
-    setEdges,
-    onNodesChange,
-    onEdgesChange,
     currentDirection,
     rotateLayout,
     collapsedNodes,
+    toggleNodeChildren,
+    descendantsCache,
   } = useFlowController(flowControllerParams);
 
   const { zoom } = useViewport();
@@ -88,16 +146,37 @@ export const FlowCanvas = memo(function FlowCanvas() {
   const { selectedNode, onNodeClick, clearSelection, selectNode } =
     useSelectedNode();
 
+  const onDirectionChange = useCallback(
+    (direction: Direction) => {
+      dispatch({
+        type: 'SET_ORIENTATION',
+        payload: { orientation: direction },
+      });
+    },
+    [dispatch],
+  );
+
   const { handleRotation, handleEdgeSettingsChange } = useFlowSettings(
     rotateLayout,
     flowData,
-    setEdges,
+    setRenderEdges,
+    onDirectionChange,
   );
 
   // Debounce heavy settings updates to avoid rapid recomputation/edge updates
   const settingsChangeTimerRef = useRef<number | undefined>(undefined);
   const debouncedHandleEdgeSettingsChange = useCallback(
     (next: Parameters<typeof handleEdgeSettingsChange>[0]) => {
+      // Capture edge settings immediately for re-application after worker sync
+      edgeSettingsRef.current = {
+        edgeType: next.edgeType ?? DEFAULT_SETTINGS.edgeType,
+        animated: next.animated ?? DEFAULT_SETTINGS.animated,
+        hasArrow: next.hasArrow ?? false,
+      };
+      // Update background variant immediately (no debounce needed for UI)
+      if (next.backgroundVariant) {
+        setBackgroundVariant(next.backgroundVariant);
+      }
       if (settingsChangeTimerRef.current) {
         window.clearTimeout(settingsChangeTimerRef.current);
       }
@@ -116,8 +195,9 @@ export const FlowCanvas = memo(function FlowCanvas() {
   }, []);
 
   const onConnect = useCallback(
-    (params: Connection) => setEdges((eds: Edge[]) => addEdge(params, eds)),
-    [setEdges],
+    (params: Connection) =>
+      setRenderEdges((eds: Edge[]) => addEdge(params, eds)),
+    [],
   );
 
   const baseGap = 50;
@@ -135,15 +215,18 @@ export const FlowCanvas = memo(function FlowCanvas() {
     [nodeTypes, isDraggable],
   );
 
+  const backgroundStyle =
+    backgroundVariant === BackgroundVariant.Dots ? {} : { strokeOpacity: 0.3 };
+
   const backgroundProps = useMemo(
     () => ({
       gap: dynamicGap,
-      variant: settings.backgroundVariant,
-      style: { strokeOpacity: 0.1 },
+      variant: backgroundVariant as BackgroundVariant,
+      style: backgroundStyle,
       className: 'bg-background',
       patternClassName: '!stroke-foreground/30',
     }),
-    [dynamicGap, settings.backgroundVariant],
+    [dynamicGap, backgroundVariant, backgroundStyle],
   );
 
   const controlsProps = useMemo(
@@ -153,24 +236,26 @@ export const FlowCanvas = memo(function FlowCanvas() {
       currentDirection,
       onLayoutRotate: handleRotation,
       onSettingsChange: debouncedHandleEdgeSettingsChange,
+      nodes: renderNodes as InternalNode[],
     }),
     [
       isDraggable,
       currentDirection,
       handleRotation,
       debouncedHandleEdgeSettingsChange,
+      renderNodes,
     ],
   );
 
   const debugProps = useMemo(
     () => ({
-      nodes,
-      edges,
+      nodes: renderNodes,
+      edges: renderEdges,
       treeData: safeTreeData as TreeMap,
       collapsedNodes,
       direction: currentDirection,
     }),
-    [nodes, edges, safeTreeData, collapsedNodes, currentDirection],
+    [renderNodes, renderEdges, safeTreeData, collapsedNodes, currentDirection],
   );
 
   const nodeDetailProps = useMemo(
@@ -213,19 +298,14 @@ export const FlowCanvas = memo(function FlowCanvas() {
       reactFlowInstanceRef.current &&
       !didFitViewRef.current
     ) {
-      if (import.meta.env.DEV) {
-        logger.log(
-          `Auto-fit after completion: nodes=${workerNodes.length}, edges=${workerEdges?.length ?? 0}`,
-        );
-      }
       requestAnimationFrame(() => {
         try {
           reactFlowInstanceRef.current?.fitView({
             padding: 0.2,
             includeHiddenNodes: true,
           });
-        } catch (e) {
-          logger.warn('fitView failed:', e);
+        } catch {
+          // Swallowed: fitView may fail when nodes are not yet rendered
         }
         didFitViewRef.current = true;
       });
@@ -235,9 +315,6 @@ export const FlowCanvas = memo(function FlowCanvas() {
     if (!isWorkerProcessing) {
       requestAnimationFrame(() => {
         const count = document.querySelectorAll('.react-flow__node').length;
-        if (import.meta.env.DEV) {
-          logger.log(`Rendered DOM nodes count: ${count}`);
-        }
         if (count > 0) {
           setGraphReady(true);
         }
@@ -258,7 +335,9 @@ export const FlowCanvas = memo(function FlowCanvas() {
       return;
     }
     const isJsonChanged = lastDataRef.current !== jsonData;
-    if (isJsonChanged) {
+    const isOrientationChanged =
+      lastDirectionRef.current !== flowData.orientation;
+    if (isJsonChanged || isOrientationChanged) {
       setGraphReady(false);
       didFitViewRef.current = false;
     }
@@ -266,54 +345,128 @@ export const FlowCanvas = memo(function FlowCanvas() {
     lastDataRef.current = jsonData;
     lastDirectionRef.current = flowData.orientation;
 
-    if (import.meta.env.DEV) {
-      logger.log('[FlowCanvas] ===== STARTING NEW PROCESSING =====');
-      logger.log('[FlowCanvas] JSON data changed, triggering worker processing', {
-        orientation: flowData.orientation,
-        dataType: typeof jsonData,
-        path: flowData.path,
-        fileName: flowData.fileName,
-      });
-    }
     processWithWorker(jsonData, {
-      direction: flowData.orientation === 'TB' ? 'vertical' : 'horizontal',
-      compact: true, // Enable compact transferable payloads for better performance
-      autoTune: true, // Enable adaptive batching optimization
-      preallocate: true, // Enable preallocation hints for large datasets
+      direction: flowData.orientation,
     });
     if (import.meta.env.DEV) {
       logger.log('[FlowCanvas] Worker processing initiated');
     }
   }, [flowData.data, flowData.orientation, isValidTree, processWithWorker]);
 
-  const finalNodes = workerNodes || nodes;
-  const finalEdges = workerEdges || edges;
-  // Live Sync: wire selection synchronization (Phase 1)
-  const { paused: liveSyncPaused, pauseReason } = useEditorSync({
-    selectedNodeId: selectedNode?.id ?? null,
-    onApplyGraphSelection: (nodeId?: string) => {
+  // Stable ref for toggleNodeChildren to avoid re-creating callbacks
+  const toggleChildrenRef =
+    useRef<(nodeId: string) => void>(toggleNodeChildren);
+  useEffect(() => {
+    toggleChildrenRef.current = toggleNodeChildren;
+  }, [toggleNodeChildren]);
+
+  // Named delegate so CustomNode receives a stable function reference
+  const handleToggleChildren = useCallback((nodeId: string) => {
+    if (nodeId) {
+      toggleChildrenRef.current(nodeId);
+    }
+  }, []);
+
+  // Sync render state when layout source or collapse state changes
+  useEffect(() => {
+    const sourceNodes = workerNodes ?? [];
+    const sourceEdges = workerEdges ?? [];
+
+    if (!sourceNodes?.length) {
+      setRenderNodes([]);
+      setRenderEdges([]);
+      return;
+    }
+
+    const visibleNodes = sourceNodes.filter(
+      (node) => !collapsedNodes.has(node.id),
+    );
+
+    setRenderNodes(
+      visibleNodes.map((node) => ({
+        ...node,
+        data: {
+          ...node.data,
+          onToggleChildren: handleToggleChildren,
+          isCollapsed: (descendantsCache.get(node.id) ?? []).some(
+            (descendantId) => collapsedNodes.has(descendantId),
+          ),
+        },
+      })),
+    );
+
+    const filteredEdges = (sourceEdges ?? []).filter(
+      (edge) =>
+        !collapsedNodes.has(edge.source) && !collapsedNodes.has(edge.target),
+    );
+    setRenderEdges(
+      applyEdgeSettingsToList(filteredEdges, edgeSettingsRef.current),
+    );
+  }, [
+    workerNodes,
+    workerEdges,
+    collapsedNodes,
+    descendantsCache,
+    handleToggleChildren,
+  ]);
+
+  // Unified change handlers for ReactFlow interactivity (drag, select)
+  const onNodesChange = useCallback((changes: NodeChange[]) => {
+    setRenderNodes((nds) => applyNodeChanges(changes, nds));
+  }, []);
+
+  const onEdgesChange = useCallback((changes: EdgeChange[]) => {
+    setRenderEdges((eds) => applyEdgeChanges(changes, eds));
+  }, []);
+
+  // Keep a ref so the stable Live Sync callback always sees the latest nodes
+  const finalNodesRef = useRef<Node[]>([]);
+  finalNodesRef.current = renderNodes;
+
+  // Stable callback: depends only on selectNode (itself stable from useCallback)
+  const handleApplyGraphSelection = useCallback(
+    (nodeId?: string) => {
       if (!nodeId) {
         selectNode(null);
         return;
       }
       const target =
-        (finalNodes || []).find((n: Node) => n.id === nodeId) || null;
+        (finalNodesRef.current || []).find((n: Node) => n.id === nodeId) ||
+        null;
       selectNode(target);
+      // Center viewport on the selected node so it is visible
+      if (target?.position) {
+        const centerX = target.position.x + (target.width ?? 0) / 2;
+        const centerY = target.position.y + (target.height ?? 0) / 2;
+        reactFlowInstanceRef.current?.setCenter(centerX, centerY, {
+          zoom: 1.2,
+          duration: 500,
+        });
+      }
     },
-  });
-  // Render-only virtualization: defer edges until the graph is ready
-  const renderedEdges = graphReady ? finalEdges : [];
-  const reactFlowKey = useMemo(() => {
-    const n = workerNodes?.length ?? finalNodes?.length ?? 0;
-    const e = workerEdges?.length ?? finalEdges?.length ?? 0;
-    return `${n}:${e}:${currentDirection}`;
-  }, [workerNodes, workerEdges, finalNodes, finalEdges, currentDirection]);
+    [selectNode],
+  );
 
-  if (
-    !workerNodes &&
-    (!isValidTree || !Array.isArray(nodes) || !Array.isArray(edges))
-  ) {
-    return <Loading text="Preparing data..." />;
+  // Live Sync: wire selection synchronization (Phase 1)
+  const { paused: liveSyncPaused, pauseReason } = useEditorSync({
+    selectedNodeId: selectedNode?.id ?? null,
+    onApplyGraphSelection: handleApplyGraphSelection,
+    path: flowData.path,
+  });
+  const defaultEdgeOptions = useMemo(() => {
+    return {
+      style: { stroke: GLOBAL_EDGE_COLOR },
+    };
+  }, []);
+
+  // Render-only virtualization: defer edges until the graph is ready
+  const renderedEdges = graphReady ? renderEdges : [];
+  const reactFlowKey = useMemo(() => {
+    return `${currentDirection}:${flowData.data ? 'loaded' : 'empty'}`;
+  }, [currentDirection, flowData.data]);
+
+  if (!workerNodes && isValidTree) {
+    return <Loading />;
   }
 
   if (workerError) {
@@ -324,7 +477,7 @@ export const FlowCanvas = memo(function FlowCanvas() {
     <div className="relative h-screen w-screen">
       <ReactFlow
         key={reactFlowKey}
-        nodes={finalNodes}
+        nodes={renderNodes}
         edges={renderedEdges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
@@ -337,8 +490,8 @@ export const FlowCanvas = memo(function FlowCanvas() {
           reactFlowInstanceRef.current = instance;
           try {
             instance.fitView({ padding: 0.2, includeHiddenNodes: true });
-          } catch (e) {
-            logger.warn('initial fitView failed:', e);
+          } catch {
+            // Swallowed: fitView may fail during initial render
           }
           // Ensure the graph is ready after initial render
           requestAnimationFrame(() => {
@@ -348,6 +501,7 @@ export const FlowCanvas = memo(function FlowCanvas() {
             }
           });
         }}
+        defaultEdgeOptions={defaultEdgeOptions}
         {...reactFlowProps}
       >
         <CustomControls {...controlsProps} />
@@ -375,7 +529,7 @@ export const FlowCanvas = memo(function FlowCanvas() {
           </div>
         </div>
       )}
-      {!graphReady && (
+      {isWorkerProcessing && (
         <div
           style={{
             position: 'absolute',
@@ -384,7 +538,7 @@ export const FlowCanvas = memo(function FlowCanvas() {
             pointerEvents: 'none',
           }}
         >
-          <Loading progress={workerProgress} text="Loading graph..." />
+          <Loading progress={workerProgress} />
         </div>
       )}
       {import.meta.env.DEV && processingStats && (

@@ -114,7 +114,6 @@ export const EDGE_TYPE_NAMES: Record<EdgeType, string> = {
 export interface EdgeSettings {
   edgeType: EdgeType;
   animated: boolean;
-  edgeColor: string;
 }
 
 /**
