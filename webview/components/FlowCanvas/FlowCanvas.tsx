@@ -56,6 +56,9 @@ const EMPTY_EDGES: Edge[] = [];
 
 const BASE_GAP = 50;
 
+/** Debounce interval (ms) for worker invocations during rapid Live Sync updates. */
+const WORKER_DEBOUNCE_MS = 80;
+
 /** Pre-allocated background style objects to preserve referential equality. */
 const BG_STYLE_DOTS: React.CSSProperties = {};
 const BG_STYLE_OTHER: React.CSSProperties = { strokeOpacity: 0.3 };
@@ -127,6 +130,7 @@ export const FlowCanvas = memo(function FlowCanvas() {
 
   const lastDataRef = useRef<unknown>(null);
   const lastDirectionRef = useRef(flowData.orientation);
+  const workerDebounceRef = useRef<number | undefined>(undefined);
 
   const nodeTypes = useMemo(() => ({ custom: CustomNode }), []);
 
@@ -325,6 +329,15 @@ export const FlowCanvas = memo(function FlowCanvas() {
     }
   }, [isWorkerProcessing]);
 
+  // Clean up debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (workerDebounceRef.current != null) {
+        window.clearTimeout(workerDebounceRef.current);
+      }
+    };
+  }, []);
+
   useEffect(() => {
     const jsonData = flowData.data;
     if (!jsonData || !isValidTree) {
@@ -337,20 +350,25 @@ export const FlowCanvas = memo(function FlowCanvas() {
     ) {
       return;
     }
-    const isJsonChanged = lastDataRef.current !== jsonData;
-    const isOrientationChanged =
-      lastDirectionRef.current !== flowData.orientation;
-    if (isJsonChanged || isOrientationChanged) {
-      setGraphReady(false);
-      didFitViewRef.current = false;
-    }
+
+    // At least one input changed — reset graph readiness immediately
+    setGraphReady(false);
+    didFitViewRef.current = false;
 
     lastDataRef.current = jsonData;
     lastDirectionRef.current = flowData.orientation;
 
-    processWithWorker(jsonData, {
-      direction: flowData.orientation,
-    });
+    // Debounce worker invocation to coalesce rapid Live Sync updates.
+    // The graph reset above gives instant visual feedback while the
+    // debounce prevents firing the worker on every keystroke.
+    if (workerDebounceRef.current != null) {
+      window.clearTimeout(workerDebounceRef.current);
+    }
+    const direction = flowData.orientation;
+    workerDebounceRef.current = window.setTimeout(() => {
+      workerDebounceRef.current = undefined;
+      processWithWorker(jsonData, { direction });
+    }, WORKER_DEBOUNCE_MS);
   }, [flowData.data, flowData.orientation, isValidTree, processWithWorker]);
 
   // Stable ref for toggleNodeChildren to avoid re-creating callbacks
