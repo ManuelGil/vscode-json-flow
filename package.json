@@ -501,7 +501,7 @@
 		"ignore": "^7.0.5",
 		"ini": "^5.0.0",
 		"json5": "^2.2.3",
-		"lucide-react": "^0.525.0",
+		"lucide-react": "^0.563.0",
 		"quicktype-core": "23.2.6",
 		"react": "^19.1.5",
 		"react-colorful": "^5.6.1",
