@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+* feat: implement debounce for worker invocations during Live Sync updates
+* chore: simplify pnpm configuration and remove NODE_ENV from environment
+
 ## [2.3.1] - 2026-02-12
 
 * fix: update @types/vscode dependency to version ^1.90.0
