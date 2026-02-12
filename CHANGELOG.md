@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+* feat(logging): Implement enhanced logging utility for better error tracking and performance metrics ([2efe71f](https://github.com/ManuelGil/vscode-json-flow/commit/2efe71f))
+* feat: :sparkles: implement live sync pause functionality with UI indication and message enhancements ([65a075a](https://github.com/ManuelGil/vscode-json-flow/commit/65a075a))
+* feat: :sparkles: add live sync selection throttle configuration and improve constructor formatting ([069db46](https://github.com/ManuelGil/vscode-json-flow/commit/069db46))
+* feat: :sparkles: enhance normalization and selection mapping for various file formats ([fe22778](https://github.com/ManuelGil/vscode-json-flow/commit/fe22778))
+* feat: update JSON Flow configuration and improve live sync functionality ([f9c2be7](https://github.com/ManuelGil/vscode-json-flow/commit/f9c2be7))
+* refactor: optimize webview updates and node collapse state management with linear layout fallback for large graphs ([5e99424](https://github.com/ManuelGil/vscode-json-flow/commit/5e99424))
+* refactor: migrate selection helpers and node identity to RFC 6901 JSON Pointers ([7f6af40](https://github.com/ManuelGil/vscode-json-flow/commit/7f6af40))
+* docs: :memo: add localization updates and new configuration options for Live Sync ([7ef7245](https://github.com/ManuelGil/vscode-json-flow/commit/7ef7245))
+
 ## [2.2.1] - 2025-08-12
 
 * chore: :bookmark: update localization strings and improve documentation in README and ROADMAP ([bcd10a6](https://github.com/ManuelGil/vscode-json-flow/commit/bcd10a6))
