@@ -15,7 +15,6 @@ import { useTreeDataValidator } from '@webview/hooks/useTreeDataValidator';
 import { useVscodeMessageHandler } from '@webview/hooks/useVscodeMessageHandler';
 import { vscodeService } from '@webview/services/vscodeService';
 import type { Direction, TreeMap } from '@webview/types';
-import * as logger from '@webview/utils/logger';
 import type {
   Connection,
   Edge,
@@ -45,13 +44,40 @@ import {
   useRef,
   useState,
 } from 'react';
-import Debug from '../Debug';
-import { NodeDetail } from '../NodeDetail/NodeDetail';
 import { useSelectedNode } from './useSelectedNode';
+
 /**
  * Snapshot of edge appearance settings for re-application after worker sync.
  */
 const GLOBAL_EDGE_COLOR: string = 'hsl(var(--muted-foreground))';
+
+/** Stable empty array to avoid new references when edges are deferred. */
+const EMPTY_EDGES: Edge[] = [];
+
+const BASE_GAP = 50;
+
+/** Pre-allocated background style objects to preserve referential equality. */
+const BG_STYLE_DOTS: React.CSSProperties = {};
+const BG_STYLE_OTHER: React.CSSProperties = { strokeOpacity: 0.3 };
+
+/** Pre-allocated overlay style objects to preserve referential equality. */
+const OVERLAY_PAUSE_STYLE: React.CSSProperties = {
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  zIndex: 300,
+  pointerEvents: 'none',
+};
+const OVERLAY_PAUSE_INNER_STYLE: React.CSSProperties = {
+  pointerEvents: 'none',
+};
+const OVERLAY_LOADING_STYLE: React.CSSProperties = {
+  position: 'absolute',
+  inset: 0,
+  zIndex: 200,
+  pointerEvents: 'none',
+};
 
 interface EdgeSettingsSnapshot {
   edgeType: string;
@@ -143,8 +169,7 @@ export const FlowCanvas = memo(function FlowCanvas() {
 
   const { zoom } = useViewport();
 
-  const { selectedNode, onNodeClick, clearSelection, selectNode } =
-    useSelectedNode();
+  const { selectedNode, onNodeClick, selectNode } = useSelectedNode();
 
   const onDirectionChange = useCallback(
     (direction: Direction) => {
@@ -200,8 +225,7 @@ export const FlowCanvas = memo(function FlowCanvas() {
     [],
   );
 
-  const baseGap = 50;
-  const dynamicGap = useMemo(() => baseGap / zoom, [zoom]);
+  const dynamicGap = useMemo(() => BASE_GAP / zoom, [zoom]);
 
   const reactFlowProps = useMemo(
     () => ({
@@ -215,18 +239,18 @@ export const FlowCanvas = memo(function FlowCanvas() {
     [nodeTypes, isDraggable],
   );
 
-  const backgroundStyle =
-    backgroundVariant === BackgroundVariant.Dots ? {} : { strokeOpacity: 0.3 };
-
   const backgroundProps = useMemo(
     () => ({
       gap: dynamicGap,
       variant: backgroundVariant as BackgroundVariant,
-      style: backgroundStyle,
+      style:
+        backgroundVariant === BackgroundVariant.Dots
+          ? BG_STYLE_DOTS
+          : BG_STYLE_OTHER,
       className: 'bg-background',
       patternClassName: '!stroke-foreground/30',
     }),
-    [dynamicGap, backgroundVariant, backgroundStyle],
+    [dynamicGap, backgroundVariant],
   );
 
   const controlsProps = useMemo(
@@ -247,25 +271,6 @@ export const FlowCanvas = memo(function FlowCanvas() {
     ],
   );
 
-  const debugProps = useMemo(
-    () => ({
-      nodes: renderNodes,
-      edges: renderEdges,
-      treeData: safeTreeData as TreeMap,
-      collapsedNodes,
-      direction: currentDirection,
-    }),
-    [renderNodes, renderEdges, safeTreeData, collapsedNodes, currentDirection],
-  );
-
-  const nodeDetailProps = useMemo(
-    () => ({
-      node: selectedNode,
-      onClose: clearSelection,
-    }),
-    [selectedNode, clearSelection],
-  );
-
   const onNodeDoubleClick = useCallback(
     (event: MouseEvent, node: Node) => {
       event.preventDefault();
@@ -278,10 +283,8 @@ export const FlowCanvas = memo(function FlowCanvas() {
     processData: processWithWorker,
     isProcessing: isWorkerProcessing,
     progress: workerProgress,
-    error: workerError,
     nodes: workerNodes,
     edges: workerEdges,
-    processingStats,
   } = useLayoutWorker();
 
   const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
@@ -310,7 +313,7 @@ export const FlowCanvas = memo(function FlowCanvas() {
         didFitViewRef.current = true;
       });
     }
-  }, [isWorkerProcessing, graphReady, workerNodes, workerEdges]);
+  }, [isWorkerProcessing, graphReady, workerNodes]);
   useEffect(() => {
     if (!isWorkerProcessing) {
       requestAnimationFrame(() => {
@@ -348,9 +351,6 @@ export const FlowCanvas = memo(function FlowCanvas() {
     processWithWorker(jsonData, {
       direction: flowData.orientation,
     });
-    if (import.meta.env.DEV) {
-      logger.error('[FlowCanvas] Worker processing initiated');
-    }
   }, [flowData.data, flowData.orientation, isValidTree, processWithWorker]);
 
   // Stable ref for toggleNodeChildren to avoid re-creating callbacks
@@ -453,6 +453,22 @@ export const FlowCanvas = memo(function FlowCanvas() {
     onApplyGraphSelection: handleApplyGraphSelection,
     path: flowData.path,
   });
+  const handleReactFlowInit = useCallback((instance: ReactFlowInstance) => {
+    reactFlowInstanceRef.current = instance;
+    try {
+      instance.fitView({ padding: 0.2, includeHiddenNodes: true });
+    } catch {
+      // Swallowed: fitView may fail during initial render
+    }
+    // Ensure the graph is ready after initial render
+    requestAnimationFrame(() => {
+      const count = document.querySelectorAll('.react-flow__node').length;
+      if (count > 0) {
+        setGraphReady(true);
+      }
+    });
+  }, []);
+
   const defaultEdgeOptions = useMemo(() => {
     return {
       style: { stroke: GLOBAL_EDGE_COLOR },
@@ -460,17 +476,13 @@ export const FlowCanvas = memo(function FlowCanvas() {
   }, []);
 
   // Render-only virtualization: defer edges until the graph is ready
-  const renderedEdges = graphReady ? renderEdges : [];
+  const renderedEdges = graphReady ? renderEdges : EMPTY_EDGES;
   const reactFlowKey = useMemo(() => {
     return `${currentDirection}:${flowData.data ? 'loaded' : 'empty'}`;
   }, [currentDirection, flowData.data]);
 
   if (!workerNodes && isValidTree) {
     return <Loading />;
-  }
-
-  if (workerError) {
-    logger.error('Worker error:', workerError);
   }
 
   return (
@@ -486,21 +498,7 @@ export const FlowCanvas = memo(function FlowCanvas() {
         onNodeDoubleClick={onNodeDoubleClick}
         nodesDraggable={graphReady && isDraggable}
         nodesConnectable={graphReady && isDraggable}
-        onInit={(instance) => {
-          reactFlowInstanceRef.current = instance;
-          try {
-            instance.fitView({ padding: 0.2, includeHiddenNodes: true });
-          } catch {
-            // Swallowed: fitView may fail during initial render
-          }
-          // Ensure the graph is ready after initial render
-          requestAnimationFrame(() => {
-            const count = document.querySelectorAll('.react-flow__node').length;
-            if (count > 0) {
-              setGraphReady(true);
-            }
-          });
-        }}
+        onInit={handleReactFlowInit}
         defaultEdgeOptions={defaultEdgeOptions}
         {...reactFlowProps}
       >
@@ -509,19 +507,10 @@ export const FlowCanvas = memo(function FlowCanvas() {
         {graphReady && !isWorkerProcessing && <FlowMinimap />}
       </ReactFlow>
       {liveSyncPaused && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            zIndex: 300,
-            pointerEvents: 'none',
-          }}
-        >
+        <div style={OVERLAY_PAUSE_STYLE}>
           <div
             className="mx-auto mt-2 w-fit max-w-[90%] rounded bg-yellow-100 px-3 py-1 text-yellow-900 shadow"
-            style={{ pointerEvents: 'none' }}
+            style={OVERLAY_PAUSE_INNER_STYLE}
             title={pauseReason || 'Live Sync paused'}
           >
             <strong>Live Sync paused</strong>
@@ -530,63 +519,8 @@ export const FlowCanvas = memo(function FlowCanvas() {
         </div>
       )}
       {isWorkerProcessing && (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            zIndex: 200,
-            pointerEvents: 'none',
-          }}
-        >
+        <div style={OVERLAY_LOADING_STYLE}>
           <Loading progress={workerProgress} />
-        </div>
-      )}
-      {import.meta.env.DEV && processingStats && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 10,
-            left: 10,
-            zIndex: 50,
-            padding: '5px',
-            background: 'rgba(255,255,255,0.8)',
-            borderRadius: '4px',
-            fontSize: '12px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-            pointerEvents: 'none',
-          }}
-        >
-          <p>
-            <strong>Processing stats:</strong> {processingStats.nodesCount}{' '}
-            nodes processed in {Math.round(processingStats.time)}ms
-          </p>
-        </div>
-      )}
-      {import.meta.env.DEV && isValidTree && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            right: 0,
-            zIndex: 50,
-            pointerEvents: 'auto',
-          }}
-        >
-          <Debug {...debugProps} />
-        </div>
-      )}
-      {import.meta.env.DEV && selectedNode && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 20,
-            right: 20,
-            zIndex: 100,
-            background: 'rgba(255,255,255,0)',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-          }}
-        >
-          <NodeDetail {...nodeDetailProps} />
         </div>
       )}
     </div>

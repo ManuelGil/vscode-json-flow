@@ -154,7 +154,7 @@ importers:
         specifier: ^10.0.0
         version: 10.0.0
       '@types/vscode':
-        specifier: ^1.109.0
+        specifier: ^1.90.0
         version: 1.109.0
       '@vitejs/plugin-react':
         specifier: ^4.7.0

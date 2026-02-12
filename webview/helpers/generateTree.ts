@@ -1,3 +1,4 @@
+import { IS_DEV } from '@webview/env';
 import type { JsonValue, TreeMap } from '@webview/types';
 import {
   GRAPH_ROOT_ID,
@@ -38,7 +39,7 @@ export function generateTree(
   lineNumber = 1,
 ): TreeMap {
   // DEV-only: fail fast if the sentinel ever gets corrupted to a pointer.
-  if (import.meta.env.DEV && GRAPH_ROOT_ID.startsWith('/')) {
+  if (IS_DEV && GRAPH_ROOT_ID.startsWith('/')) {
     throw new Error(
       'GRAPH_ROOT_ID must never start with "/". The graph identity domain and the JSON Pointer domain must remain disjoint.',
     );

@@ -29,7 +29,7 @@ import {
   JsonController,
   TransformController,
 } from './app/controllers';
-import { getSelectionMapper, logger } from './app/helpers';
+import { getSelectionMapper, logger, LogLevel } from './app/helpers';
 import { FeedbackProvider, FilesProvider, JSONProvider } from './app/providers';
 
 /**
@@ -39,6 +39,14 @@ import { FeedbackProvider, FilesProvider, JSONProvider } from './app/providers';
  * @param context The VSCode extension context object.
  */
 export async function activate(context: vscode.ExtensionContext) {
+  // Configure logger based on VS Code extension mode (replaces process.env.NODE_ENV)
+  const isDevMode = context.extensionMode === vscode.ExtensionMode.Development;
+  logger.configure({
+    enableConsole: isDevMode,
+    minLevel: isDevMode ? LogLevel.Debug : LogLevel.Info,
+    includeLocation: isDevMode,
+  });
+
   // The code you place here will be executed every time your command is executed
   let resource: vscode.WorkspaceFolder | undefined;
 

@@ -1,3 +1,5 @@
+import { IS_DEV } from '@webview/env';
+
 /**
  * VSCode API singleton instance
  * We only want to call acquireVsCodeApi() once as per VS Code recommendations
@@ -25,7 +27,7 @@ let vscodeInstance: VsCodeApi | null = null;
  * ```
  */
 export function getVscodeApi() {
-  if (import.meta.env.DEV) {
+  if (IS_DEV) {
     return {
       postMessage: () => {
         void 0;

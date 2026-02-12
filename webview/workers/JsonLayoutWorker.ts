@@ -7,17 +7,16 @@
 
 /// <reference lib="webworker" />
 
-import type { Direction, JsonValue } from '@webview/types';
-import type { Edge, Node } from '@xyflow/react';
 import { generateTree, getRootId } from '@webview/helpers';
 import {
   DEFAULT_EDGE_SETTINGS,
   layoutElementsCore,
 } from '@webview/services/layout-core';
+import type { Direction, JsonValue } from '@webview/types';
+import type { Edge, Node } from '@xyflow/react';
 
 type JsonLayoutOptions = {
   direction?: Direction;
-  compact?: boolean;
 };
 
 type WorkerRequestMessage =

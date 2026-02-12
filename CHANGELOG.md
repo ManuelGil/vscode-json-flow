@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.1] - 2026-02-12
+
+* fix: update @types/vscode dependency to version ^1.90.0
+* chore(deps): bump lucide-react from 0.525.0 to 0.563.0
+* chore: make Husky hooks executable and refine pnpm configuration for lifecycle script handling
+
 ## [2.3.0] - 2026-02-11
 
 * feat(logging): Implement enhanced logging utility for better error tracking and performance metrics ([2efe71f](https://github.com/ManuelGil/vscode-json-flow/commit/2efe71f))
@@ -189,7 +195,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * build: add webview path ([960fb18](https://github.com/ManuelGil/vscode-json-flow/commit/960fb18))
 * fix: :rotating_light: fix compilation settings ([1ccbfa5](https://github.com/ManuelGil/vscode-json-flow/commit/1ccbfa5))
 
-[Unreleased]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.3.0...HEAD
+[Unreleased]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.3.1...HEAD
+[2.3.1]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.3.0...v2.3.1
 [2.3.0]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.2.1...v2.3.0
 [2.2.1]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.2.0...v2.2.1
 [2.2.0]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.1.0...v2.2.0

@@ -2,7 +2,7 @@
  * Enhanced logger utility for the JSON Flow extension.
  * Provides structured logging with context, timestamps, performance metrics, and error details.
  * Optimized for worker debugging with detailed tracing capabilities.
- * 
+ *
  * @module logger.helper
  */
 
@@ -14,12 +14,12 @@ import { EXTENSION_DISPLAY_NAME } from '../configs';
  * Log levels for categorizing messages
  */
 export enum LogLevel {
-  Trace = 'TRACE',  // Most verbose - for detailed tracing
+  Trace = 'TRACE', // Most verbose - for detailed tracing
   Debug = 'DEBUG',
   Info = 'INFO',
   Warn = 'WARN',
   Error = 'ERROR',
-  Fatal = 'FATAL'   // Critical errors that may crash the extension
+  Fatal = 'FATAL', // Critical errors that may crash the extension
 }
 
 /**
@@ -92,21 +92,21 @@ export class Logger {
     this.outputChannel = window.createOutputChannel(EXTENSION_DISPLAY_NAME);
     this.sessionId = this.generateSessionId();
     this.config = {
-      enableConsole: process.env.NODE_ENV === 'development',
-      minLevel: process.env.NODE_ENV === 'development' ? LogLevel.Debug : LogLevel.Info,
+      enableConsole: false,
+      minLevel: LogLevel.Info,
       includeTimestamp: true,
-      includeLocation: process.env.NODE_ENV === 'development',
+      includeLocation: false,
       includePerformance: true,
       enableBuffering: false,
       bufferSize: 100,
       maxLogSize: 50, // MB
-      ...config
+      ...config,
     };
-    
+
     // Show logger initialization
     this.info('Logger initialized', {
       sessionId: this.sessionId,
-      config: this.config
+      config: this.config,
     });
   }
 
@@ -128,19 +128,28 @@ export class Logger {
   }
 
   /**
+   * Reconfigure the logger after activation.
+   * Call from extension activate() with context.extensionMode.
+   */
+  configure(config: LoggerConfig): void {
+    this.config = { ...this.config, ...config };
+  }
+
+  /**
    * Get caller location from stack trace
    */
   private getCallerLocation(): string {
     const stack = new Error().stack;
     if (!stack) return '';
-    
+
     const lines = stack.split('\n');
     // Skip first 3 lines (Error, getCallerLocation, formatMessage)
     const callerLine = lines[4];
     if (!callerLine) return '';
-    
-    const match = callerLine.match(/\((.*):(\d+):(\d+)\)/) || 
-                  callerLine.match(/at (.*):(\d+):(\d+)/);
+
+    const match =
+      callerLine.match(/\((.*):(\d+):(\d+)\)/) ||
+      callerLine.match(/at (.*):(\d+):(\d+)/);
     if (match) {
       const file = match[1].split('/').pop() || match[1];
       return `${file}:${match[2]}`;
@@ -155,24 +164,24 @@ export class Logger {
     level: LogLevel,
     message: string,
     context?: Record<string, unknown>,
-    metrics?: WorkerMetrics
+    metrics?: WorkerMetrics,
   ): string {
     const parts: string[] = [];
-    
+
     // Add sequence number for ordering
     parts.push(`#${++this.sequenceNumber}`);
-    
+
     // Add timestamp
     if (this.config.includeTimestamp) {
       parts.push(`[${new Date().toISOString()}]`);
     }
-    
+
     // Add session ID for correlation
     parts.push(`[${this.sessionId.substring(0, 8)}]`);
-    
+
     // Add log level
     parts.push(`[${level}]`);
-    
+
     // Add caller location
     if (this.config.includeLocation) {
       const location = this.getCallerLocation();
@@ -180,7 +189,7 @@ export class Logger {
         parts.push(`[${location}]`);
       }
     }
-    
+
     // Add worker metrics if available
     if (metrics) {
       const metricsStr = this.formatWorkerMetrics(metrics);
@@ -188,19 +197,19 @@ export class Logger {
         parts.push(`[METRICS: ${metricsStr}]`);
       }
     }
-    
+
     // Add main message
     parts.push(message);
-    
+
     // Add context
     if (context && Object.keys(context).length > 0) {
       const contextStr = JSON.stringify(context, null, 2)
         .split('\n')
-        .map((line, index) => index === 0 ? line : `  ${line}`)
+        .map((line, index) => (index === 0 ? line : `  ${line}`))
         .join('\n');
       parts.push(`\n  Context: ${contextStr}`);
     }
-    
+
     return parts.join(' ');
   }
 
@@ -209,19 +218,25 @@ export class Logger {
    */
   private formatWorkerMetrics(metrics: WorkerMetrics): string {
     const parts: string[] = [];
-    
+
     if (metrics.workerId) parts.push(`Worker:${metrics.workerId}`);
     if (metrics.requestId) parts.push(`Req:${metrics.requestId}`);
     if (metrics.operation) parts.push(`Op:${metrics.operation}`);
     if (metrics.duration !== undefined) parts.push(`${metrics.duration}ms`);
-    if (metrics.itemsProcessed !== undefined) parts.push(`Items:${metrics.itemsProcessed}`);
-    if (metrics.processingRate !== undefined) parts.push(`Rate:${metrics.processingRate.toFixed(2)}/s`);
-    if (metrics.memoryUsage !== undefined) parts.push(`Mem:${(metrics.memoryUsage / 1024 / 1024).toFixed(2)}MB`);
+    if (metrics.itemsProcessed !== undefined)
+      parts.push(`Items:${metrics.itemsProcessed}`);
+    if (metrics.processingRate !== undefined)
+      parts.push(`Rate:${metrics.processingRate.toFixed(2)}/s`);
+    if (metrics.memoryUsage !== undefined)
+      parts.push(`Mem:${(metrics.memoryUsage / 1024 / 1024).toFixed(2)}MB`);
     if (metrics.workerState) parts.push(`State:${metrics.workerState}`);
-    if (metrics.queueSize !== undefined) parts.push(`Queue:${metrics.queueSize}`);
-    if (metrics.errorCount !== undefined && metrics.errorCount > 0) parts.push(`Errors:${metrics.errorCount}`);
-    if (metrics.retryCount !== undefined && metrics.retryCount > 0) parts.push(`Retries:${metrics.retryCount}`);
-    
+    if (metrics.queueSize !== undefined)
+      parts.push(`Queue:${metrics.queueSize}`);
+    if (metrics.errorCount !== undefined && metrics.errorCount > 0)
+      parts.push(`Errors:${metrics.errorCount}`);
+    if (metrics.retryCount !== undefined && metrics.retryCount > 0)
+      parts.push(`Retries:${metrics.retryCount}`);
+
     return parts.join(' ');
   }
 
@@ -235,10 +250,10 @@ export class Logger {
         name: error.name,
         message: error.message,
         stack: error.stack?.split('\n').slice(0, 5).join('\n'), // First 5 stack lines
-        ...(errorRecord.code && { code: errorRecord.code })
+        ...(errorRecord.code && { code: errorRecord.code }),
       };
     }
-    
+
     if (typeof error === 'object' && error !== null) {
       try {
         return { details: JSON.stringify(error, null, 2) };
@@ -246,7 +261,7 @@ export class Logger {
         return { details: String(error) };
       }
     }
-    
+
     return { details: String(error) };
   }
 
@@ -257,7 +272,7 @@ export class Logger {
     level: LogLevel,
     message: string,
     context?: Record<string, unknown>,
-    metrics?: WorkerMetrics
+    metrics?: WorkerMetrics,
   ): void {
     const levelPriority = {
       [LogLevel.Trace]: 0,
@@ -265,18 +280,24 @@ export class Logger {
       [LogLevel.Info]: 2,
       [LogLevel.Warn]: 3,
       [LogLevel.Error]: 4,
-      [LogLevel.Fatal]: 5
+      [LogLevel.Fatal]: 5,
     };
 
-    const minLevelPriority = levelPriority[this.config.minLevel || LogLevel.Info];
+    const minLevelPriority =
+      levelPriority[this.config.minLevel || LogLevel.Info];
     const currentLevelPriority = levelPriority[level];
 
     if (currentLevelPriority < minLevelPriority) {
       return;
     }
 
-    const formattedMessage = this.formatMessage(level, message, context, metrics);
-    
+    const formattedMessage = this.formatMessage(
+      level,
+      message,
+      context,
+      metrics,
+    );
+
     // Buffer logs if enabled
     if (this.config.enableBuffering) {
       this.logBuffer.push(formattedMessage);
@@ -287,15 +308,20 @@ export class Logger {
       // Always output to VS Code output channel
       this.outputChannel.appendLine(formattedMessage);
     }
-    
+
     // Optionally output to console (only in development)
     if (this.config.enableConsole) {
-      const consoleMethod = level === LogLevel.Fatal || level === LogLevel.Error ? 'error' :
-                           level === LogLevel.Warn ? 'warn' :
-                           level === LogLevel.Debug || level === LogLevel.Trace ? 'debug' : 'log';
+      const consoleMethod =
+        level === LogLevel.Fatal || level === LogLevel.Error
+          ? 'error'
+          : level === LogLevel.Warn
+            ? 'warn'
+            : level === LogLevel.Debug || level === LogLevel.Trace
+              ? 'debug'
+              : 'log';
       console[consoleMethod](formattedMessage);
     }
-    
+
     // Show output channel on error or fatal
     if (level === LogLevel.Error || level === LogLevel.Fatal) {
       this.outputChannel.show(true);
@@ -307,7 +333,7 @@ export class Logger {
    */
   private flush(): void {
     if (this.logBuffer.length === 0) return;
-    
+
     const output = this.logBuffer.join('\n');
     this.outputChannel.appendLine(output);
     this.logBuffer = [];
@@ -344,10 +370,14 @@ export class Logger {
   /**
    * Log error message with enhanced error formatting
    */
-  error(message: string, error?: unknown, additionalContext?: Record<string, unknown>): void {
+  error(
+    message: string,
+    error?: unknown,
+    additionalContext?: Record<string, unknown>,
+  ): void {
     const context = {
       ...additionalContext,
-      ...(error && { error: this.formatError(error) })
+      ...(error && { error: this.formatError(error) }),
     };
     this.log(LogLevel.Error, message, context);
   }
@@ -355,10 +385,14 @@ export class Logger {
   /**
    * Log fatal error (crashes or unrecoverable errors)
    */
-  fatal(message: string, error?: unknown, additionalContext?: Record<string, unknown>): void {
+  fatal(
+    message: string,
+    error?: unknown,
+    additionalContext?: Record<string, unknown>,
+  ): void {
     const context = {
       ...additionalContext,
-      ...(error && { error: this.formatError(error) })
+      ...(error && { error: this.formatError(error) }),
     };
     this.log(LogLevel.Fatal, message, context);
   }
@@ -366,8 +400,15 @@ export class Logger {
   /**
    * Log worker-specific message with metrics
    */
-  worker(message: string, metrics: WorkerMetrics, context?: Record<string, unknown>): void {
-    const level = metrics.errorCount && metrics.errorCount > 0 ? LogLevel.Warn : LogLevel.Info;
+  worker(
+    message: string,
+    metrics: WorkerMetrics,
+    context?: Record<string, unknown>,
+  ): void {
+    const level =
+      metrics.errorCount && metrics.errorCount > 0
+        ? LogLevel.Warn
+        : LogLevel.Info;
     this.log(level, `[WORKER] ${message}`, context, metrics);
   }
 
@@ -388,21 +429,21 @@ export class Logger {
       this.warn(`No timing found for operation`, { operationId });
       return 0;
     }
-    
+
     const duration = performance.now() - startTime;
     this.performanceMap.delete(operationId);
-    
+
     const workerMetrics: WorkerMetrics = {
       operation: operationId,
       duration: Math.round(duration),
-      ...metrics
+      ...metrics,
     };
-    
+
     // Calculate processing rate if items were processed
     if (metrics?.itemsProcessed && duration > 0) {
       workerMetrics.processingRate = (metrics.itemsProcessed * 1000) / duration;
     }
-    
+
     this.worker(`Operation completed`, workerMetrics);
     return duration;
   }
@@ -413,14 +454,18 @@ export class Logger {
   workerLifecycle(
     workerId: string,
     event: 'created' | 'started' | 'stopped' | 'error' | 'terminated',
-    context?: Record<string, unknown>
+    context?: Record<string, unknown>,
   ): void {
-    const level = event === 'error' ? LogLevel.Error : 
-                  event === 'terminated' ? LogLevel.Warn : LogLevel.Info;
+    const level =
+      event === 'error'
+        ? LogLevel.Error
+        : event === 'terminated'
+          ? LogLevel.Warn
+          : LogLevel.Info;
     this.log(level, `Worker ${event}`, {
       workerId,
       event,
-      ...context
+      ...context,
     });
   }
 
@@ -432,14 +477,14 @@ export class Logger {
     direction: 'sent' | 'received',
     messageType: string,
     payload?: unknown,
-    requestId?: string
+    requestId?: string,
   ): void {
     this.trace(`Worker message ${direction}`, {
       workerId,
       direction,
       messageType,
       requestId,
-      payloadSize: payload ? JSON.stringify(payload).length : 0
+      payloadSize: payload ? JSON.stringify(payload).length : 0,
     });
   }
 

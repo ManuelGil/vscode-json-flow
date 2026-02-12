@@ -3,6 +3,7 @@
  * Custom hook for managing JSON layout Web Worker lifecycle and communication
  * Provides a clean interface for offloading heavy layout calculations to a background thread
  */
+import { IS_DEV } from '@webview/env';
 import type { Direction } from '@webview/types';
 import type {
   WorkerMessage,
@@ -16,19 +17,7 @@ import { v4 as uuidv4 } from 'uuid'; // Ensure uuid is installed for request tra
 
 // Worker request options
 export interface LayoutWorkerOptions {
-  spacing?: number;
   direction?: Direction;
-  compact?: boolean;
-  /**
-   * Enable adaptive batching in the worker to minimize CPU while keeping UI responsive.
-   * Defaults to true in the worker when undefined.
-   */
-  autoTune?: boolean;
-  /**
-   * Hint the worker to preallocate internal arrays to reduce reallocations.
-   * No restrictions - worker will process unlimited nodes.
-   */
-  preallocate?: boolean;
 }
 
 // Hook return type
@@ -526,7 +515,6 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
           setIsProcessing(false);
           setProgress(null);
           currentRequestId.current = null;
-          logger.error('Worker error:', payload.error);
           break;
         }
 
@@ -607,14 +595,30 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
 
           // Start processing
           setIsProcessing(true);
+          const workerPayload = {
+            jsonData,
+            options: options?.direction
+              ? { direction: options.direction }
+              : undefined,
+            requestId,
+          };
+          if (IS_DEV) {
+            try {
+              const payloadSize = JSON.stringify(workerPayload).length;
+              const jsonDataSize = JSON.stringify(jsonData).length;
+              logger.error(
+                `[useLayoutWorker] PROCESS_JSON payload: ${(payloadSize / 1024).toFixed(1)}KB total, ` +
+                  `jsonData: ${(jsonDataSize / 1024).toFixed(1)}KB (${((jsonDataSize / payloadSize) * 100).toFixed(0)}%), ` +
+                  `options: ${JSON.stringify(workerPayload.options)}, requestId: ${requestId}`,
+              );
+            } catch {
+              // Measurement failed — ignore
+            }
+          }
           if (workerRef.current) {
             workerRef.current.postMessage({
               type: 'PROCESS_JSON',
-              payload: {
-                jsonData,
-                options,
-                requestId,
-              },
+              payload: workerPayload,
             });
           } else {
             throw new Error('Worker is not initialized');
