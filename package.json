@@ -2,7 +2,7 @@
 	"name": "vscode-json-flow",
 	"displayName": "JSON Flow",
 	"description": "Visualize, convert, and manage JSON/YAML/XML/CSV as interactive graphs in VS Code. Offline and open-source.",
-	"version": "2.2.1",
+	"version": "2.3.0",
 	"icon": "icon.png",
 	"license": "MIT",
 	"publisher": "imgildev",

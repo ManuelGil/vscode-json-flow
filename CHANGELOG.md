@@ -5,7 +5,7 @@ All notable changes to the "JSON Flow" extension will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.3.0] - 2026-02-11
 
 * feat(logging): Implement enhanced logging utility for better error tracking and performance metrics ([2efe71f](https://github.com/ManuelGil/vscode-json-flow/commit/2efe71f))
 * feat: :sparkles: implement live sync pause functionality with UI indication and message enhancements ([65a075a](https://github.com/ManuelGil/vscode-json-flow/commit/65a075a))
