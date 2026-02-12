@@ -20,6 +20,12 @@
 		"node": ">=24",
 		"pnpm": ">=10"
 	},
+	"pnpm": {
+		"onlyBuiltDependencies": [
+			"@compodoc/compodoc",
+			"esbuild"
+		]
+	},
 	"categories": [
 		"Visualization",
 		"Data Science",
@@ -515,10 +521,10 @@
 		"@commitlint/config-conventional": "^19.8.1",
 		"@compodoc/compodoc": "^1.2.1",
 		"@faker-js/faker": "^9.9.0",
-		"@release-it/keep-a-changelog": "^7.0.0",
+		"@release-it/keep-a-changelog": "^7.0.1",
 		"@types/mocha": "^10.0.10",
-		"@types/node": "^24.10.11",
-		"@types/react": "^19.2.13",
+		"@types/node": "^24.10.13",
+		"@types/react": "^19.2.14",
 		"@types/react-dom": "^19.2.3",
 		"@types/uuid": "^10.0.0",
 		"@types/vscode": "^1.109.0",
@@ -528,7 +534,7 @@
 		"@vscode/test-electron": "^2.5.2",
 		"autoprefixer": "^10.4.24",
 		"cpy-cli": "^5.0.0",
-		"glob": "^13.0.1",
+		"glob": "^13.0.2",
 		"husky": "^9.1.7",
 		"lint-staged": "^16.2.7",
 		"minimatch": "^10.1.2",
