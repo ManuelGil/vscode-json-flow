@@ -51,7 +51,7 @@ import { useSelectedNode } from './useSelectedNode';
 /**
  * Snapshot of edge appearance settings for re-application after worker sync.
  */
-const GLOBAL_EDGE_COLOR: string = 'hsl(var(--foreground))';
+const GLOBAL_EDGE_COLOR: string = 'hsl(var(--muted-foreground))';
 
 interface EdgeSettingsSnapshot {
   edgeType: string;
@@ -349,7 +349,7 @@ export const FlowCanvas = memo(function FlowCanvas() {
       direction: flowData.orientation,
     });
     if (import.meta.env.DEV) {
-      logger.log('[FlowCanvas] Worker processing initiated');
+      logger.error('[FlowCanvas] Worker processing initiated');
     }
   }, [flowData.data, flowData.orientation, isValidTree, processWithWorker]);
 

@@ -14,9 +14,9 @@ import {
   FileType,
   isFileTypeSupported,
   logger,
+  normalizeToJsonString,
   parseJsonContent,
 } from '../helpers';
-import { normalizeToJsonString } from '../helpers/normalize.helper';
 import { JSONProvider } from '../providers';
 
 /**

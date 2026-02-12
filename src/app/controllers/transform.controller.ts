@@ -6,8 +6,12 @@ import {
 } from 'quicktype-core';
 import { l10n, Range, Uri, window, workspace } from 'vscode';
 
-import { FileType, isFileTypeSupported, parseJsonContent } from '../helpers';
-import { normalizeToJsonString } from '../helpers/normalize.helper';
+import {
+  FileType,
+  isFileTypeSupported,
+  normalizeToJsonString,
+  parseJsonContent,
+} from '../helpers';
 import { NodeModel } from '../models';
 
 /**

@@ -356,7 +356,7 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
       const data = event?.data;
 
       if (!isWorkerMessage(data)) {
-        logger.warn('[useLayoutWorker] Received invalid worker message', data);
+        logger.error('[useLayoutWorker] Received invalid worker message', data);
         return;
       }
       const { type, payload } = data;
