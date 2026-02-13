@@ -138,6 +138,14 @@ export const FlowCanvas = memo(function FlowCanvas() {
   const [renderNodes, setRenderNodes] = useState<Node[]>([]);
   const [renderEdges, setRenderEdges] = useState<Edge[]>([]);
 
+  // Search match IDs for highlighting matched nodes
+  const [searchMatchIds, setSearchMatchIds] = useState<Set<string>>(
+    () => new Set<string>(),
+  );
+
+  // Counter to trigger render-sync re-application when edge settings change
+  const [edgeSettingsVersion, setEdgeSettingsVersion] = useState<number>(0);
+
   const settings = useMemo(() => {
     return localStorage.getItem('settings')
       ? JSON.parse(localStorage.getItem('settings')!)
@@ -202,6 +210,7 @@ export const FlowCanvas = memo(function FlowCanvas() {
         animated: next.animated ?? DEFAULT_SETTINGS.animated,
         hasArrow: next.hasArrow ?? false,
       };
+      setEdgeSettingsVersion((prev) => prev + 1);
       // Update background variant immediately (no debounce needed for UI)
       if (next.backgroundVariant) {
         setBackgroundVariant(next.backgroundVariant);
@@ -257,24 +266,6 @@ export const FlowCanvas = memo(function FlowCanvas() {
     [dynamicGap, backgroundVariant],
   );
 
-  const controlsProps = useMemo(
-    () => ({
-      isDraggable,
-      setIsDraggable,
-      currentDirection,
-      onLayoutRotate: handleRotation,
-      onSettingsChange: debouncedHandleEdgeSettingsChange,
-      nodes: renderNodes as InternalNode[],
-    }),
-    [
-      isDraggable,
-      currentDirection,
-      handleRotation,
-      debouncedHandleEdgeSettingsChange,
-      renderNodes,
-    ],
-  );
-
   const onNodeDoubleClick = useCallback(
     (event: MouseEvent, node: Node) => {
       event.preventDefault();
@@ -290,6 +281,41 @@ export const FlowCanvas = memo(function FlowCanvas() {
     nodes: workerNodes,
     edges: workerEdges,
   } = useLayoutWorker();
+
+  const controlsProps = useMemo(
+    () => ({
+      isDraggable,
+      setIsDraggable,
+      currentDirection,
+      onLayoutRotate: handleRotation,
+      onSettingsChange: debouncedHandleEdgeSettingsChange,
+      nodes: renderNodes as InternalNode[],
+      allNodes: (workerNodes ?? []) as InternalNode[],
+      onSearchMatchChange: (next: Set<string>) => {
+        setSearchMatchIds((prev) => {
+          if (prev.size === next.size) {
+            let equal = true;
+            for (const v of prev) {
+              if (!next.has(v)) {
+                equal = false;
+                break;
+              }
+            }
+            if (equal) return prev;
+          }
+          return next;
+        });
+      },
+    }),
+    [
+      isDraggable,
+      currentDirection,
+      handleRotation,
+      debouncedHandleEdgeSettingsChange,
+      renderNodes,
+      workerNodes,
+    ],
+  );
 
   const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
   const [graphReady, setGraphReady] = useState(false);
@@ -409,6 +435,7 @@ export const FlowCanvas = memo(function FlowCanvas() {
           isCollapsed: (descendantsCache.get(node.id) ?? []).some(
             (descendantId) => collapsedNodes.has(descendantId),
           ),
+          isSearchMatch: searchMatchIds.has(node.id),
         },
       })),
     );
@@ -426,6 +453,8 @@ export const FlowCanvas = memo(function FlowCanvas() {
     collapsedNodes,
     descendantsCache,
     handleToggleChildren,
+    searchMatchIds,
+    edgeSettingsVersion,
   ]);
 
   // Unified change handlers for ReactFlow interactivity (drag, select)

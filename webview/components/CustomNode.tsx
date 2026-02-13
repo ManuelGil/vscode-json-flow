@@ -46,6 +46,7 @@ export const CustomNode = memo<CustomNodeProps>(
       direction,
       onToggleChildren,
       isCollapsed,
+      isSearchMatch,
       id,
     } = data;
     const isHorizontal = useMemo(
@@ -116,8 +117,9 @@ export const CustomNode = memo<CustomNodeProps>(
           'focus:ring-2 focus:ring-offset-0 transition-all duration-200',
           ...colors.node,
           selected && colors.nodeSelected,
+          isSearchMatch && 'ring-2 ring-primary',
         ),
-      [colors.node, colors.nodeSelected, selected],
+      [colors.node, colors.nodeSelected, selected, isSearchMatch],
     );
 
     const labelClass = useMemo(
@@ -290,7 +292,8 @@ export const CustomNode = memo<CustomNodeProps>(
       prevProps.data.spouses?.length === nextProps.data.spouses?.length &&
       prevProps.data.isSpouse === nextProps.data.isSpouse &&
       prevProps.data.isSibling === nextProps.data.isSibling &&
-      prevProps.data.isRoot === nextProps.data.isRoot
+      prevProps.data.isRoot === nextProps.data.isRoot &&
+      prevProps.data.isSearchMatch === nextProps.data.isSearchMatch
     );
   },
 );

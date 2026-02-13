@@ -32,6 +32,7 @@ export interface CustomNodeData {
   selected?: boolean;
   onToggleChildren?: (id: string) => void;
   isCollapsed?: boolean;
+  isSearchMatch?: boolean;
   line?: number;
 }
 

@@ -31,6 +31,8 @@ type CustomControlsProps = {
   onLayoutRotate: () => void;
   onSettingsChange: (newSettings: typeof DEFAULT_SETTINGS) => void;
   nodes: InternalNode[];
+  allNodes?: InternalNode[];
+  onSearchMatchChange?: (matchedIds: Set<string>) => void;
 };
 
 /**
@@ -51,6 +53,8 @@ export function CustomControls({
   onLayoutRotate,
   onSettingsChange,
   nodes,
+  allNodes,
+  onSearchMatchChange,
 }: CustomControlsProps) {
   return (
     <Panel className="flex justify-between gap-2" position="top-center">
@@ -75,7 +79,11 @@ export function CustomControls({
       />
       <ImageDownload />
       <ModeToggle />
-      <GoToSearch nodes={nodes} />
+      <GoToSearch
+        nodes={nodes}
+        allNodes={allNodes}
+        onMatchChange={onSearchMatchChange}
+      />
       <Settings onSettingsChange={onSettingsChange} />
     </Panel>
   );

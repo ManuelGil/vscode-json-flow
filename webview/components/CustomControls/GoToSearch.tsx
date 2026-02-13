@@ -14,11 +14,25 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 
 const NODE_WIDTH_FALLBACK = 160;
 const NODE_HEIGHT_FALLBACK = 36;
+
+/** Shallow comparison of two string arrays by length and element identity. */
+function areMatchesEqual(prev: string[], next: string[]): boolean {
+  if (prev.length !== next.length) {
+    return false;
+  }
+  for (let idx = 0; idx < prev.length; idx++) {
+    if (prev[idx] !== next[idx]) {
+      return false;
+    }
+  }
+  return true;
+}
 
 /**
  * GoToSearch component provides a search interface to focus and navigate between nodes
@@ -26,7 +40,17 @@ const NODE_HEIGHT_FALLBACK = 36;
  *
  * @returns A dropdown menu with a search input and navigation controls for node navigation.
  */
-export function GoToSearch({ nodes }: { nodes: InternalNode[] }) {
+interface GoToSearchProps {
+  nodes: InternalNode[];
+  allNodes?: InternalNode[];
+  onMatchChange?: (matchedIds: Set<string>) => void;
+}
+
+export function GoToSearch({
+  nodes,
+  allNodes,
+  onMatchChange,
+}: GoToSearchProps) {
   const [search, setSearch] = useState<string>('');
   const [matches, setMatches] = useState<string[]>([]);
   const [currentMatchIdx, setCurrentMatchIdx] = useState<number>(-1);
@@ -35,28 +59,42 @@ export function GoToSearch({ nodes }: { nodes: InternalNode[] }) {
 
   const reactFlow = useReactFlow();
 
-  const labelIndex = useMemo(() => {
-    const map = new Map<string, string[]>();
+  // Tracks whether the next focus should actually center the viewport.
+  // Only set to true by explicit user actions (search term change, prev/next).
+  const shouldCenterRef = useRef<boolean>(false);
+  const prevSearchRef = useRef<string>('');
 
-    for (const node of nodes) {
-      const raw = node.data?.label;
-      if (!raw) {
-        continue;
+  const buildLabelIndex = useCallback(
+    (nodeList: InternalNode[]): Map<string, string[]> => {
+      const map = new Map<string, string[]>();
+      for (const node of nodeList) {
+        const raw = node.data?.label;
+        if (!raw) {
+          continue;
+        }
+        const label = String(raw).toLowerCase().trim();
+        if (!label) {
+          continue;
+        }
+        if (!map.has(label)) {
+          map.set(label, []);
+        }
+        map.get(label)!.push(node.id);
       }
+      return map;
+    },
+    [],
+  );
 
-      const label = String(raw).toLowerCase().trim();
-      if (!label) {
-        continue;
-      }
+  const labelIndex = useMemo(
+    () => buildLabelIndex(nodes),
+    [nodes, buildLabelIndex],
+  );
 
-      if (!map.has(label)) {
-        map.set(label, []);
-      }
-
-      map.get(label)!.push(node.id);
-    }
-    return map;
-  }, [nodes]);
+  const allLabelIndex = useMemo(
+    () => (allNodes ? buildLabelIndex(allNodes) : labelIndex),
+    [allNodes, labelIndex, buildLabelIndex],
+  );
 
   /**
    * Finds all node ids whose label or data includes the search term (case-insensitive).
@@ -158,6 +196,7 @@ export function GoToSearch({ nodes }: { nodes: InternalNode[] }) {
       typeof currentMatchIdx === 'number' ? currentMatchIdx : 0;
     const newIdx = (currentIdx - 1 + matches.length) % matches.length;
 
+    shouldCenterRef.current = true;
     setCurrentMatchIdx(newIdx);
     // focusMatch(newIdx) removed; effect will handle focusing
   }, [matches, currentMatchIdx]);
@@ -175,14 +214,18 @@ export function GoToSearch({ nodes }: { nodes: InternalNode[] }) {
       typeof currentMatchIdx === 'number' ? currentMatchIdx : 0;
     const newIdx = (currentIdx + 1) % matches.length;
 
+    shouldCenterRef.current = true;
     setCurrentMatchIdx(newIdx);
     // focusMatch(newIdx) removed; effect will handle focusing
   }, [matches, currentMatchIdx]);
 
   useEffect(() => {
+    console.log('Search effect fired');
     try {
       // Validate value before processing
       const trimmedSearch = debouncedSearch?.trim() || '';
+      const searchTermChanged = trimmedSearch !== prevSearchRef.current;
+      prevSearchRef.current = trimmedSearch;
 
       if (trimmedSearch.length >= 2) {
         try {
@@ -190,8 +233,16 @@ export function GoToSearch({ nodes }: { nodes: InternalNode[] }) {
           // Ensure found is always an array
           const safeFound = Array.isArray(found) ? found : [];
 
-          setMatches(safeFound);
-          setCurrentMatchIdx(safeFound.length > 0 ? 0 : -1);
+          setMatches((prev) =>
+            areMatchesEqual(prev, safeFound) ? prev : safeFound,
+          );
+          // Only reset navigation index and trigger centering when the
+          // search term itself changed — not when the node list changed
+          // due to collapse/expand.
+          if (searchTermChanged) {
+            shouldCenterRef.current = true;
+            setCurrentMatchIdx(safeFound.length > 0 ? 0 : -1);
+          }
           // focusMatch(0) removed to avoid infinite loop
         } catch {
           setMatches([]);
@@ -207,9 +258,15 @@ export function GoToSearch({ nodes }: { nodes: InternalNode[] }) {
     }
   }, [debouncedSearch, findMatchingNodeIds]);
 
-  // Focus the current match whenever matches or currentMatchIdx change
+  // Notify parent when matched node IDs change
   useEffect(() => {
-    if (matches.length > 0 && currentMatchIdx >= 0) {
+    onMatchChange?.(new Set(matches));
+  }, [matches, onMatchChange]);
+
+  // Focus the current match only when triggered by an explicit user action
+  useEffect(() => {
+    if (shouldCenterRef.current && matches.length > 0 && currentMatchIdx >= 0) {
+      shouldCenterRef.current = false;
       focusMatch(currentMatchIdx);
     }
   }, [matches, currentMatchIdx, focusMatch]);
@@ -218,6 +275,27 @@ export function GoToSearch({ nodes }: { nodes: InternalNode[] }) {
   const matchCount = useMemo(() => {
     return Array.isArray(matches) ? matches.length : 0;
   }, [matches]);
+
+  const hiddenMatchCount = useMemo(() => {
+    if (!allNodes || !debouncedSearch) {
+      return 0;
+    }
+    const trimmed = debouncedSearch.trim().toLowerCase();
+    if (trimmed.length < 2) {
+      return 0;
+    }
+    let totalCount = 0;
+    if (allLabelIndex.has(trimmed)) {
+      totalCount = allLabelIndex.get(trimmed)!.length;
+    } else {
+      totalCount = allNodes.filter((node) =>
+        String(node.data?.label || '')
+          .toLowerCase()
+          .includes(trimmed),
+      ).length;
+    }
+    return Math.max(0, totalCount - matchCount);
+  }, [allNodes, allLabelIndex, debouncedSearch, matchCount]);
 
   const hasMatches = matchCount > 0;
   const currentMatch = hasMatches ? currentMatchIdx + 1 : 0;
@@ -256,7 +334,7 @@ export function GoToSearch({ nodes }: { nodes: InternalNode[] }) {
             {searchError
               ? searchError
               : hasMatches
-                ? `${currentMatch}/${matchCount}`
+                ? `${currentMatch}/${matchCount}${hiddenMatchCount > 0 ? ` (+${hiddenMatchCount} hidden)` : ''}`
                 : '0/0'}
           </span>
           <div className="flex items-center gap-0.5 rounded-md border border-input bg-muted px-1 py-0.5">
