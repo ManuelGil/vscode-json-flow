@@ -3,26 +3,8 @@ import { z } from 'zod';
 
 import { getVscodeApi } from '../getVscodeApi';
 
-/** Schema for config updates */
-const configMessageSchema = z.object({
-  command: z.literal('updateConfig'),
-  orientation: z.enum(['TB', 'RL', 'BT', 'LR']).optional(),
-});
-
-/** Schema for state update from webview to extension */
-const updateStateSchema = z.object({
-  command: z.literal('updateState'),
-  data: z.unknown().optional(),
-  fileName: z.string().optional(),
-  path: z.string().optional(),
-  orientation: z.enum(['TB', 'RL', 'BT', 'LR']).optional(),
-});
-
 /** Union of all webview-to-extension messages */
 const messageSchema = z.discriminatedUnion('command', [
-  configMessageSchema,
-  updateStateSchema,
-  z.object({ command: z.literal('openSettings') }),
   z.object({
     command: z.literal('graphSelectionChanged'),
     nodeId: z.string().optional(),

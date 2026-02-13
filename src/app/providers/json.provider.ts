@@ -72,11 +72,6 @@ export class JSONProvider {
   static hostThrottleMs: number | undefined;
 
   /**
-   * Extension configuration that should be synchronized with the webview
-   */
-  static configState: Record<string, unknown> = {};
-
-  /**
    * Last applied nodeId from inbound message to de-duplicate
    */
   static lastAppliedNodeId: string | undefined;
@@ -307,8 +302,6 @@ export class JSONProvider {
       JSONProvider.isSplitView,
     );
 
-    // Sync initial configuration state with the new webview
-    JSONProvider.syncConfigState();
     // Notify listeners
     JSONProvider._onStateChanged.fire({
       isSplitView: JSONProvider.isSplitView,
@@ -518,53 +511,6 @@ export class JSONProvider {
   }
 
   /**
-   * Updates the configuration state and synchronizes it with the webview
-   * This should be called whenever relevant extension configuration changes
-   *
-   * @param config Configuration object with settings to synchronize
-   * @param broadcast Whether to broadcast to the webview immediately
-   */
-  static updateConfigState(
-    config: Record<string, unknown>,
-    broadcast = true,
-  ): void {
-    // Merge the new config with existing state
-    JSONProvider.configState = { ...JSONProvider.configState, ...config };
-
-    if (broadcast && JSONProvider.currentProvider) {
-      try {
-        JSONProvider.postMessageToWebview({
-          command: 'configUpdate',
-          config: JSONProvider.configState,
-          origin: 'extension',
-          nonce: getNonce(),
-        });
-      } catch {
-        // ignore transmission errors
-      }
-    }
-  }
-
-  /**
-   * Sends the full current configuration state to the webview
-   * Useful when a webview is first created or reconnected
-   */
-  static syncConfigState(): void {
-    if (JSONProvider.currentProvider) {
-      try {
-        JSONProvider.postMessageToWebview({
-          command: 'configSync',
-          config: JSONProvider.configState,
-          origin: 'extension',
-          nonce: getNonce(),
-        });
-      } catch {
-        // ignore transmission errors
-      }
-    }
-  }
-
-  /**
    * Cleans up static resources used by JSONProvider to avoid leaks across
    * activation/deactivation cycles. Resets flags and reinitializes the
    * state change emitter to a fresh instance.
@@ -588,7 +534,6 @@ export class JSONProvider {
     JSONProvider.liveSyncPauseReason = undefined;
     JSONProvider.hostThrottleMs = undefined;
     JSONProvider.lastAppliedNodeId = undefined;
-    JSONProvider.configState = {};
   }
 
   /** Tell the webview to apply selection to a graph node by ID (route-by-indices) */

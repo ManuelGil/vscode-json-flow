@@ -7,11 +7,8 @@ import { Direction, JsonValue } from '@webview/types';
  * VSCode message command types
  */
 export type VscodeMessageCommand =
-  | 'updateConfig'
-  | 'openSettings'
-  | 'updateState'
   // Live Sync (webview -> extension)
-  | 'graphSelectionChanged';
+  'graphSelectionChanged';
 
 /**
  * VSCode message structure
@@ -37,17 +34,6 @@ export interface VscodeState {
   orientation?: Direction;
   path?: string;
   fileName?: string;
-}
-
-/**
- * VSCode configuration update payload
- */
-/**
- * VSCode configuration update payload
- * Only known configuration keys should be included here to avoid drift.
- */
-export interface VscodeConfigUpdate {
-  orientation?: Direction;
 }
 
 /**

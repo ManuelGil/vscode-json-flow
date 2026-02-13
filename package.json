@@ -520,7 +520,6 @@
 		"@commitlint/cli": "^19.8.1",
 		"@commitlint/config-conventional": "^19.8.1",
 		"@compodoc/compodoc": "^1.2.1",
-		"@faker-js/faker": "^9.9.0",
 		"@release-it/keep-a-changelog": "^7.0.1",
 		"@types/mocha": "^10.0.10",
 		"@types/node": "^24.10.13",

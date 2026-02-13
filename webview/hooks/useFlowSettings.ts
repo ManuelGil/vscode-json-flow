@@ -53,8 +53,6 @@ export function useFlowSettings(
         path: current?.path ?? flowData.path,
         fileName: current?.fileName ?? flowData.fileName,
       });
-      // Also update VSCode configuration
-      vscodeService.updateConfig({ orientation: newDirection });
     },
     [flowData.data, flowData.path, flowData.fileName],
   );

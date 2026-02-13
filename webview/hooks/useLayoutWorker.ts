@@ -5,11 +5,7 @@
  */
 import { IS_DEV } from '@webview/env';
 import type { Direction } from '@webview/types';
-import type {
-  WorkerMessage,
-  WorkerProcessingCompleteCompact,
-  WorkerProcessingPartialCompact,
-} from '@webview/types/workerMessages';
+import type { WorkerMessage } from '@webview/types/workerMessages';
 import * as logger from '@webview/utils/logger';
 import type { Edge, Node } from '@xyflow/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -73,50 +69,6 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
   const latestProgressRef = useRef(0);
   const progressRafIdRef = useRef<number | null>(null);
 
-  // Buffers to coalesce partial node/edge updates and flush once per frame
-  const partialNodesBufferRef = useRef<Node[]>([]);
-  const partialEdgesBufferRef = useRef<Edge[]>([]);
-  const partialFlushRafIdRef = useRef<number | null>(null);
-  // Time-based coalescing: limit UI merges to at most every ~80ms
-  const lastPartialFlushTimeRef = useRef<number>(0);
-  const partialFlushTimeoutIdRef = useRef<number | null>(null);
-  const PartialMinIntervalMs = 80;
-
-  const flushPartials = useCallback(() => {
-    const toAddNodes = partialNodesBufferRef.current;
-    const toAddEdges = partialEdgesBufferRef.current;
-    partialNodesBufferRef.current = [];
-    partialEdgesBufferRef.current = [];
-    if (toAddNodes.length > 0) {
-      setNodes((prev) => (prev ? prev.concat(toAddNodes) : toAddNodes));
-    }
-    if (toAddEdges.length > 0) {
-      setEdges((prev) => (prev ? prev.concat(toAddEdges) : toAddEdges));
-    }
-    lastPartialFlushTimeRef.current = performance.now();
-    partialFlushRafIdRef.current = null;
-  }, []);
-
-  const schedulePartialFlush = useCallback(() => {
-    if (
-      partialFlushRafIdRef.current != null ||
-      partialFlushTimeoutIdRef.current != null
-    ) {
-      return;
-    }
-    const now = performance.now();
-    const elapsed = now - lastPartialFlushTimeRef.current;
-    const wait = Math.max(0, PartialMinIntervalMs - elapsed);
-    if (wait === 0) {
-      partialFlushRafIdRef.current = requestAnimationFrame(flushPartials);
-    } else {
-      partialFlushTimeoutIdRef.current = window.setTimeout(() => {
-        partialFlushTimeoutIdRef.current = null;
-        partialFlushRafIdRef.current = requestAnimationFrame(flushPartials);
-      }, wait);
-    }
-  }, [flushPartials]);
-
   // Clean up worker, blob URL, and pending async timers on unmount
   useEffect(() => {
     return () => {
@@ -131,14 +83,6 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
       if (progressRafIdRef.current != null) {
         cancelAnimationFrame(progressRafIdRef.current);
         progressRafIdRef.current = null;
-      }
-      if (partialFlushRafIdRef.current != null) {
-        cancelAnimationFrame(partialFlushRafIdRef.current);
-        partialFlushRafIdRef.current = null;
-      }
-      if (partialFlushTimeoutIdRef.current != null) {
-        clearTimeout(partialFlushTimeoutIdRef.current);
-        partialFlushTimeoutIdRef.current = null;
       }
     };
   }, []);
@@ -274,72 +218,14 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
       obj.type === 'PROCESSING_COMPLETE' ||
       obj.type === 'PROCESSING_PROGRESS' ||
       obj.type === 'PROCESSING_ERROR' ||
-      obj.type === 'PROCESSING_CANCELED' ||
-      obj.type === 'PROCESSING_PARTIAL' ||
-      obj.type === 'PROCESSING_PARTIAL_COMPACT' ||
-      obj.type === 'PROCESSING_COMPLETE_COMPACT'
+      obj.type === 'PROCESSING_CANCELED'
     );
   }, []);
 
   /**
-   * Handle worker messages based on type
-   */
-  /**
    * Handle messages coming from the worker. Only the messages whose
    * requestId matches the current in-flight job are processed.
    */
-  // Compact payload union type
-  type CompactPayload =
-    | WorkerProcessingPartialCompact['payload']
-    | WorkerProcessingCompleteCompact['payload'];
-  // Reconstruct Nodes/Edges from compact payload
-  const reconstructFromCompact = useCallback(
-    (payload: CompactPayload): { nodes: Node[]; edges: Edge[] } => {
-      const nodeIds: string[] = payload.nodeIds || [];
-      const labels: string[] = payload.labels || [];
-      const types: Array<
-        'object' | 'array' | 'string' | 'number' | 'boolean' | 'null'
-      > = payload.types || [];
-      const depths: Uint16Array = payload.depths;
-      const positions: Float32Array = payload.positions;
-      const childrenCounts: Uint16Array = payload.childrenCounts;
-      const values: Array<string | number | boolean | null> =
-        payload.values || [];
-      const edgeSources: string[] = payload.edgeSources || [];
-      const edgeTargets: string[] = payload.edgeTargets || [];
-
-      const n = nodeIds.length;
-      const nodes: Node[] = new Array(n);
-      for (let i = 0; i < n; i++) {
-        nodes[i] = {
-          id: nodeIds[i],
-          data: {
-            label: labels[i],
-            type: types[i],
-            depth: depths ? depths[i] : undefined,
-            childrenCount: childrenCounts ? childrenCounts[i] : undefined,
-            value: values ? values[i] : undefined,
-          },
-          position: {
-            x: positions ? positions[i * 2] : 0,
-            y: positions ? positions[i * 2 + 1] : 0,
-          },
-        } as unknown as Node;
-      }
-
-      const m = edgeSources.length;
-      const edges: Edge[] = new Array(m);
-      for (let i = 0; i < m; i++) {
-        const s = edgeSources[i];
-        const t = edgeTargets[i];
-        edges[i] = { id: `edge-${s}-${t}`, source: s, target: t } as Edge;
-      }
-
-      return { nodes, edges };
-    },
-    [],
-  );
-
   const handleWorkerMessage = useCallback(
     (event: MessageEvent) => {
       const data = event?.data;
@@ -357,17 +243,6 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
 
       switch (type) {
         case 'PROCESSING_COMPLETE': {
-          // Cancel any pending partial flush and clear buffers before final commit
-          if (partialFlushRafIdRef.current != null) {
-            cancelAnimationFrame(partialFlushRafIdRef.current);
-            partialFlushRafIdRef.current = null;
-          }
-          if (partialFlushTimeoutIdRef.current != null) {
-            clearTimeout(partialFlushTimeoutIdRef.current);
-            partialFlushTimeoutIdRef.current = null;
-          }
-          partialNodesBufferRef.current = [];
-          partialEdgesBufferRef.current = [];
           // Commit results synchronously to avoid race with hiding the loader
           setNodes(payload.nodes);
           setEdges(payload.edges);
@@ -398,70 +273,6 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
           break;
         }
 
-        case 'PROCESSING_COMPLETE_COMPACT': {
-          if (partialFlushRafIdRef.current != null) {
-            cancelAnimationFrame(partialFlushRafIdRef.current);
-            partialFlushRafIdRef.current = null;
-          }
-          if (partialFlushTimeoutIdRef.current != null) {
-            clearTimeout(partialFlushTimeoutIdRef.current);
-            partialFlushTimeoutIdRef.current = null;
-          }
-          partialNodesBufferRef.current = [];
-          partialEdgesBufferRef.current = [];
-          const { nodes: finalNodes, edges: finalEdges } =
-            reconstructFromCompact(payload);
-          setNodes(finalNodes);
-          setEdges(finalEdges);
-          setProgress(99);
-          setProcessingStats({
-            time: payload.processingTime,
-            nodesCount: payload.nodesCount,
-          });
-          if (progressRafIdRef.current != null) {
-            cancelAnimationFrame(progressRafIdRef.current);
-            progressRafIdRef.current = null;
-          }
-          const completedCompactId = payload.requestId;
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              if (currentRequestId.current !== completedCompactId) {
-                return;
-              }
-              setIsProcessing(false);
-              setProgress(100);
-              currentRequestId.current = null;
-            });
-          });
-          break;
-        }
-
-        case 'PROCESSING_PARTIAL': {
-          // Buffer partials and flush once per frame to reduce React churn
-          if (payload.nodes && payload.nodes.length > 0) {
-            partialNodesBufferRef.current.push(...payload.nodes);
-          }
-          if (payload.edges && payload.edges.length > 0) {
-            partialEdgesBufferRef.current.push(...payload.edges);
-          }
-          schedulePartialFlush();
-          break;
-        }
-
-        case 'PROCESSING_PARTIAL_COMPACT': {
-          // Reconstruct compact payload then buffer and flush coalesced
-          const { nodes: partNodes, edges: partEdges } =
-            reconstructFromCompact(payload);
-          if (partNodes && partNodes.length > 0) {
-            partialNodesBufferRef.current.push(...partNodes);
-          }
-          if (partEdges && partEdges.length > 0) {
-            partialEdgesBufferRef.current.push(...partEdges);
-          }
-          schedulePartialFlush();
-          break;
-        }
-
         case 'PROCESSING_PROGRESS': {
           // Coalesce progress updates to once per animation frame
           latestProgressRef.current = payload.progress;
@@ -475,16 +286,6 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
         }
 
         case 'PROCESSING_CANCELED': {
-          if (partialFlushRafIdRef.current != null) {
-            cancelAnimationFrame(partialFlushRafIdRef.current);
-            partialFlushRafIdRef.current = null;
-          }
-          if (partialFlushTimeoutIdRef.current != null) {
-            clearTimeout(partialFlushTimeoutIdRef.current);
-            partialFlushTimeoutIdRef.current = null;
-          }
-          partialNodesBufferRef.current = [];
-          partialEdgesBufferRef.current = [];
           if (progressRafIdRef.current != null) {
             cancelAnimationFrame(progressRafIdRef.current);
             progressRafIdRef.current = null;
@@ -498,16 +299,6 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
         case 'PROCESSING_ERROR': {
           logger.error(`[useLayoutWorker] PROCESSING_ERROR: ${payload.error}`);
           setError(payload.error);
-          if (partialFlushRafIdRef.current != null) {
-            cancelAnimationFrame(partialFlushRafIdRef.current);
-            partialFlushRafIdRef.current = null;
-          }
-          if (partialFlushTimeoutIdRef.current != null) {
-            clearTimeout(partialFlushTimeoutIdRef.current);
-            partialFlushTimeoutIdRef.current = null;
-          }
-          partialNodesBufferRef.current = [];
-          partialEdgesBufferRef.current = [];
           if (progressRafIdRef.current != null) {
             cancelAnimationFrame(progressRafIdRef.current);
             progressRafIdRef.current = null;
@@ -517,11 +308,9 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
           currentRequestId.current = null;
           break;
         }
-
-        // ...
       }
     },
-    [isWorkerMessage, reconstructFromCompact, schedulePartialFlush],
+    [isWorkerMessage],
   );
 
   // Keep the ref in sync so the stable onmessage wrapper inside ensureWorker
@@ -550,22 +339,11 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
         currentRequestId.current = null;
       }
 
-      // Proactively clear any pending coalescing timers/buffers from previous runs
-      if (partialFlushRafIdRef.current != null) {
-        cancelAnimationFrame(partialFlushRafIdRef.current);
-        partialFlushRafIdRef.current = null;
-      }
-      if (partialFlushTimeoutIdRef.current != null) {
-        clearTimeout(partialFlushTimeoutIdRef.current);
-        partialFlushTimeoutIdRef.current = null;
-      }
-      partialNodesBufferRef.current = [];
-      partialEdgesBufferRef.current = [];
+      // Proactively clear any pending progress RAF from previous runs
       if (progressRafIdRef.current != null) {
         cancelAnimationFrame(progressRafIdRef.current);
         progressRafIdRef.current = null;
       }
-      lastPartialFlushTimeRef.current = performance.now();
 
       // Reset state before starting
       setError(null);

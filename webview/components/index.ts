@@ -1,7 +1,6 @@
 export * from './atoms';
 export * from './CustomControls';
 export * from './CustomNode';
-export * from './Debug';
 export * from './FlowCanvas';
 export * from './Loading';
 export * from './Minimap';

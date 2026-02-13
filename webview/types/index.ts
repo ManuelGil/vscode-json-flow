@@ -76,10 +76,6 @@ export interface TreeNode {
   data?: {
     type?: string;
     value?: string;
-    homeTown?: string;
-    formed?: number;
-    secretBase?: string;
-    active?: boolean;
     line?: number;
   };
 }
@@ -130,11 +126,6 @@ export type NodeColors = {
 };
 
 /**
- * Alias for serialized JSON strings.
- */
-export type JsonString = string;
-
-/**
  * Base type for JSON values
  * Replaces generic 'any' with more specific type information
  */
@@ -157,13 +148,3 @@ export interface JsonObject {
  * Type for JSON arrays
  */
 export type JsonArray = JsonValue[];
-
-/**
- * Interface for a node in the JSON tree
- * Used for rendering in the flow visualization
- */
-export interface JsonNode {
-  key: string;
-  value: JsonValue;
-  type: 'object' | 'array' | 'string' | 'number' | 'boolean' | 'null';
-}

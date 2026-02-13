@@ -7,7 +7,6 @@ import {
 import { DEFAULT_SETTINGS } from '@webview/components/CustomControls/Settings';
 import { flowReducer } from '@webview/context/FlowContext';
 import { generateTree, getRootId } from '@webview/helpers/generateTree';
-import { createSampleJsonData } from '@webview/helpers/mockData';
 import { useFlowController, useLayoutWorker } from '@webview/hooks';
 import { useEditorSync } from '@webview/hooks/useEditorSync';
 import { useFlowSettings } from '@webview/hooks/useFlowSettings';
@@ -109,11 +108,9 @@ function applyEdgeSettingsToList(
 export const FlowCanvas = memo(function FlowCanvas() {
   const initialFlowState = useMemo(() => {
     const st = vscodeService.getStateOrDefaults();
-    const enableMock: boolean = import.meta.env.VITE_ENABLE_MOCK === 'true';
-    const data = enableMock ? createSampleJsonData() : st.data;
     return {
-      data,
-      treeData: data ? generateTree(data) : {},
+      data: st.data,
+      treeData: st.data ? generateTree(st.data) : {},
       orientation: st.orientation,
       path: st.path,
       fileName: st.fileName,
@@ -482,13 +479,17 @@ export const FlowCanvas = memo(function FlowCanvas() {
         null;
       selectNode(target);
       // Center viewport on the selected node so it is visible
-      if (target?.position) {
+      if (target?.position && reactFlowInstanceRef.current) {
         const centerX = target.position.x + (target.width ?? 0) / 2;
         const centerY = target.position.y + (target.height ?? 0) / 2;
-        reactFlowInstanceRef.current?.setCenter(centerX, centerY, {
-          zoom: 1.2,
-          duration: 500,
-        });
+        try {
+          reactFlowInstanceRef.current.setCenter(centerX, centerY, {
+            zoom: 1.2,
+            duration: 500,
+          });
+        } catch {
+          // Swallowed: setCenter may fail if the viewport is not ready
+        }
       }
     },
     [selectNode],

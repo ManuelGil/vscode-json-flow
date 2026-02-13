@@ -168,7 +168,11 @@ export function GoToSearch({
       const centerX = node.position.x + width / 2;
       const centerY = node.position.y + height / 2;
 
-      reactFlow.setCenter(centerX, centerY, { zoom: 1.5, duration: 800 });
+      try {
+        reactFlow.setCenter(centerX, centerY, { zoom: 1.5, duration: 800 });
+      } catch {
+        // Swallowed: setCenter may fail if the viewport is not ready
+      }
     },
     [nodes, matches, reactFlow],
   );
@@ -220,7 +224,6 @@ export function GoToSearch({
   }, [matches, currentMatchIdx]);
 
   useEffect(() => {
-    console.log('Search effect fired');
     try {
       // Validate value before processing
       const trimmedSearch = debouncedSearch?.trim() || '';
@@ -262,6 +265,15 @@ export function GoToSearch({
   useEffect(() => {
     onMatchChange?.(new Set(matches));
   }, [matches, onMatchChange]);
+
+  // Clamp currentMatchIdx when matches shrink (e.g. after orientation change)
+  useEffect(() => {
+    if (matches.length === 0 && currentMatchIdx !== -1) {
+      setCurrentMatchIdx(-1);
+    } else if (currentMatchIdx >= matches.length && matches.length > 0) {
+      setCurrentMatchIdx(0);
+    }
+  }, [matches, currentMatchIdx]);
 
   // Focus the current match only when triggered by an explicit user action
   useEffect(() => {
