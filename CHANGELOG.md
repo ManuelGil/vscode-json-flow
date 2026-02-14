@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+* feat: reset search state on dataset changes and improve hidden match feedback
+* chore: remove unused @faker-js/faker dependency and config state synchronization
+* feat: add search match highlighting and hidden match counter with collapse-aware navigation
+
 ## [2.3.2] - 2026-02-12
 
 * feat: implement debounce for worker invocations during Live Sync updates
