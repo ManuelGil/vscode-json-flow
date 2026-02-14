@@ -64,6 +64,18 @@ export function GoToSearch({
   const shouldCenterRef = useRef<boolean>(false);
   const prevSearchRef = useRef<string>('');
 
+  const previousAllNodesRef = useRef<InternalNode[] | undefined>(undefined);
+
+  const resetSearchOnDatasetChange = useCallback((): void => {
+    if (previousAllNodesRef.current === allNodes) {
+      return;
+    }
+    previousAllNodesRef.current = allNodes;
+    shouldCenterRef.current = false;
+    setMatches([]);
+    setCurrentMatchIdx(-1);
+  }, [allNodes]);
+
   const buildLabelIndex = useCallback(
     (nodeList: InternalNode[]): Map<string, string[]> => {
       const map = new Map<string, string[]>();
@@ -266,11 +278,18 @@ export function GoToSearch({
     onMatchChange?.(new Set(matches));
   }, [matches, onMatchChange]);
 
+  // Reset search state when the dataset changes (e.g. new worker result)
+  useEffect(resetSearchOnDatasetChange, [resetSearchOnDatasetChange]);
+
   // Clamp currentMatchIdx when matches shrink (e.g. after orientation change)
   useEffect(() => {
-    if (matches.length === 0 && currentMatchIdx !== -1) {
-      setCurrentMatchIdx(-1);
-    } else if (currentMatchIdx >= matches.length && matches.length > 0) {
+    if (matches.length === 0) {
+      if (currentMatchIdx !== -1) {
+        setCurrentMatchIdx(-1);
+      }
+      return;
+    }
+    if (currentMatchIdx >= matches.length && currentMatchIdx !== 0) {
       setCurrentMatchIdx(0);
     }
   }, [matches, currentMatchIdx]);
@@ -374,6 +393,15 @@ export function GoToSearch({
             </Button>
           </div>
         </div>
+        {!hasMatches && hiddenMatchCount > 0 && (
+          <div
+            className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-xs text-amber-900"
+            role="status"
+            aria-live="polite"
+          >
+            Matches exist in collapsed branches
+          </div>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
