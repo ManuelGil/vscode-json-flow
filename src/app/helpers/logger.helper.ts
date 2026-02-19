@@ -140,12 +140,16 @@ export class Logger {
    */
   private getCallerLocation(): string {
     const stack = new Error().stack;
-    if (!stack) return '';
+    if (!stack) {
+      return '';
+    }
 
     const lines = stack.split('\n');
     // Skip first 3 lines (Error, getCallerLocation, formatMessage)
     const callerLine = lines[4];
-    if (!callerLine) return '';
+    if (!callerLine) {
+      return '';
+    }
 
     const match =
       callerLine.match(/\((.*):(\d+):(\d+)\)/) ||
@@ -219,23 +223,39 @@ export class Logger {
   private formatWorkerMetrics(metrics: WorkerMetrics): string {
     const parts: string[] = [];
 
-    if (metrics.workerId) parts.push(`Worker:${metrics.workerId}`);
-    if (metrics.requestId) parts.push(`Req:${metrics.requestId}`);
-    if (metrics.operation) parts.push(`Op:${metrics.operation}`);
-    if (metrics.duration !== undefined) parts.push(`${metrics.duration}ms`);
-    if (metrics.itemsProcessed !== undefined)
+    if (metrics.workerId) {
+      parts.push(`Worker:${metrics.workerId}`);
+    }
+    if (metrics.requestId) {
+      parts.push(`Req:${metrics.requestId}`);
+    }
+    if (metrics.operation) {
+      parts.push(`Op:${metrics.operation}`);
+    }
+    if (metrics.duration !== undefined) {
+      parts.push(`${metrics.duration}ms`);
+    }
+    if (metrics.itemsProcessed !== undefined) {
       parts.push(`Items:${metrics.itemsProcessed}`);
-    if (metrics.processingRate !== undefined)
+    }
+    if (metrics.processingRate !== undefined) {
       parts.push(`Rate:${metrics.processingRate.toFixed(2)}/s`);
-    if (metrics.memoryUsage !== undefined)
+    }
+    if (metrics.memoryUsage !== undefined) {
       parts.push(`Mem:${(metrics.memoryUsage / 1024 / 1024).toFixed(2)}MB`);
-    if (metrics.workerState) parts.push(`State:${metrics.workerState}`);
-    if (metrics.queueSize !== undefined)
+    }
+    if (metrics.workerState) {
+      parts.push(`State:${metrics.workerState}`);
+    }
+    if (metrics.queueSize !== undefined) {
       parts.push(`Queue:${metrics.queueSize}`);
-    if (metrics.errorCount !== undefined && metrics.errorCount > 0)
+    }
+    if (metrics.errorCount !== undefined && metrics.errorCount > 0) {
       parts.push(`Errors:${metrics.errorCount}`);
-    if (metrics.retryCount !== undefined && metrics.retryCount > 0)
+    }
+    if (metrics.retryCount !== undefined && metrics.retryCount > 0) {
       parts.push(`Retries:${metrics.retryCount}`);
+    }
 
     return parts.join(' ');
   }
@@ -332,7 +352,9 @@ export class Logger {
    * Flush buffered logs to output
    */
   private flush(): void {
-    if (this.logBuffer.length === 0) return;
+    if (this.logBuffer.length === 0) {
+      return;
+    }
 
     const output = this.logBuffer.join('\n');
     this.outputChannel.appendLine(output);
