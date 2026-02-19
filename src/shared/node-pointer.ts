@@ -44,7 +44,7 @@ const INVALID_TILDE_PATTERN: RegExp = /~(?![01])/;
  * encodeSegment('')      // ''
  * encodeSegment('0')     // '0'
  */
-export function encodeSegment(rawKey: string): string {
+function encodeSegment(rawKey: string): string {
   // Step 1: escape tildes, Step 2: escape slashes.
   // Order is critical — reversing it corrupts `~/` sequences.
   return rawKey.replace(/~/g, '~0').replace(/\//g, '~1');
@@ -68,7 +68,7 @@ export function encodeSegment(rawKey: string): string {
  * decodeSegment('')       // ''
  * decodeSegment('0')      // '0'
  */
-export function decodeSegment(encoded: string): string {
+function decodeSegment(encoded: string): string {
   // Step 1: unescape slashes, Step 2: unescape tildes.
   return encoded.replace(/~1/g, '/').replace(/~0/g, '~');
 }
@@ -186,7 +186,7 @@ export function parsePointer(pointer: string): string[] {
  * isValidPointer('/a~b')       // false  (unescaped ~)
  * isValidPointer('/a~2b')      // false  (invalid escape ~2)
  */
-export function isValidPointer(value: string): boolean {
+function isValidPointer(value: string): boolean {
   if (typeof value !== 'string' || value.length === 0) {
     return false;
   }
@@ -231,33 +231,6 @@ export function lastSegment(pointer: string): string | undefined {
   }
 
   return segments[segments.length - 1];
-}
-
-/**
- * Returns the parent pointer of the given pointer.
- * Returns `undefined` for the root pointer `/`.
- *
- * @param pointer - A valid pointer string.
- * @returns The parent pointer, or `undefined` for root.
- *
- * @example
- * parentPointer('/')           // undefined
- * parentPointer('/foo')        // '/'
- * parentPointer('/foo/bar')    // '/foo'
- * parentPointer('/foo/bar/0')  // '/foo/bar'
- */
-export function parentPointer(pointer: string): string | undefined {
-  const segments: string[] = parsePointer(pointer);
-
-  if (segments.length === 0) {
-    return undefined;
-  }
-
-  if (segments.length === 1) {
-    return ROOT_POINTER;
-  }
-
-  return '/' + segments.slice(0, -1).map(encodeSegment).join('/');
 }
 
 /** Re-export the root constant for external use. */
