@@ -16,15 +16,8 @@
 	},
 	"packageManager": "pnpm@10.0.0",
 	"engines": {
-		"vscode": "^1.90.0",
-		"node": ">=24",
-		"pnpm": ">=10"
-	},
-	"pnpm": {
-		"onlyBuiltDependencies": [
-			"@compodoc/compodoc",
-			"esbuild"
-		]
+		"vscode": "^1.102.0",
+		"node": ">=22"
 	},
 	"categories": [
 		"Visualization",
@@ -287,7 +280,7 @@
 				},
 				{
 					"command": "jsonFlow.view.enableLiveSync",
-					"when": "jsonFlow.splitView && !jsonFlow.liveSyncEnabled && (resourceExtname =~ /^\\.(json|jsonc|json5|cfg|csv|hcl|ini|properties|toml|tsv|xml|yaml|yml)$/ || resourceFilename =~ /^\\.env(\\..*)?$/)",
+					"when": "jsonFlow.splitView && !jsonFlow.liveSyncEnabled && resourceExtname =~ /^\\.(json|jsonc|json5|yaml|yml)$/",
 					"group": "navigation@-99"
 				},
 				{
@@ -459,16 +452,18 @@
 		]
 	},
 	"scripts": {
-		"vscode:prepublish": "npm run build && npm run compile",
+		"vscode:prepublish": "pnpm build && pnpm compile",
 		"compile": "rimraf out && tsc -p ./",
 		"watch": "tsc -watch -p ./",
-		"pretest": "npm run compile && npm run lint",
+		"pretest": "pnpm compile && pnpm lint",
 		"dev": "vite --mode development",
 		"build": "tsc --p ./tsconfig.web.json && vite build --mode production && vite build --mode production --config vite.config.worker.ts",
 		"preview": "vite preview",
-		"format": "biome format --write",
-		"lint": "biome lint --write",
-		"lint:check": "biome check --write",
+		"format": "biome format --write .",
+		"lint": "biome lint .",
+		"lint:fix": "biome lint --write .",
+		"check": "biome check .",
+		"check:fix": "biome check --write --unsafe .",
 		"test": "vscode-test",
 		"compodoc": "npx compodoc -p tsconfig.doc.json -d compodoc --theme readthedocs -s",
 		"l10n:check": "node scripts/check-l10n.js",
@@ -522,26 +517,32 @@
 		"@compodoc/compodoc": "^1.2.1",
 		"@release-it/keep-a-changelog": "^7.0.1",
 		"@types/mocha": "^10.0.10",
-		"@types/node": "^24.10.13",
+		"@types/node": "^22.19.11",
 		"@types/react": "^19.2.14",
 		"@types/react-dom": "^19.2.3",
 		"@types/uuid": "^10.0.0",
-		"@types/vscode": "^1.90.0",
+		"@types/vscode": "^1.102.0",
 		"@vitejs/plugin-react": "^4.7.0",
 		"@vscode/l10n-dev": "^0.0.35",
 		"@vscode/test-cli": "^0.0.12",
 		"@vscode/test-electron": "^2.5.2",
 		"autoprefixer": "^10.4.24",
 		"cpy-cli": "^5.0.0",
-		"glob": "^13.0.2",
+		"glob": "^13.0.4",
 		"husky": "^9.1.7",
 		"lint-staged": "^16.2.7",
-		"minimatch": "^10.1.2",
+		"minimatch": "^10.2.1",
 		"postcss": "^8.5.6",
 		"release-it": "^19.2.4",
 		"rimraf": "^6.1.3",
 		"tailwindcss": "^3.4.19",
 		"typescript": "^5.9.3",
 		"vite": "^7.3.1"
+	},
+	"pnpm": {
+		"onlyBuiltDependencies": [
+			"@compodoc/compodoc",
+			"esbuild"
+		]
 	}
 }
