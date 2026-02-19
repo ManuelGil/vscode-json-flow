@@ -5,32 +5,34 @@ All notable changes to the "JSON Flow" extension will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
 ## [2.5.0] - 2026-02-19
 
-* chore: update engine requirements and refine live sync file type support
-* refactor: clean up FlowCanvas component and improve node centering
-* refactor: clarify layout-core execution context and fix spacing in comment
-* refactor: add file type validation and consolidate language detection in live sync
-* refactor: rewrite YAML selection mapper using line-based path resolution
-* chore: remove unused parentPointer function and make internal helpers private
-* chore: apply consistent early return formatting in logger helper
+* chore: update engine requirements and refine live sync file type support ([ef208a1](https://github.com/ManuelGil/vscode-json-flow/commit/ef208a1))
+* refactor: clean up FlowCanvas component and improve node centering ([73059ed](https://github.com/ManuelGil/vscode-json-flow/commit/73059ed))
+* refactor: clarify layout-core execution context and fix spacing in comment ([ad877c1](https://github.com/ManuelGil/vscode-json-flow/commit/ad877c1))
+* refactor: add file type validation and consolidate language detection in live sync ([68d8fdf](https://github.com/ManuelGil/vscode-json-flow/commit/68d8fdf))
+* refactor: rewrite YAML selection mapper using line-based path resolution ([a84af5d](https://github.com/ManuelGil/vscode-json-flow/commit/a84af5d))
+* chore: remove unused parentPointer function and make internal helpers private ([250cb10](https://github.com/ManuelGil/vscode-json-flow/commit/250cb10))
+* chore: apply consistent early return formatting in logger helper ([3164fc1](https://github.com/ManuelGil/vscode-json-flow/commit/3164fc1))
 
 ## [2.4.0] - 2026-02-14
 
-* feat: reset search state on dataset changes and improve hidden match feedback
-* chore: remove unused @faker-js/faker dependency and config state synchronization
-* feat: add search match highlighting and hidden match counter with collapse-aware navigation
+* feat: reset search state on dataset changes and improve hidden match feedback ([8a36b64](https://github.com/ManuelGil/vscode-json-flow/commit/8a36b64))
+* chore: remove unused @faker-js/faker dependency and config state synchronization ([14ecef0](https://github.com/ManuelGil/vscode-json-flow/commit/14ecef0))
+* feat: add search match highlighting and hidden match counter with collapse-aware navigation ([d2824af](https://github.com/ManuelGil/vscode-json-flow/commit/d2824af))
 
 ## [2.3.2] - 2026-02-12
 
-* feat: implement debounce for worker invocations during Live Sync updates
-* chore: simplify pnpm configuration and remove NODE_ENV from environment
+* feat: implement debounce for worker invocations during Live Sync updates ([814d564](https://github.com/ManuelGil/vscode-json-flow/commit/814d564))
+* chore: simplify pnpm configuration and remove NODE_ENV from environment ([8b2fa9f](https://github.com/ManuelGil/vscode-json-flow/commit/8b2fa9f))
 
 ## [2.3.1] - 2026-02-12
 
-* fix: update @types/vscode dependency to version ^1.90.0
-* chore(deps): bump lucide-react from 0.525.0 to 0.563.0
-* chore: make Husky hooks executable and refine pnpm configuration for lifecycle script handling
+* fix: update @types/vscode dependency to version ^1.90.0 ([a373dcf](https://github.com/ManuelGil/vscode-json-flow/commit/a373dcf))
+* chore(deps): bump lucide-react from 0.525.0 to 0.563.0 ([ae0939c](https://github.com/ManuelGil/vscode-json-flow/commit/ae0939c))
+* chore: make Husky hooks executable and refine pnpm configuration for lifecycle script handling ([b5cc746](https://github.com/ManuelGil/vscode-json-flow/commit/b5cc746))
 
 ## [2.3.0] - 2026-02-11
 
@@ -214,7 +216,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * build: add webview path ([960fb18](https://github.com/ManuelGil/vscode-json-flow/commit/960fb18))
 * fix: :rotating_light: fix compilation settings ([1ccbfa5](https://github.com/ManuelGil/vscode-json-flow/commit/1ccbfa5))
 
-[Unreleased]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.4.0...HEAD
+[Unreleased]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.5.0...HEAD
+[2.5.0]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.4.0...v2.5.0
 [2.4.0]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.3.2...v2.4.0
 [2.3.2]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.3.1...v2.3.2
 [2.3.1]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.3.0...v2.3.1
