@@ -7,422 +7,269 @@
 [![GitHub Repo Stars](https://img.shields.io/github/stars/ManuelGil/vscode-json-flow?style=for-the-badge&logo=github)](https://github.com/ManuelGil/vscode-json-flow)
 [![GitHub License](https://img.shields.io/github/license/ManuelGil/vscode-json-flow?style=for-the-badge&logo=github)](https://github.com/ManuelGil/vscode-json-flow/blob/main/LICENSE)
 
----
+Visualize, explore, and export structured data files as interactive graphs directly inside VS Code.
 
-## Introduction
+## What is JSON Flow?
 
-**JSON Flow** is a robust and feature-rich extension for Visual Studio Code and all editors based on the VSCode platform (including VSCodium, WindSurf, Cursor, and others). It enables interactive visualization, conversion, and management of structured data files such as JSON, YAML, XML, CSV, and more. Leveraging a node-based graph interface and advanced data transformation tools, JSON Flow streamlines the process of exploring, converting, and generating code from complex data structures. This extension is tailored for developers, data engineers, and analysts seeking enhanced clarity, productivity, and efficiency in their daily workflows.
+**JSON Flow** transforms structured data files into an interactive node-based graph view rendered inside a VS Code webview panel.
+
+Stop scrolling through deeply nested structured files. With JSON Flow, you can:
+
+- Navigate relationships visually
+- Expand and collapse nested structures
+- Search nodes with prev/next navigation
+- Sync selections bidirectionally
+- Export graphs as PNG, JPG, or SVG
+- Convert any supported format to JSON
+- Generate strongly-typed code using quicktype
+- Fetch and visualize JSON from a remote URL
+
+Runs 100% locally. No telemetry. No uploads. No background network access.
 
 ![JSON Flow Demo](https://raw.githubusercontent.com/ManuelGil/vscode-json-flow/main/assets/images/json-flow-1.gif)
-
----
-
-## Highlights
-
-- **Interactive graphs** for JSON and other structured formats (YAML, XML, CSV, TOML, INI, ENV, JSON5/JSONC).
-- **One-click conversions** between JSON and popular formats; copy as JSON anywhere.
-- **Code generation** from JSON (TypeScript, Go, JSON Schema, and more).
-- **Works across VS Code family** (VS Code, VSCodium, WindSurf, Cursor) on Windows, macOS, and Linux.
-- **Private by design**: 100% local processing, no telemetry, no uploads.
-- **Built for scale**: entitree-flex layout engine; Web Worker processing with intelligent main-thread fallback; circuit breaker safety guards; no hard size caps.
-
----
-
-## Why choose JSON Flow for VS Code
-
-- **Offline-first & open source (MIT)**: Processing happens locally in VS Code. Codebase is open for audit and contributions.
-- **VS Code-native UX**: Activity Bar views, Explorer context menus, editor title actions, and keybindings for a smooth workflow.
-- **Broad multi-format scope**: JSON/JSONC/JSON5, YAML, XML, CSV/TSV, TOML, INI, .env, HCL, and more with unified operations.
-- **Code generation built-in**: Generate TypeScript, Go, JSON Schema and more directly from JSON.
-- **Workspace-ready**: Supports untrusted and virtual workspaces (limited), respects ignore rules, and is configurable per workspace.
-
-## Why JSON Flow?
-
-Exploring complex data structures in code or configuration files can be cumbersome. JSON Flow converts supported files into interactive graphs, enabling you to:
-
-- **Visualize** nested data relationships with zoom, pan, and expand/collapse controls.
-- **Convert** between formats (YAML, TOML, INI, XML, CSV, etc.) and JSON in one click.
-- **Inspect** file properties and copy content or JSON representation directly from the editor.
-- **Generate** code artifacts (TypeScript interfaces, Go structs, JSON Schema, and more) from JSON data.
-
----
 
 ## Table of Contents
 
 - [JSON Flow](#json-flow)
-  - [Introduction](#introduction)
-  - [Highlights](#highlights)
-  - [Why choose JSON Flow for VS Code](#why-choose-json-flow-for-vs-code)
-  - [Why JSON Flow?](#why-json-flow)
+  - [What is JSON Flow?](#what-is-json-flow)
   - [Table of Contents](#table-of-contents)
-  - [Key Features](#key-features)
-    - [Interactive Data Visualization](#interactive-data-visualization)
-    - [File Conversion \& Management](#file-conversion--management)
+  - [Supported Formats](#supported-formats)
+  - [Format Capability Matrix](#format-capability-matrix)
+  - [Core Features](#core-features)
+    - [Interactive Graph Visualization](#interactive-graph-visualization)
+    - [Graph Export](#graph-export)
+    - [Node Search](#node-search)
+    - [Appearance and Settings](#appearance-and-settings)
+    - [Live Sync](#live-sync)
+    - [Format Conversion](#format-conversion)
+    - [Partial Operations](#partial-operations)
     - [Code Generation](#code-generation)
-    - [Supported Formats](#supported-formats)
-    - [Advanced Configuration](#advanced-configuration)
-    - [Architecture Overview](#architecture-overview)
-      - [High-Level Architecture](#high-level-architecture)
-      - [Architecture Diagram](#architecture-diagram)
-      - [Project Structure](#project-structure)
-      - [Design Philosophy](#design-philosophy)
-    - [Typical Workflow](#typical-workflow)
-  - [Split View](#split-view)
-    - [Editor Toolbar and Status Bar](#editor-toolbar-and-status-bar)
-    - [Views \& Activity Bar](#views--activity-bar)
-  - [Requirements \& Limitations](#requirements--limitations)
-  - [Security \& Privacy](#security--privacy)
-  - [Commands \& Menus](#commands--menus)
-  - [Keyboard Shortcuts](#keyboard-shortcuts)
-  - [Frequently Asked Questions (FAQ)](#frequently-asked-questions-faq)
-    - [Technology Stack](#technology-stack)
-    - [Main Commands \& Views](#main-commands--views)
-    - [Enhanced JSON Management](#enhanced-json-management)
-    - [Supported File Formats](#supported-file-formats)
-    - [File Explorer](#file-explorer)
-  - [Getting Started](#getting-started)
-  - [Usage](#usage)
-    - [Context Menu Options](#context-menu-options)
-  - [Project Settings](#project-settings)
-  - [Code Generation from JSON](#code-generation-from-json)
-    - [Example](#example)
-  - [Installation](#installation)
-    - [Prerequisites](#prerequisites)
-    - [Installation Steps](#installation-steps)
-  - [Usage Guidelines](#usage-guidelines)
-  - [Troubleshooting](#troubleshooting)
+    - [Fetch JSON from URL](#fetch-json-from-url)
+  - [Explorer and File Management](#explorer-and-file-management)
+  - [Split View Mode](#split-view-mode)
+  - [Commands](#commands)
+  - [Configuration](#configuration)
+  - [Architecture](#architecture)
+    - [Extension Host](#extension-host)
+    - [Webview (React UI)](#webview-react-ui)
+    - [Web Worker](#web-worker)
+  - [Identity Model](#identity-model)
+  - [How the Graph Is Generated](#how-the-graph-is-generated)
+  - [Performance Characteristics](#performance-characteristics)
+  - [Known Behavior and Limitations](#known-behavior-and-limitations)
+  - [Security and Privacy](#security-and-privacy)
   - [Internationalization (i18n)](#internationalization-i18n)
-    - [i18n maintenance](#i18n-maintenance)
+  - [Requirements](#requirements)
+  - [Troubleshooting](#troubleshooting)
   - [Contributing](#contributing)
   - [Code of Conduct](#code-of-conduct)
   - [Changelog](#changelog)
-  - [Support \& Contact](#support--contact)
+  - [Support and Contact](#support-and-contact)
   - [Other Extensions](#other-extensions)
   - [Recommended Browser Extension](#recommended-browser-extension)
   - [License](#license)
 
----
+## Supported Formats
 
-## Key Features
+JSON Flow supports preview, conversion, and graph visualization for:
 
-### Interactive Data Visualization
+- JSON / JSONC / JSON5
+- YAML (`.yaml`, `.yml`)
+- TOML
+- INI / CFG / Properties
+- ENV (`.env`, `.env.*`)
+- XML
+- CSV / TSV
+- HCL
+- Docker Compose
 
-- **Node-Based Graphs**: Render complex, nested structures as interactive graphs using XYFlow and React.
-- **Dynamic Exploration**: Zoom, pan, expand/collapse nodes, and inspect properties in real time.
-- **Entitree-Flex Integration**: All JSON data processed through TreeMap format for consistent graph structure and reliable layout calculation.
-- **Worker-First Processing**: Intensive JSON processing handled by Web Workers with automatic fallback to main thread for reliability.
+## Format Capability Matrix
 
-### File Conversion & Management
+| Format         | Parse | Graph Preview | Convert to JSON | Code Generation | Live Sync | Sync Strategy |
+| -------------- | ----- | ------------- | --------------- | --------------- | --------- | ------------- |
+| JSON           | ✓     | ✓             | —               | ✓               | ✓         | AST-based     |
+| JSONC          | ✓     | ✓             | —               | ✓               | ✓         | AST-based     |
+| JSON5          | ✓     | ✓             | —               | ✓               | ✓         | AST-based     |
+| YAML (.yaml)   | ✓     | ✓             | ✓               | ✓               | ✓         | Line-based    |
+| YAML (.yml)    | ✓     | ✓             | ✓               | ✓               | ✓         | Line-based    |
+| TOML           | ✓     | ✓             | ✓               | ✓               | ✗         | Standard      |
+| INI / CFG      | ✓     | ✓             | ✓               | ✓               | ✗         | Standard      |
+| Properties     | ✓     | ✓             | ✓               | ✓               | ✗         | Standard      |
+| ENV            | ✓     | ✓             | ✓               | ✓               | ✗         | Standard      |
+| XML            | ✓     | ✓             | ✓               | ✓               | ✗         | Standard      |
+| CSV            | ✓     | ✓             | ✓               | ✓               | ✗         | Standard      |
+| TSV            | ✓     | ✓             | ✓               | ✓               | ✗         | Standard      |
+| HCL            | ✓     | ✓             | ✓               | ✓               | ✗         | Standard      |
+| Docker Compose | ✓     | ✓             | ✓               | ✓               | ✗         | —             |
 
-- **Format Conversion**: Convert between JSON, YAML, TOML, INI, XML, CSV, TSV, HCL, ENV, Properties, and more with one click.
-- **Clipboard Operations**: Copy content or JSON representation directly from the editor or explorer.
-- **File Inspector**: View file metadata, structure, and properties.
-- **Batch Preview**: Manage and preview multiple data files in a dedicated explorer view.
-- **Partial Selection**: Convert or preview only selected blocks of data.
+Live Sync is gated in the extension host. Only `json`, `jsonc`, `json5`, `yaml`, and `yml` are whitelisted. Formats like `toml` and `dockercompose` are explicitly excluded.
+
+## Core Features
+
+### Interactive Graph Visualization
+
+- Deterministic layout computed in a Web Worker
+- Smooth zoom, pan, and fit-view controls
+- Expand/collapse subtrees per node
+- Four layout directions: Top-Bottom (TB), Left-Right (LR), Bottom-Top (BT), Right-Left (RL)
+- Rotate layout button cycles through directions
+- Minimap navigation
+- Node detail panel
+- Draggable nodes (lockable via interactivity toggle)
+
+### Graph Export
+
+Export from the toolbar inside the webview panel.
+
+- **Formats**: PNG, JPG (2× pixel ratio), SVG, or Clipboard (PNG blob).
+- **Options**: Custom filename, background color (hex/preset/transparent).
+- **Clean Output**: UI chrome (controls, minimap) is automatically excluded.
+
+### Node Search
+
+Label-based navigation control.
+
+- Case-insensitive, debounced text search
+- Exact match priority with partial match fallback
+- Prev/Next navigation with match counter
+- Hidden match indicator for collapsed branches
+- Auto-reset on dataset change
+
+### Appearance and Settings
+
+Persisted to `localStorage`.
+
+- **Theme**: Light, Dark, or System
+- **Theme Color**: Multiple named palettes
+- **Background**: Lines, Dots, or Cross
+- **Edges**: Straight, Step, Smooth Step, Simple Bezier (with optional arrows and animation)
+- **Reset**: Restore defaults button available
+
+### Live Sync
+
+Bidirectional synchronization between editor cursor and graph.
+
+**Supported (Whitelisted):** `json`, `jsonc`, `json5`, `yaml`, `yml`
+
+**Excluded:** `toml`, `dockercompose`, and all others.
+
+**Behavior:**
+
+- **Disabled by default**: Enable via Title Bar or command.
+- **Mouse-only**: Triggered by clicks, not keyboard/hover.
+- **Context-aware**: Active document must match previewed file.
+- **Throttled**: Configurable delay (default 100ms).
+- **Optimized**: De-duplicates redundant events.
+- **Safe**: Prevents feedback loops and pauses on mapping errors.
+
+**Editor → Graph:** Click in editor → cursor offset resolved to JSON Pointer → graph focuses node.
+
+**Graph → Editor:** Click node → ID resolved to text range → editor selection updates.
+
+**Single-file mode only.** No cross-file sync.
+
+### Format Conversion
+
+- **Convert to JSON**: Opens content as new JSON document.
+- **Convert Partial**: Converts selection to new JSON document.
+- **Copy as JSON**: Copies content/selection as JSON to clipboard.
+- **Copy Content**: Copies raw content.
+
+**Normalization:** Partial selections of JS/TS object literals (single quotes, trailing commas) are automatically normalized to valid JSON.
+
+### Partial Operations
+
+Available via Editor context menu submenu:
+
+- **Show Partial Preview**: Graph from selection.
+- **Convert Partial to JSON**: New JSON document.
+- **Convert Partial to Type**: Generate code.
+- **Copy Partial as JSON**: Clipboard.
 
 ### Code Generation
 
-- **Quicktype Integration**: Generate TypeScript interfaces, Go structs, JSON Schema, and more from JSON data.
-- **Customizable Output**: Select target language, type name, and output location.
+Generate types/data structures via quicktype.
 
-### Supported Formats
+**Supported languages:**
+TypeScript, JavaScript, Flow, Rust, Kotlin, Dart, Python, C#, Go, C++, Java, Scala, Swift, Objective-C, Elm, JSON Schema, Pike, PropTypes, Haskell, PHP, Ruby.
 
-- **JSON / JSONC / JSON5**
-- **YAML** (`.yaml`, `.yml`)
-- **TOML**
-- **INI / CFG**
-- **Java Properties & `.env`**
-- **XML**
-- **CSV / TSV**
-- **HCL**
+**Example:** Selecting TypeScript for `{ "name": "...", "age": 0 }` produces:
 
-### Advanced Configuration
-
-- **Enable/Disable Extension**: Activate or deactivate the extension. Key: `jsonFlow.enable` (`boolean`, default value: `true`).
-- **Included File Patterns**: Specify file type identifiers (extensions) to include in operations. Key: `jsonFlow.files.includedFilePatterns` (`array`, default value: `["json", "jsonc", ...]`).
-- **Excluded File Patterns**: Specify glob patterns to exclude files or folders. Key: `jsonFlow.files.excludedFilePatterns` (`array`, default value: `["**/node_modules/**", ...]`).
-- **Max Search Recursion Depth**: Limits the maximum folder depth when searching for files. Key: `jsonFlow.files.maxSearchRecursionDepth` (`number`, default value: `0` for unlimited).
-- **Supports Hidden Files**: Includes hidden files (such as `.env`) in searches and views. Key: `jsonFlow.files.supportsHiddenFiles` (`boolean`, default value: `true`).
-- **Preserve Gitignore Settings**: Respects rules defined in `.gitignore` when searching or listing files. Key: `jsonFlow.files.preserveGitignoreSettings` (`boolean`, default value: `false`).
-- **Include File Path in Views**: Displays the full file path in views. Key: `jsonFlow.files.includeFilePath` (`boolean`, default value: `true`).
-- **Graph Layout Orientation**: Defines the orientation of the graph in visualizations. Key: `jsonFlow.graph.layoutOrientation` (`string`, options: `TB`, `LR`, `BT`, `RL`; default value: `TB`).
-- **Live Sync Throttle (ms)**: Throttle duration for Live Sync updates. Key: `jsonFlow.liveSync.throttleMs` (`number`, default value: `100`, min: `0`, max: `1000`).
-
-### Architecture Overview
-
-JSON Flow is designed with a clear separation of concerns, ensuring that data processing and visualization are handled efficiently and securely. The architecture is modular, allowing for easy maintenance and extensibility.
-
-#### High-Level Architecture
-
-JSON Flow is organized into two main parts: the **Extension Backend** and the **Webview Frontend**.
-
-- **Extension Backend** (runs in VSCode):
-  - Handles activation, file parsing, and data transformation.
-  - Converts various data formats (JSON, YAML, XML, etc.) into a unified structure.
-  - Prepares the data and sends it to the frontend for visualization.
-
-- **Webview Frontend** (interactive UI):
-  - Receives structured data from the backend via a secure messaging channel.
-  - Renders the interactive graph and UI using React and XYFlow.
-  - Handles user interactions (zoom, pan, expand/collapse, export, etc.) and sends relevant actions back to the backend if needed.
-
-**How it works:**
-
-1. When you open a supported file, the backend parses and processes the data.
-2. **JSON Processing Pipeline**: Raw JSON → `jsonLayoutProcessor` (TreeMap generation) → `layoutService` (entitree-flex layout) → React Flow nodes/edges
-3. **Worker Architecture**: Primary processing via Web Worker with automatic main-thread fallback for reliability
-4. The frontend displays the data as an interactive graph with incremental rendering for large datasets.
-5. User actions in the UI (such as conversion or export) are communicated back to the backend when necessary.
-
-This separation ensures that all data processing is secure and local, while the user interface remains fast and highly interactive.
-
-#### Architecture Diagram
-
-```mermaid
-flowchart TB
-  %% Backend
-  subgraph BE["VSCode Extension (Backend)"]
-    Parser["Data Parser"]
-    Transformer["Format Transformer"]
-    API["Messaging API"]
-  end
-
-  %% Frontend
-  subgraph FE["Webview (Frontend)"]
-    UI["React + XYFlow"]
-    Controls["Zoom/Pan Controls"]
-  end
-
-  Parser --> Transformer --> API --> UI
-  UI --> Controls
-  Controls --> API
+```typescript
+export interface Person {
+  name: string;
+  age:  number;
+}
 ```
 
-- **Parser**: Parses various data formats (JSON, YAML, XML, etc.).
-- **Transformer**: Converts parsed data into a unified structure.
-- **API**: Handles secure communication between the backend and frontend.
-- **UI**: Renders the interactive graph and handles user interactions.
-- **Controls**: Provides zoom, pan, and other controls for the graph.
-
-#### Project Structure
-
-- **src/app/helpers/**: Modular parsing helpers for each supported format (JSON, YAML, TOML, INI, ENV, XML, HCL, CSV, TSV) in individual files. Centralized error handling (`error-handler.helper.ts`). Barrel file (`parsers/index.ts`) for clean imports.
-- **src/app/models/**: Data models such as `NodeModel`, documented and aligned with SOLID principles.
-- **src/app/interfaces/**: Interfaces such as `TreeNode` and `Tree`, documented with JSDoc.
-- **src/app/providers/**: Decoupled and documented providers for files, feedback, and JSON views, following SOLID principles.
-- **src/app/controllers/**: Business logic separated from the UI and providers.
-- **src/app/configs/**: Centralized configuration and constants.
-- **webview/**: Reactive UI with current architecture:
-  - **services/**: `jsonLayoutProcessor` (TreeMap generation), `layoutService` (entitree-flex integration)
-  - **hooks/**: `useLayoutWorkerSafe` (worker wrapper with fallback), `useLayoutWorkerMainThread` (main thread processing)
-  - **workers/**: Web Worker implementation with automatic fallback mechanisms
-  - **components/**: React components following Atomic Design principles
-  - **types/**: TypeScript interfaces for TreeMap, processing options, and worker communication
-- **Barrel Files**: Use of `index.ts` for consistent and clean imports in helpers and other modules.
-
-#### Design Philosophy
-
-- **Atomic Design**: UI components organized by level of atomicity.
-- **SOLID Principles**: Providers and helpers are decoupled and easily testable.
-- **Centralized Error Handling**: All helpers use a single entry point for errors.
-- **JSDoc Everywhere**: Clear and relevant English documentation in all modules and public functions.
-
-### Typical Workflow
-
-1. Open a supported data file (e.g., JSON, YAML, XML) in VS Code.
-2. Use the Activity Bar icon or Command Palette (`Show Preview`) to visualize the data as a graph.
-3. Interact with the graph (zoom, pan, expand/collapse nodes, inspect properties).
-4. Use context menu options for conversion, copying, or type generation.
-5. Export the visualization or generated code as needed.
-
----
-
-## Split View
-
-JSON Flow supports working with the text editor and the graph view side-by-side.
-
-- **Split View**: Opens the JSON Flow webview beside the active editor for supported file types. You can toggle it from the editor title bar or the status bar.
-
-### Editor Toolbar and Status Bar
-
-- **Status Bar**: Shows a quick toggle:
-  - `JSON Flow: Open` / `JSON Flow: Close`
-- **Editor Title Bar**: Buttons to enable/disable Split View when relevant.
-
-Notes:
-
-- Available when the active file matches the configured extensions (see `jsonFlow.files.includedFilePatterns`).
-
-### Views & Activity Bar
-
-- **Activity Bar Container**: `JSON Explorer` (`json-explorer`).
-- **Views**:
-  - `Files` (`jsonFlow.filesView`): Browse supported files. The view title has a Refresh action. Context menus provide Open, Convert, Copy, and Properties.
-  - `Feedback` (`jsonFlow.feedbackView`): Quick links to Extension Website, Report an Issue, and Rate Us.
-- **Welcome Content**: The Files view shows a helpful message when no files match or on first use.
-
----
-
-## Requirements & Limitations
-
-- **Editor Compatibility:** Compatible with Visual Studio Code and all VSCode-based editors (including VSCodium, WindSurf, Cursor, and others).
-- **Minimum VS Code Version:** Requires Visual Studio Code 1.88.0 or later (or a compatible base version).
-- **Supported Operating Systems:** Windows, macOS, and Linux.
-- **Performance:** No hard limits on file size or depth. Rendering is incremental and designed to degrade gracefully on very large/complex data. See Troubleshooting for tuning tips.
-- **Limitations:** Certain operations may take longer on extremely large graphs; Live Sync pauses on JSON syntax errors until fixed. Refer to Troubleshooting for known issues and workarounds.
-
----
-
-## Security & Privacy
-
-- **100% local**: Parsing, visualization, and conversions run inside VS Code.
-- **No telemetry or analytics**: We do not collect usage or content data.
-- **No network access by default**: The only network action is the explicit command `jsonFlow.json.fetchJsonData` when you choose to fetch from a URL.
-- **Workspace Trust aware**: Behaves safely in untrusted workspaces and supports virtual workspaces (with limitations).
-- **Offline friendly**: Works without internet connectivity once installed.
-
----
-
-## Commands & Menus
-
-Below is a summary of the main commands and context menu options available in JSON Flow. All commands can be accessed via the Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`) or via context menus in the Explorer and Editor.
-
-| Command ID                              | Title                        | Where/How to Access     | Description                                   |
-| --------------------------------------- | ---------------------------- | ----------------------- | --------------------------------------------- |
-| jsonFlow.files.refreshList              | Refresh List                 | Explorer/Palette        | Refreshes the file list in JSON Flow view     |
-| jsonFlow.files.openFile                 | Open File                    | Explorer/Palette        | Opens the selected file in the editor         |
-| jsonFlow.files.copyContent              | Copy Content                 | Explorer/Editor/Palette | Copies the file content                       |
-| jsonFlow.files.copyContentAsJson        | Copy Content as JSON         | Explorer/Editor/Palette | Copies content as JSON                        |
-| jsonFlow.files.getFileProperties        | Get File Properties          | Explorer/Palette        | Shows metadata and structure                  |
-| jsonFlow.files.convertToJson            | Convert to JSON              | Explorer/Editor/Palette | Converts file to JSON                         |
-| jsonFlow.files.convertToType            | Convert to Type or Structure | Explorer/Editor/Palette | Generates types from JSON                     |
-| jsonFlow.files.convertPartialToType     | Convert Partial to Type      | Editor/Palette          | Generates types from selected block           |
-| jsonFlow.files.convertPartialToJson     | Convert Partial to JSON      | Editor/Palette          | Converts selected block to JSON               |
-| jsonFlow.files.copyContentPartialAsJson | Copy Partial as JSON         | Editor/Palette          | Copies selected block as JSON                 |
-| jsonFlow.json.showPreview               | Show Preview                 | Explorer/Editor/Palette | Shows the data as an interactive graph        |
-| jsonFlow.json.showPartialPreview        | Show Partial Preview         | Editor/Palette          | Shows a preview of the selected block         |
-| jsonFlow.json.fetchJsonData             | Fetch JSON Data from URL     | Editor/Palette          | Fetches JSON data from a specified URL        |
-| jsonFlow.view.enableSplitView           | Enable Split View            | Editor Title/Palette    | Opens the JSON Flow webview beside the editor |
-| jsonFlow.view.disableSplitView          | Disable Split View           | Editor Title/Palette    | Closes the side-by-side JSON Flow view        |
-
-- **Context Menus:** Right-click on a supported file in the Explorer or inside the Editor to access these commands quickly.
-- **Submenus:** JSON Flow groups actions under a dedicated submenu in both Explorer and Editor context menus for convenience.
-
-For a full list of commands and their descriptions, see the [package.json](https://github.com/ManuelGil/vscode-json-flow/blob/main/package.json) or use the Command Palette in your editor.
-
----
-
-## Keyboard Shortcuts
-
-Default keybindings:
-
-- Toggle Split View: Ctrl+Alt+F (macOS: Cmd+Alt+F)
-
-Notes:
-
-- Split View key toggles on/off depending on current state.
-- Show Preview is active for supported file types when the editor has focus.
-
----
-
-## Frequently Asked Questions (FAQ)
-
-**Q: Where can I report bugs or request features?**
-A: Please use the [GitHub Issues page](https://github.com/ManuelGil/vscode-json-flow/issues).
-
-**Q: How can I contribute translations?**
-A: See the Internationalization section for instructions on adding new languages.
-
-**Q: Does JSON Flow support custom JSON schemas?**
-A: Yes, you can add JSON schemas in the `schemas/` directory or reference external schemas for validation and autocompletion.
-
-**Q: Can I export the graph visualization?**
-A: Yes, use the export options in the graph view to save as PNG, SVG, or other formats.
-
-### Technology Stack
-
-- **Frontend/UI**: React, XYFlow, Radix UI, TailwindCSS, Lucide React
-- **Parsing & Conversion**: YAML, TOML, INI, fast-xml-parser, JSON5, dotenv, hcl-parser, quicktype-core
-- **Dev Tools**: Vite, TypeScript, Husky, Biome, Compodoc, Release-it, lint-staged, rimraf, autoprefixer, postcss
-
-### Main Commands & Views
-
-- **Commands**: Refresh list, open file, copy content (as JSON), show preview (full/partial), convert between formats, get file properties, generate code, etc.
-- **Views**: Dedicated explorer with files and feedback, context menus in explorer/editor, batch operations
-
-### Enhanced JSON Management
-
-- **File Conversion**: Convert formats such as YAML, TOML, INI, and more into JSON with a single click.
-- **Content Operations**: Quickly copy file content or its JSON representation, and view detailed file properties.
-
-### Supported File Formats
-
-- **JSON Family**: Standard JSON, JSON with comments (`jsonc`), and JSON5.
-- **YAML**: `.yaml` and `.yml` files.
-- **TOML**: For readable configuration files.
-- **INI/CFG**: Traditional key-value configuration formats.
-- **Properties & Environment Files**: Java-style properties and `.env` files.
-- **XML**: Structured data for various applications.
-- **CSV/TSV**: Tabular data formats.
-- **HCL**: HashiCorp Configuration Language for DevOps tools.
-
-### File Explorer
-
-- **Efficient Management**: Open, convert, copy, and inspect files directly through an integrated file explorer interface.
-
----
-
-## Getting Started
-
-1. **Install the Extension**
-   Download and install JSON Flow from the [Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=imgildev.vscode-json-flow).
-
-2. **Open Your Data File**
-   Open any supported file (JSON, YAML, XML, CSV, etc.) in VS Code.
-
-3. **Visualize the Graph**
-   Click on the JSON Flow icon in the Activity Bar or execute the command `Show Preview` from the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`).
-
-4. **Customize and Export**
-   Adjust the graph layout using the toolbar and export your visualization as an image if needed.
-
-For more detailed guidance, see the [Official Documentation](https://github.com/ManuelGil/vscode-json-flow/wiki).
-
----
-
-## Usage
-
-- **Launching the Graph View**: Access the graph via the Activity Bar icon.
-- **Interactivity**: Click on nodes to expand or collapse details. Use the zoom controls to focus on specific areas of your data.
-- **Export**: Export your graph as PNG, SVG, or other image formats with customizable background options.
-
-![JSON Flow Menu](https://raw.githubusercontent.com/ManuelGil/vscode-json-flow/main/images/json-flow-2.gif)
-
-### Context Menu Options
-
-| Title                        | Purpose                                                                                                                                  |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| Open File                    | Open the selected file                                                                                                                   |
-| Convert to JSON              | Convert the selected file to JSON                                                                                                        |
-| Convert to Type or Structure | Convert the selected file to a specific type or structure. See [Code Generation from JSON](#code-generation-from-json) for more details. |
-| Copy Content to Clipboard    | Copy the content of the selected file to the clipboard                                                                                   |
-| Copy Content as JSON         | Copy the content of the selected file as JSON                                                                                            |
-| Get File Properties          | Get the properties of the selected file                                                                                                  |
-| Show Partial Preview         | Show a preview of the selected block in the JSON Flow view                                                                               |
-
----
-
-## Project Settings
-
-JSON Flow can be customized to fit your workflow. Add or edit the following settings in your `.vscode/settings.json` file:
-
-For quick guidance, see [Settings Tips](USAGE_GUIDE.md#settings-tips) and the [Appendix: Configuration Reference](USAGE_GUIDE.md#8-appendix-configuration-reference) in the Usage Guide.
+### Fetch JSON from URL
+
+Prompt for URL and visualize response.
+
+- **HTTP GET only**. No auth/headers.
+- **10s timeout** with cancellation.
+- Validates URL format before request.
+- Falls back to text parsing if content-type isn't JSON.
+- No persistent connection.
+
+## Explorer and File Management
+
+Adds a dedicated **JSON Explorer** to the Activity Bar.
+
+- **Views**: Files list (grouped by type) and Feedback links.
+- **Discovery**: Efficient file discovery with caching.
+- **Sorting**: Groups by size (descending); files alphabetically.
+- **Settings**: Configurable includes/excludes, recursion depth, hidden files, `.gitignore`.
+- **Actions**: Open, Copy Content/JSON, Get Properties, Convert.
+
+## Split View Mode
+
+Opens graph panel beside active editor.
+
+- Toggle via Title Bar button or `Ctrl+Alt+F` / `Cmd+Alt+F`.
+- Live Sync is available only in Split View.
+
+## Commands
+
+Accessible via Command Palette (`Ctrl+Shift+P`).
+
+| Command                                   | Description                                        |
+| ----------------------------------------- | -------------------------------------------------- |
+| `JSON Flow: Show Preview`                 | Open graph panel for the current file              |
+| `JSON Flow: Show Partial Preview`         | Open graph panel from current text selection       |
+| `JSON Flow: Fetch JSON Data`              | Fetch JSON from a URL and open graph panel         |
+| `JSON Flow: Convert to JSON`              | Convert file to JSON in a new document             |
+| `JSON Flow: Convert Partial to JSON`      | Convert selection to JSON in a new document        |
+| `JSON Flow: Convert to Type`              | Generate typed code from file using quicktype      |
+| `JSON Flow: Convert Partial to Type`      | Generate typed code from selection using quicktype |
+| `JSON Flow: Copy Content`                 | Copy raw file content to clipboard                 |
+| `JSON Flow: Copy Content as JSON`         | Copy file content as JSON to clipboard             |
+| `JSON Flow: Copy Partial Content as JSON` | Copy selection as JSON to clipboard                |
+| `JSON Flow: Get File Properties`          | Show file name, language, line count, version      |
+| `JSON Flow: Refresh List`                 | Refresh the file list in the Explorer view         |
+| `JSON Flow: Open File`                    | Open file from Explorer view in editor             |
+| `JSON Flow: Enable Split View`            | Open graph panel beside editor                     |
+| `JSON Flow: Disable Split View`           | Close graph panel                                  |
+| `JSON Flow: Enable Live Sync`             | Enable editor ↔ graph synchronization              |
+| `JSON Flow: Disable Live Sync`            | Disable editor ↔ graph synchronization             |
+
+## Configuration
+
+Configured via `jsonFlow` settings.
 
 ```jsonc
 {
   "jsonFlow.enable": true,
   "jsonFlow.files.includedFilePatterns": [
-    "json", "jsonc", "json5", "cfg", "csv", "env", "hcl", "ini", "properties", "toml", "tsv", "xml", "yaml", "yml"
+    "json", "jsonc", "json5",
+    "yaml", "yml",
+    "toml",
+    "ini", "cfg",
+    "xml",
+    "csv", "tsv",
+    "env",
+    "hcl",
+    "properties"
   ],
   "jsonFlow.files.excludedFilePatterns": [
     "**/node_modules/**",
@@ -431,7 +278,7 @@ For quick guidance, see [Settings Tips](USAGE_GUIDE.md#settings-tips) and the [A
     "**/build/**",
     "**/vendor/**"
   ],
-  "jsonFlow.files.maxSearchRecursionDepth": 0, // 0 means unlimited depth
+  "jsonFlow.files.maxSearchRecursionDepth": 0,
   "jsonFlow.files.supportsHiddenFiles": true,
   "jsonFlow.files.preserveGitignoreSettings": false,
   "jsonFlow.files.includeFilePath": true,
@@ -440,159 +287,181 @@ For quick guidance, see [Settings Tips](USAGE_GUIDE.md#settings-tips) and the [A
 }
 ```
 
-- `jsonFlow.enable` (`boolean`, default: `true`): Enable or disable the extension.
-- `jsonFlow.files.includedFilePatterns` (`array`, default: `[ ... ]`): File extensions managed by JSON Flow.
-- `jsonFlow.files.excludedFilePatterns` (`array`, default: `[ ... ]`): Glob patterns for files/folders to ignore.
-- `jsonFlow.files.includeFilePath` (`boolean`, default: `true`): Display file paths in the explorer view.
-- `jsonFlow.files.maxSearchRecursionDepth` (`number`, default: `0`): Controls the maximum depth for recursive file searches. A value of `0` disables the limit.
-- `jsonFlow.files.supportsHiddenFiles` (`boolean`, default: `true`): Determines if hidden files (e.g., `.env`) are included in search results and file views.
-- `jsonFlow.files.preserveGitignoreSettings` (`boolean`, default: `false`): Toggles whether to respect rules defined in `.gitignore` files during file searches.
-- `jsonFlow.graph.layoutOrientation` (`string`, default: `"TB"`): Orientation of the graph. Options: `TB` (top-bottom), `LR` (left-right), `BT` (bottom-top), `RL` (right-left).
-- `jsonFlow.liveSync.throttleMs` (`number`, default: `100`): Throttle in milliseconds for Live Sync updates (0-1000).
+| Setting                                    | Type                   | Default         | Description                                         |
+| ------------------------------------------ | ---------------------- | --------------- | --------------------------------------------------- |
+| `jsonFlow.enable`                          | boolean                | `true`          | Enable or disable the extension                     |
+| `jsonFlow.graph.layoutOrientation`         | `TB`\|`LR`\|`BT`\|`RL` | `TB`            | Initial layout direction                            |
+| `jsonFlow.liveSync.throttleMs`             | number (0–1000)        | `100`           | Live Sync throttle delay in milliseconds            |
+| `jsonFlow.files.includedFilePatterns`      | string[]               | 14 extensions   | File extensions managed by the Explorer view        |
+| `jsonFlow.files.excludedFilePatterns`      | string[]               | 5 glob patterns | Glob patterns excluded from file search             |
+| `jsonFlow.files.maxSearchRecursionDepth`   | number                 | `0`             | Max recursion depth for file search (0 = unlimited) |
+| `jsonFlow.files.supportsHiddenFiles`       | boolean                | `true`          | Include hidden files (dot-prefixed) in search       |
+| `jsonFlow.files.preserveGitignoreSettings` | boolean                | `false`         | Respect `.gitignore` rules in file search           |
+| `jsonFlow.files.includeFilePath`           | boolean                | `true`          | Show relative path alongside filename in Explorer   |
 
-After editing, restart your editor to apply changes.
+## Architecture
 
----
+JSON Flow uses a strict three-layer separation of concerns.
 
-## Code Generation from JSON
+### Extension Host
 
-Leverage quicktype integration to generate type definitions or schemas from JSON.
+The extension host is the sole backend. It runs inside the VS Code process and is responsible for:
 
-1. Open a JSON file and select a JSON block or the entire document.
-2. Right-click and choose **Convert to Type or Structure**.
-3. Select the target language (TypeScript, Go, Rust, Java, Python, C#, Swift, Kotlin, Dart, C++, PHP, Ruby, Scala, Elm, JSON Schema, Flow, Prop-Types, Haskell, JavaScript, and more).
-4. Provide a type name and review the generated code in a new editor tab.
+- Parsing all supported file formats
+- Building the tree structure sent to the webview
+- Handling all commands and file system operations
+- Managing Live Sync state and format gating
+- Validating all messages received from the webview
+- Handling localization
 
-### Example
+The extension host never renders UI and never runs layout algorithms.
 
-Given the JSON:
+### Webview (React UI)
 
-```json
-{
-  "name": "John Doe",
-  "age": 30,
-  "email": "john.doe@example.com"
-}
-```
+The webview is a sandboxed iframe. It is responsible for:
 
-Selecting TypeScript and naming it `Person` produces:
+- Rendering the interactive graph
+- Managing UI state
+- Communicating with the extension host exclusively via structured message passing
+- Persisting appearance settings
 
-```typescript
-export interface Person {
-  name: string;
-  age: number;
-  email: string;
-}
-```
+The webview has no access to the VS Code API, the filesystem, or the extension host's state directly.
 
----
+### Web Worker
 
-## Installation
+The Web Worker is the sole layout authority.
 
-### Prerequisites
+- Receives graph data and settings
+- Executes the layout pipeline deterministically
+- Returns positioned nodes and edges
+- **Stateless**: Processes each request independently
+- **Lightweight**: Contains no DOM dependencies or React runtime
 
-- Visual Studio Code 1.88.0 or later (or compatible base editor)
-- Internet connection for installation from the Marketplace
+No layout logic runs in the main thread.
 
-### Installation Steps
+## Identity Model
 
-1. Open your VSCode-based editor (e.g., VSCode, VSCodium, WindSurf, Cursor).
-2. Navigate to the **Extensions** view (`Ctrl+Shift+X` on Windows/Linux or `⌘+Shift+X` on macOS).
-3. Search for **"JSON Flow"** (author: Manuel Gil).
-4. Click **Install**.
-5. (Optional) To test the latest development version, clone or download this repository and open the folder in VSCode. Use `npm install && npm run package` to build a VSIX package for local installation.
+Every node in the graph has a deterministic identity based on its structural position in the source data.
 
----
+- **Data nodes**: Identified by RFC 6901 JSON Pointer strings (e.g. `/users/0/name`).
+- **Graph structural root**: Uses a reserved identifier disjoint from the JSON Pointer domain.
 
-## Usage Guidelines
+IDs are stable across re-renders for the same file content, ensuring reliable state preservation (such as expansion/collapse status) during updates.
 
-- Access all extension commands through the **Command Palette** by typing `JSON Flow:`.
-- Use context menu options in the Explorer and editor for actions such as: Open File, Convert to JSON, Convert to Type or Structure, Copy Content, and Inspect Properties.
-- Use the dedicated File Explorer view to efficiently manage and preview multiple data files within your workspace.
+## How the Graph Is Generated
 
----
+1. **Host**: Parses file to object. Sends to Webview.
+2. **Webview**: Dispatches data to the Worker.
+3. **Worker**: Computes layout using an adaptive strategy.
+   - Small/Medium graphs use a layout optimized for structure and readability.
+   - Large graphs automatically switch to a high-performance linear layout.
+4. **Worker**: Returns positioned elements.
+5. **Webview**: Renders the graph.
 
-## Troubleshooting
+## Performance Characteristics
 
-For assistance with common issues or error diagnostics, please refer to the following resources:
+JSON Flow utilizes an adaptive layout system to balance readability and performance.
 
-- [Troubleshooting Guide](https://github.com/ManuelGil/vscode-json-flow/blob/main/TROUBLESHOOTING.md)
-- [GitHub Issues](https://github.com/ManuelGil/vscode-json-flow/issues)
+- **Standard Layout**: Used for most files. Provides optimal edge routing and hierarchical spacing.
+- **Linear Layout**: Automatically activated for large graphs (> 2000 nodes). Switches to a high-performance, O(n) breadth-first strategy to maintain responsiveness.
 
-If your issue is not addressed, you are encouraged to open a new issue on GitHub with a detailed description and reproduction steps.
+Performance depends on structural complexity (depth, branching factor), not only file size. There is no hard file size cap.
 
----
+## Known Behavior and Limitations
+
+- **Single-file mode only.** One file per preview panel. No cross-file graph.
+- **No cross-file Live Sync.** Live Sync only operates on the file currently open in the preview panel.
+- **No persistent layout cache.** Layout is recomputed on every open.
+- **No background indexing.** Files are scanned only when the Explorer view is opened or refreshed.
+- **State resets on extension reload.** No state is persisted between VS Code sessions.
+- **Live Sync is mouse-only.** Keyboard navigation in the editor does not trigger graph sync.
+- **Fetch JSON from URL is GET-only.** No POST, no authentication, no custom headers.
+- **Docker Compose has no selection mapper.** Preview and conversion work; Live Sync does not.
+
+## Security and Privacy
+
+**Processing boundary:** All parsing, layout, and code generation runs locally inside VS Code. No data leaves the machine unless the user explicitly invokes `Fetch JSON from URL`.
+
+**Webview security:**
+
+- Unique nonce per instantiation
+- Strict Content-Security-Policy
+- No `unsafe-eval`
+- Remote scripts are not loaded
+
+**Input sanitization:**
+
+- All messages are validated before processing
+- HTML sanitization applied to all user-controlled content
+
+**Workspace Trust:** The extension respects VS Code Workspace Trust. It is declared as supporting untrusted workspaces and virtual workspaces (with limitations).
+
+**No telemetry. No analytics. No automatic uploads.**
 
 ## Internationalization (i18n)
 
-All user-facing strings are localized using VS Code's `l10n` system:
+The extension is fully localized.
 
-- **Manifest (static) strings**: `package.nls.*.json`
-- **Runtime strings**: `l10n/bundle.l10n.*.json`
+- **Extension Host**: Uses VS Code's native localization APIs.
+- **Webview**: Uses a dedicated internal localization layer.
+- **Worker**: Language-agnostic.
 
-To add a new language:
+## Requirements
 
-1. Manifest: duplicate `package.nls.json` and rename to `package.nls.<lang>.json` (e.g., `package.nls.de.json`). Translate the values, keep keys unchanged.
-2. Runtime: add a file `l10n/bundle.l10n.<lang>.json` with translations for runtime message keys. Use existing bundles (e.g., Spanish, German, French, Italian, Brazilian Portuguese) as references.
-3. Preserve placeholders such as `{0}`, `{1}`, etc., exactly as in the source strings.
-4. Reload the window to see your translations.
+- VS Code 1.102.0 or later
+- Windows, macOS, or Linux
+- Works in untrusted workspaces (with limitations)
+- Works in virtual workspaces (with limitations)
+- Compatible with VSCodium, Cursor, WindSurf, and any VS Code–compatible platform
 
-The extension automatically selects the appropriate language based on your VS Code display language settings.
+## Troubleshooting
 
-### i18n maintenance
+**Performance is slow:**
 
-Use the following scripts to validate localization keys:
+- Collapse large branches to reduce rendered node count
+- Switch to a different layout orientation
+- Disable Live Sync temporarily
+- Avoid files with extremely wide root objects (hundreds of top-level keys)
 
-```bash
-# Check used keys vs translation bundles
-npm run -s l10n:check
+**Live Sync does not respond:**
 
-# Validate NLS manifest keys
-npm run -s nls:check
-```
+- Confirm the format is `json`, `jsonc`, `json5`, `yaml`, or `yml`
+- Confirm Live Sync is enabled (Editor Title Bar button)
+- Confirm the active editor document matches the previewed file
+- Click (mouse) in the editor — keyboard navigation does not trigger sync
 
----
+**Graph export is blank or clipped:**
+
+- Use Fit View before exporting
+- Ensure the graph has finished loading (worker completes layout before export)
+
+For issues: [https://github.com/ManuelGil/vscode-json-flow/issues](https://github.com/ManuelGil/vscode-json-flow/issues)
 
 ## Contributing
 
-JSON Flow is an open-source project and welcomes contributions from the community. Here's how you can get involved:
+Contributions are welcome.
 
-1. **Fork** the [GitHub repository](https://github.com/ManuelGil/vscode-json-flow).
-2. **Create a new branch** for your feature or fix:
+- Follow project coding standards
+- Maintain deterministic behavior
+- Do not modify identity logic
+- Do not introduce layout computation outside the Web Worker
+- Do not alter the adaptive threshold without benchmarking
 
-   ```bash
-   git checkout -b feature/your-feature
-   ```
-
-3. **Implement your changes**, ensuring you:
-   - Follow the project's coding standards and best practices.
-   - Update documentation if your change affects usage or features.
-4. **Commit your changes** and push the branch to your fork.
-5. **Submit a Pull Request** against the `main` branch with a clear, descriptive title and summary of your contribution.
-
-Before submitting, please review the [Contribution Guidelines](https://github.com/ManuelGil/vscode-json-flow/blob/main/CONTRIBUTING.md) for details on coding standards and commit message conventions. If you encounter a bug or wish to request a new feature, please open an Issue on GitHub or use the [Feature Requests & Bug Reports](https://github.com/ManuelGil/vscode-json-flow/issues) page.
-
----
+Architecture stability is prioritized over feature expansion.
 
 ## Code of Conduct
 
 We are committed to providing a friendly, safe, and welcoming environment for all, regardless of gender, sexual orientation, disability, ethnicity, religion, or other personal characteristic. Please review our [Code of Conduct](https://github.com/ManuelGil/vscode-json-flow/blob/main/CODE_OF_CONDUCT.md) before participating in our community.
 
----
-
 ## Changelog
 
 For a complete list of changes, see the [CHANGELOG.md](https://github.com/ManuelGil/vscode-json-flow/blob/main/CHANGELOG.md).
 
----
-
-## Support & Contact
+## Support and Contact
 
 If you need help, want to discuss ideas, or have questions about the project:
 
-- Open a [GitHub Discussion](https://github.com/ManuelGil/vscode-json-flow/discussions) (if enabled)
 - Submit an [Issue](https://github.com/ManuelGil/vscode-json-flow/issues)
-- Contact the maintainer via [GitHub profile](https://github.com/ManuelGil)
 
 For urgent matters or partnership inquiries, please use the contact information provided in the [repository profile](https://github.com/ManuelGil/vscode-json-flow).
 
@@ -601,8 +470,6 @@ For urgent matters or partnership inquiries, please use the contact information 
 - **Andry Orellana** - *Collaborator* - [AndryOre](https://github.com/AndryOre)
 
 See the list of [contributors](https://github.com/ManuelGil/vscode-json-flow/contributors).
-
----
 
 ## Other Extensions
 
@@ -636,8 +503,6 @@ See the list of [contributors](https://github.com/ManuelGil/vscode-json-flow/con
 - **[Mustache Template Engine - Snippets & Autocomplete](https://marketplace.visualstudio.com/items?itemName=imgildev.vscode-mustache-snippets)**
   Snippets and autocomplete support for Mustache templates, making HTML templating faster and more reliable.
 
----
-
 ## Recommended Browser Extension
 
 For developers who work with `.vsix` files for offline installations or distribution, the complementary [**One-Click VSIX**](https://chromewebstore.google.com/detail/imojppdbcecfpeafjagncfplelddhigc?utm_source=item-share-cb) extension is recommended, available for both Chrome and Firefox.
@@ -646,8 +511,6 @@ For developers who work with `.vsix` files for offline installations or distribu
 
 - [Get One-Click VSIX for Chrome &rarr;](https://chromewebstore.google.com/detail/imojppdbcecfpeafjagncfplelddhigc?utm_source=item-share-cb)
 - [Get One-Click VSIX for Firefox &rarr;](https://addons.mozilla.org/es-ES/firefox/addon/one-click-vsix/)
-
----
 
 ## License
 

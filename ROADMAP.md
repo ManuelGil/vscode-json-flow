@@ -1,6 +1,6 @@
 # JSON Flow - Formal Technical Roadmap and Execution Contract
 
-Version: 2.3.2
+Version: 2.5.0
 Scope: Single-file graph mode unless explicitly stated otherwise.
 
 This document defines:
@@ -33,30 +33,30 @@ Invalid sources:
 
 ## 2. Versioned Architectural Baseline
 
-### 2.2.x - Architectural Foundation
+### 2.2.x – Architectural Foundation
 
-- Web Worker became sole layout authority.
-- `generateTree()` + `getRootId()` + `layoutElementsCore()` defined pure layout pipeline.
-- Deterministic node identity established via RFC 6901 JSON Pointers.
-- `GRAPH_ROOT_ID = '__GRAPH_ROOT__'` introduced as non-pointer structural root.
-- Split View introduced.
-- Bidirectional Live Sync introduced (single-file only).
-- Adaptive layout threshold introduced at 2000 nodes.
-- Collapse and expand functionality introduced.
-- Layout unified into single pure engine (`layout-core.ts`).
+- Worker established as sole layout authority.
+- Deterministic RFC 6901 identity introduced.
+- `GRAPH_ROOT_ID` separated from pointer domain.
+- Adaptive layout threshold set to 2000.
+- Live Sync (single-file) introduced.
+- Layout pipeline unified.
 
-### 2.3.x - Format Expansion and Structural Stabilization
+### 2.3.x – Structural Stabilization
 
-- Multi-format preview support: JSON, JSONC, JSON5, YAML, CSV, TSV, TOML, INI, XML, HCL, ENV.
-- Multi-format `SelectionMapper` implementations added.
-- Partial graph search introduced (indexing, navigation, viewport centering).
-- Extension host internationalization implemented via `vscode.l10n`.
+- Multi-format preview added (independent from Live Sync whitelist).
+- SelectionMapper layer expanded.
+- Partial search introduced.
 - `useReducer` established as webview state authority.
-- No main-thread layout fallback remains.
+- Main-thread layout fallback removed.
 
-Version 2.3.2 represents stabilized single-file architecture.
+Preview capability does not imply Live Sync activation.
 
-## 3. Current Architecture (2.3.2)
+Live Sync activation is strictly controlled by the 2.5.x whitelist and must not be inferred from preview support.
+
+Version 2.5.0 represents structural hardening and invariant consolidation.
+
+## 3. Current Architecture (2.5.0)
 
 ### 3.1 Layout Authority
 
@@ -64,6 +64,7 @@ Version 2.3.2 represents stabilized single-file architecture.
 - Worker is stateless between requests.
 - Worker calls only pure functions.
 - No main-thread layout fallback exists.
+- entitree-flex is present only in the Worker bundle.
 
 ### 3.2 Node Identity
 
@@ -73,16 +74,41 @@ Version 2.3.2 represents stabilized single-file architecture.
 - `GRAPH_ROOT_ID` must not start with `/`.
 - Identity generation must remain pure and shared across contexts.
 - Identity must remain deterministic for identical document content.
+- No additional identity domain may be introduced in 2.x.
 
-### 3.3 Live Sync
+Structural root and JSON Pointer domains are strictly disjoint and must never collide.
+GRAPH_ROOT_ID must never pass through buildPointer().
+
+## 3.3 Live Sync (2.5.0 Contract)
 
 - Single-file only.
 - Disabled by default.
-- Explicitly enabled via command.
+- Explicit activation required.
 - Guarded by `previewedPath`.
 - Loop prevention via suppression flag, nonce tracking, origin tagging, and de-duplication.
-- Editor-to-Graph throttled.
-- Graph-to-Editor debounced.
+- Editor → Graph throttled.
+- Graph → Editor debounced.
+
+Live Sync whitelist (frozen):
+
+- json
+- jsonc
+- json5
+- yaml
+- yml
+
+**No formats outside this whitelist may activate Live Sync.**
+
+The whitelist is closed for all 2.5.x releases.
+
+The following are explicitly prohibited:
+
+- Filename-based heuristics.
+- Implicit activation based on inferred format.
+- Runtime extension of the whitelist.
+- Fallback activation outside the declared list.
+
+TOML retains SelectionMapper support but is explicitly excluded from Live Sync activation in 2.5.x.
 
 Cross-file synchronization is prohibited.
 
@@ -92,14 +118,16 @@ Cross-file synchronization is prohibited.
 - At or below threshold: entitree-flex.
 - Above threshold: linear breadth-first layout.
 - Output structure identical across both paths.
-- entitree-flex remains sole layout dependency.
+- entitree-flex remains the only external layout dependency.
+- The linear BFS layout is an internal threshold-based strategy executed inside the Worker.
 
 ### 3.5 Webview State
 
 - Selection, collapse, and search state are transient.
 - Data, orientation, path, and file name persist across visibility changes only.
 - State lost on extension restart.
-- Reducer is single source of truth for flow data.
+- Reducer is primary UI data authority for flow state.
+- Auxiliary ephemeral runtime state (refs, worker handles) exists but is not layout-authoritative.
 
 ## 4. Structural Invariants
 
@@ -109,71 +137,86 @@ The following must always hold:
 2. Node identity logic must not diverge.
 3. Live Sync must remain single-file.
 4. Worker must remain stateless.
-5. Adaptive threshold must not change without validation.
+5. Adaptive threshold must not change without benchmark evidence and explicit version escalation.
 6. No cross-file graph behavior may be introduced implicitly.
 7. entitree-flex integration must not be replaced or duplicated.
+8. requestId must remain mandatory in worker protocol.
+9. No identity mutation during editing.
+10. No shadow layout state.
+11. No persistent worker state.
+12. i18n domains must remain isolated.
 
-## 5. Partial Systems (2.3.2)
+## 5. Controlled Debt (Non-Blocking)
 
-The following exist but are incomplete:
+Acknowledged structural debt:
 
-- Graph search highlighting.
-- Collapse-aware search.
-- Format gating alignment between preview and selection mapping.
+- descendantsCache worst-case O(N²)
+- No automated invariant tests
+- No automated performance benchmarks
+- No schema validation layer on messaging protocol
+- No runtime invariant enforcement
+- Webview i18n scaffold incomplete
+- dockercompose is not treated as a first-class format and is outside the 2.5.x Live Sync whitelist
 
-Completion must not alter identity, worker contract, or layout authority.
+## 6. Forward Progression
 
-## 6. Non-Operational Elements
+Forward progression describes hypothetical controlled tracks beyond 2.5.0.
 
-Symbols and message paths that produce no observable behavior must be removed or isolated in future minor versions.
+Forward tracks are hypothetical and require explicit version reclassification before execution.
 
-Removal must not alter operational code paths.
+No forward track is automatically approved.
+Each track requires explicit re-validation of all frozen invariants before execution.
 
-## 7. Forward Progression
+Forward tracks do not imply commitment, timeline, or guarantee of implementation.
 
-### 2.4.x - Completion Phase
+### 2.6.x – Conditional Track: Gated Single-File Editing
 
-- Add search highlighting.
-- Add collapse-aware search.
-- Remove dead message routes.
-- Remove unused worker message handlers.
-- Remove unused functions such as `reconstructFromCompact`.
+This track is conditional and not committed.
 
-Constraints:
+If pursued, it must comply with all 2.5.0 invariants.
 
-- No identity changes.
-- No worker contract changes.
-- No new external dependencies.
-- No layout algorithm changes.
+Permitted scope:
 
-### 2.5.x - Structural Hardening
+- Graph-driven editing for the currently previewed file only.
+- Editing routed exclusively through extension host.
+- Use `WorkspaceEdit` with document version validation.
+- Disabled by default via explicit user setting.
+- Worker remains uninvolved in edit execution.
+- Editing must not alter existing node identity determinism.
+- Editing must not modify pointer construction rules.
+- Editing must not introduce new identity domains.
 
-- Align format gating between preview and selection mapping.
-- Remove all non-operational symbols.
-- Remove mock-data production bundling risk.
-- Introduce webview internationalization via extension-provided locale.
-
-Constraints:
-
-- No identity changes.
-- No layout contract changes.
-- No worker state introduction.
-
-### 2.6.x - Gated Single-File Editing
-
-- Introduce graph-driven editing for current file only.
-- Editing routed through extension host.
-- Use `WorkspaceEdit` with version validation.
-- Disabled by default via explicit setting.
-- No worker involvement in edit execution.
-
-Constraints:
+Strict constraints:
 
 - No cross-file editing.
 - No identity modification.
-- Live Sync must remain operational.
-- Worker must remain stateless.
-- Edit messages must be schema-validated.
+- No Worker protocol changes.
+- No Worker message shape changes.
+- No layout pipeline modification.
+- No introduction of layout outside Worker.
+- No persistent state in Worker.
+- No schema changes to existing message types.
+- Any new editing message type must be strictly additive and isolated.
+
+If any invariant conflict is detected, this track must be suspended.
+
+## 7. i18n Isolation (Formalized in 2.5.0)
+
+Extension Host:
+
+- Uses `vscode.l10n`.
+
+Webview:
+
+- Must NOT import `vscode`.
+- Uses independent localization system.
+- No shared schema or translation bridge.
+
+Worker:
+
+- Completely language-agnostic.
+
+Independence between domains is mandatory.
 
 ## 8. Prohibited Changes
 
@@ -187,6 +230,7 @@ Without explicit escalation, the following are forbidden:
 - Removing loop prevention mechanisms.
 - Altering `SelectionMapper` interface.
 - Replacing entitree-flex.
+- Introducing shared i18n schema between host and webview.
 
 ## 9. Change Control
 
@@ -198,3 +242,20 @@ This document may be modified only if:
 4. The version number is incremented accordingly.
 
 No speculative changes are allowed.
+
+## 10. Architectural Freeze Status (2.5.0)
+
+2.5.0 is a structural hardening release.
+
+It does not:
+
+- Change layout authority.
+- Change node identity logic.
+- Change worker protocol.
+- Change adaptive threshold.
+- Introduce cross-file behavior.
+- Expand Live Sync formats.
+
+All invariants are considered frozen unless explicitly escalated.
+
+Executable code defines truth.
