@@ -1,14 +1,3 @@
-# CI for VS Code Extension
-# -----------------------
-# This workflow runs on Pull Requests targeting the main branch.
-# It ensures that the extension installs dependencies correctly
-# and that the TypeScript sources compile without errors.
-#
-# Scope:
-# - Node.js version is defined by .nvmrc
-# - Dependencies are managed with pnpm
-# - Only compilation is verified (no tests are executed)
-
 name: CI
 
 on:
@@ -16,26 +5,33 @@ on:
     branches:
       - main
 
+# Cancel previous runs for the same branch to avoid duplicated builds
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  compile:
-    # Ubuntu provides a stable and widely supported environment
-    # for building and compiling VS Code extensions.
+  validate-and-compile:
     runs-on: ubuntu-latest
 
     steps:
-      # Fetch the repository contents for the workflow run
+      # Checkout full repository history (useful for future release workflows)
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      # Install pnpm and make it available in the environment.
-      # pnpm also manages its own dependency store cache.
+      # Ensure the package manager version declared in package.json is respected
+      - name: Enable Corepack
+        run: corepack enable
+
+      # Install pnpm explicitly for deterministic CI behavior
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 10
 
-      # Configure the Node.js runtime using the version
-      # specified in the .nvmrc file.
+      # Align Node.js version with local development (.nvmrc)
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -43,14 +39,15 @@ jobs:
           cache: "pnpm"
           cache-dependency-path: "pnpm-lock.yaml"
 
-      # Install dependencies exactly as defined in pnpm-lock.yaml.
-      # The workflow will fail if the lockfile and package.json
-      # are not in sync.
+      # Install dependencies strictly according to the lockfile
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --prefer-offline
 
-      # Compile the VS Code extension.
-      # This step typically runs the TypeScript compiler and
-      # validates the project configuration.
+      # Validate code quality (non-destructive)
+      # Fails if lint, formatting, or import organization issues exist
+      - name: Validate code quality
+        run: pnpm check
+
+      # Compile TypeScript sources to ensure extension integrity
       - name: Compile extension
         run: pnpm compile
