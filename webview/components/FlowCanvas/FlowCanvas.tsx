@@ -141,7 +141,7 @@ export const FlowCanvas = memo(function FlowCanvas() {
   );
 
   // Counter to trigger render-sync re-application when edge settings change
-  const [edgeSettingsVersion, setEdgeSettingsVersion] = useState<number>(0);
+  const [_edgeSettingsVersion, setEdgeSettingsVersion] = useState<number>(0);
 
   const settings = useMemo(() => {
     return localStorage.getItem('settings')
@@ -180,15 +180,12 @@ export const FlowCanvas = memo(function FlowCanvas() {
 
   const { selectedNode, onNodeClick, selectNode } = useSelectedNode();
 
-  const onDirectionChange = useCallback(
-    (direction: Direction) => {
-      dispatch({
-        type: 'SET_ORIENTATION',
-        payload: { orientation: direction },
-      });
-    },
-    [dispatch],
-  );
+  const onDirectionChange = useCallback((direction: Direction) => {
+    dispatch({
+      type: 'SET_ORIENTATION',
+      payload: { orientation: direction },
+    });
+  }, []);
 
   const { handleRotation, handleEdgeSettingsChange } = useFlowSettings(
     rotateLayout,
@@ -298,7 +295,9 @@ export const FlowCanvas = memo(function FlowCanvas() {
                 break;
               }
             }
-            if (equal) return prev;
+            if (equal) {
+              return prev;
+            }
           }
           return next;
         });
@@ -451,7 +450,6 @@ export const FlowCanvas = memo(function FlowCanvas() {
     descendantsCache,
     handleToggleChildren,
     searchMatchIds,
-    edgeSettingsVersion,
   ]);
 
   // Unified change handlers for ReactFlow interactivity (drag, select)
@@ -479,17 +477,13 @@ export const FlowCanvas = memo(function FlowCanvas() {
         null;
       selectNode(target);
       // Center viewport on the selected node so it is visible
-      if (target?.position && reactFlowInstanceRef.current) {
-        const centerX = target.position.x + (target.width ?? 0) / 2;
-        const centerY = target.position.y + (target.height ?? 0) / 2;
-        try {
-          reactFlowInstanceRef.current.setCenter(centerX, centerY, {
-            zoom: 1.2,
-            duration: 500,
-          });
-        } catch {
-          // Swallowed: setCenter may fail if the viewport is not ready
-        }
+      if (target && reactFlowInstanceRef.current) {
+        reactFlowInstanceRef.current.fitView({
+          nodes: [{ id: target.id }],
+          padding: 0.3,
+          duration: 500,
+          includeHiddenNodes: false,
+        });
       }
     },
     [selectNode],
