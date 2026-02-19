@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+* chore: update engine requirements and refine live sync file type support
+* refactor: clean up FlowCanvas component and improve node centering
+* refactor: clarify layout-core execution context and fix spacing in comment
+* refactor: add file type validation and consolidate language detection in live sync
+* refactor: rewrite YAML selection mapper using line-based path resolution
+* chore: remove unused parentPointer function and make internal helpers private
+* chore: apply consistent early return formatting in logger helper
+
 ## [2.4.0] - 2026-02-14
 
 * feat: reset search state on dataset changes and improve hidden match feedback
