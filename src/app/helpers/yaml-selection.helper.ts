@@ -1,69 +1,256 @@
 import * as yaml from 'yaml';
+import { GRAPH_ROOT_ID } from '../../shared/graph-identity';
 import {
   buildPointer,
-  parsePointer,
   POINTER_ROOT,
+  parsePointer,
 } from '../../shared/node-pointer';
 import type { SelectionMapper, TextRange } from '../interfaces';
 
-type YamlRange = [number, number, number];
-type YamlWithRange = { range?: YamlRange };
-type YamlWithItems = { items?: unknown[] };
-type YamlWithPairs = { pairs?: unknown[] };
-type YamlWithType = { type?: unknown };
-type YamlWithValue = { value?: unknown };
-type YamlWithKey = { key?: { value?: unknown } };
+type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue };
 
-// Type predicates and safe accessors for YAML CST/AST nodes
-function isMap(node: unknown): node is YamlWithType & YamlWithItems {
-  return Boolean(node) && (node as YamlWithType).type === 'MAP';
+type PathSegment = string | number;
+
+type LineInfo = {
+  start: number;
+  end: number;
+  indent: number;
+  trimmed: string;
+  raw: string;
+};
+
+type StackEntry = {
+  indent: number;
+  segment: PathSegment;
+};
+
+function isRecord(value: JsonValue): value is { [key: string]: JsonValue } {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
-function isSeq(node: unknown): node is YamlWithType & YamlWithItems {
-  return Boolean(node) && (node as YamlWithType).type === 'SEQ';
+
+function buildLineInfos(text: string): LineInfo[] {
+  const lines = text.split(/\r?\n/);
+  const infos: LineInfo[] = [];
+  let offset = 0;
+
+  for (const line of lines) {
+    const match = line.match(/^[ \t]*/);
+    const indent = match ? match[0].length : 0;
+    const trimmed = line.trim();
+    infos.push({
+      start: offset,
+      end: offset + line.length,
+      indent,
+      trimmed,
+      raw: line,
+    });
+    offset += line.length + 1;
+  }
+
+  return infos;
 }
-function getItems(node: unknown): unknown[] | undefined {
-  const items = (node as YamlWithItems | undefined)?.items;
-  return Array.isArray(items) ? items : undefined;
+
+function getLineIndexForOffset(lines: LineInfo[], offset: number): number {
+  for (let index = 0; index < lines.length; index++) {
+    if (offset >= lines[index].start && offset <= lines[index].end) {
+      return index;
+    }
+  }
+  return lines.length - 1;
 }
-function getPairs(node: unknown): unknown[] | undefined {
-  const pairs = (node as YamlWithPairs | undefined)?.pairs;
-  return Array.isArray(pairs) ? pairs : undefined;
+
+function parseKeyFromLine(line: string): string | undefined {
+  const colonIndex = line.indexOf(':');
+  if (colonIndex <= 0) {
+    return undefined;
+  }
+  const key = line.slice(0, colonIndex).trim();
+  return key.length > 0 ? key : undefined;
 }
-function getValue(node: unknown): unknown | undefined {
-  return (node as YamlWithValue | undefined)?.value;
+
+function parseInlineKeyFromDash(line: string): string | undefined {
+  const withoutDash = line.replace(/^-+\s*/, '');
+  return parseKeyFromLine(withoutDash);
 }
-function getKeyValue(node: unknown): unknown | undefined {
-  return (node as YamlWithKey | undefined)?.key?.value;
+
+function updateStackForLine(
+  line: LineInfo,
+  stack: StackEntry[],
+  seqCounters: Map<number, number>,
+): void {
+  if (!line.trimmed || line.trimmed.startsWith('#')) {
+    return;
+  }
+
+  while (stack.length > 0 && line.indent <= stack[stack.length - 1].indent) {
+    stack.pop();
+  }
+
+  if (line.trimmed.startsWith('-')) {
+    const currentIndex = (seqCounters.get(line.indent) ?? -1) + 1;
+    seqCounters.set(line.indent, currentIndex);
+    stack.push({ indent: line.indent, segment: currentIndex });
+
+    const inlineKey = parseInlineKeyFromDash(line.trimmed);
+    if (inlineKey) {
+      stack.push({ indent: line.indent + 1, segment: inlineKey });
+    }
+    return;
+  }
+
+  const key = parseKeyFromLine(line.trimmed);
+  if (key) {
+    stack.push({ indent: line.indent, segment: key });
+  }
 }
-function getRange(node: unknown): YamlRange | undefined {
-  const r = (node as YamlWithRange | undefined)?.range;
-  return Array.isArray(r) ? (r as YamlRange) : undefined;
+
+function resolvePathAtOffset(
+  text: string,
+  offset: number,
+): PathSegment[] | undefined {
+  if (!text) {
+    return undefined;
+  }
+  const lines = buildLineInfos(text);
+  if (lines.length === 0) {
+    return undefined;
+  }
+  const targetLineIndex = getLineIndexForOffset(lines, offset);
+  const stack: StackEntry[] = [];
+  const seqCounters = new Map<number, number>();
+
+  for (let index = 0; index <= targetLineIndex; index++) {
+    updateStackForLine(lines[index], stack, seqCounters);
+  }
+
+  return stack.map((entry) => entry.segment);
+}
+
+function resolvePathAgainstParsed(
+  root: JsonValue,
+  path: PathSegment[],
+): PathSegment[] | undefined {
+  let current: JsonValue = root;
+  const resolved: PathSegment[] = [];
+
+  for (const segment of path) {
+    if (Array.isArray(current) && typeof segment === 'number') {
+      if (segment < 0 || segment >= current.length) {
+        break;
+      }
+      current = current[segment] as JsonValue;
+      resolved.push(segment);
+      continue;
+    }
+
+    if (isRecord(current) && typeof segment === 'string') {
+      if (!Object.hasOwn(current, segment)) {
+        break;
+      }
+      current = current[segment] as JsonValue;
+      resolved.push(segment);
+      continue;
+    }
+
+    break;
+  }
+
+  return resolved.length > 0 ? resolved : undefined;
+}
+
+function buildPointerFromPath(path: PathSegment[]): string {
+  let pointer: string = POINTER_ROOT;
+  for (const segment of path) {
+    pointer = buildPointer(pointer, String(segment));
+  }
+  return pointer;
+}
+
+function normalizePointerSegments(segments: string[]): PathSegment[] {
+  return segments.map((segment) => {
+    const index = Number.parseInt(segment, 10);
+    if (Number.isInteger(index) && String(index) === segment) {
+      return index;
+    }
+    return segment;
+  });
+}
+
+function pathsEqual(left: PathSegment[], right: PathSegment[]): boolean {
+  if (left.length !== right.length) {
+    return false;
+  }
+  for (let index = 0; index < left.length; index++) {
+    if (left[index] !== right[index]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function findRangeForPath(
+  text: string,
+  targetPath: PathSegment[],
+): TextRange | undefined {
+  if (!text || targetPath.length === 0) {
+    return undefined;
+  }
+  const lines = buildLineInfos(text);
+  const stack: StackEntry[] = [];
+  const seqCounters = new Map<number, number>();
+
+  for (const line of lines) {
+    updateStackForLine(line, stack, seqCounters);
+    const currentPath = stack.map((entry) => entry.segment);
+    if (pathsEqual(currentPath, targetPath)) {
+      return { start: line.start, end: line.end };
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * Returns a JSON-style path (keys and indexes) for the YAML value covering the offset.
+ */
+function findYamlJsonPathAtOffset(
+  text: string,
+  root: JsonValue,
+  offset: number,
+): PathSegment[] | undefined {
+  const pathCandidate = resolvePathAtOffset(text, offset) ?? [];
+  const resolved = resolvePathAgainstParsed(root, pathCandidate);
+  return resolved ?? undefined;
 }
 
 /**
  * Selection mapper for YAML/Docker Compose files.
- *
- * Strategy:
- * - Parse YAML, walk the document to find the JSON-style path at a given offset.
- * - Build a JSON Pointer from the path segments.
- * - Resolve a JSON Pointer nodeId back to the YAML node and its `range`.
+ * Uses yaml.parse() output with line-based traversal to map offsets to JSON Pointer IDs.
  */
 export const yamlSelectionMapper: SelectionMapper = {
   nodeIdFromOffset(text: string, offset: number): string | undefined {
     try {
-      const doc = yaml.parseDocument(text);
-      const root = doc.contents as unknown;
-      if (!root) {
-        return POINTER_ROOT;
+      const clampedOffset = Math.max(0, Math.min(offset, text.length));
+      const parsed = yaml.parse(text) as JsonValue;
+      if (parsed === undefined) {
+        return GRAPH_ROOT_ID;
       }
 
-      const path = findYamlJsonPathAtOffset(root, offset) ?? [];
+      const resolvedPath = findYamlJsonPathAtOffset(
+        text,
+        parsed,
+        clampedOffset,
+      );
+      const pointer = resolvedPath
+        ? buildPointerFromPath(resolvedPath)
+        : GRAPH_ROOT_ID;
 
-      // Build the JSON Pointer by appending each path segment
-      let pointer: string = POINTER_ROOT;
-      for (const segment of path) {
-        pointer = buildPointer(pointer, String(segment));
-      }
       return pointer;
     } catch {
       return undefined;
@@ -71,114 +258,11 @@ export const yamlSelectionMapper: SelectionMapper = {
   },
   rangeFromNodeId(text: string, nodeId: string): TextRange | undefined {
     try {
-      const doc = yaml.parseDocument(text);
-      const root = doc.contents as unknown;
-      if (!root) {
-        return undefined;
-      }
-
-      let segments: string[];
-      try {
-        segments = parsePointer(nodeId);
-      } catch {
-        return undefined;
-      }
-      const node = yamlNodeFromSegments(root, segments);
-      const r = getRange(node);
-      if (!node || !r) {
-        return undefined;
-      }
-      const start = r[0] ?? 0;
-      const end = r[1] ?? start;
-      return { start, end };
+      const segments = parsePointer(nodeId);
+      const normalizedPath = normalizePointerSegments(segments);
+      return findRangeForPath(text, normalizedPath);
     } catch {
       return undefined;
     }
   },
 };
-
-/**
- * Returns a JSON-style path (keys and indexes) for the deepest YAML node covering the offset.
- */
-function findYamlJsonPathAtOffset(
-  node: unknown,
-  offset: number,
-): (string | number)[] | undefined {
-  if (!node) {
-    return undefined;
-  }
-  const items = getItems(node);
-  if (Array.isArray(items)) {
-    for (let i = 0; i < items.length; i++) {
-      const it = items[i];
-      const child = getValue(it) ?? it;
-      const range = getRange(child);
-      if (range && offset >= range[0] && offset <= range[1]) {
-        const sub = findYamlJsonPathAtOffset(child, offset) ?? [];
-        return [i, ...sub];
-      }
-    }
-  }
-  if (!Array.isArray(items)) {
-    const pairs = getPairs(node) ?? getItems(node);
-    if (Array.isArray(pairs)) {
-      for (let i = 0; i < pairs.length; i++) {
-        const pair = pairs[i];
-        const keyVal = getKeyValue(pair);
-        const value = getValue(pair) ?? pair;
-        const valueRange = getRange(value);
-        if (valueRange && offset >= valueRange[0] && offset <= valueRange[1]) {
-          const sub = findYamlJsonPathAtOffset(value, offset) ?? [];
-          return [typeof keyVal === 'string' ? keyVal : i, ...sub];
-        }
-      }
-    }
-  }
-  const r = getRange(node);
-  if (r && offset >= r[0] && offset <= r[1]) {
-    return [];
-  }
-  return undefined;
-}
-
-/**
- * Returns the YAML node located by decoded pointer segments.
- * For maps: matches by key name. For sequences: indexes by numeric position.
- */
-function yamlNodeFromSegments(
-  root: unknown,
-  segments: string[],
-): unknown | undefined {
-  let cur: unknown = root;
-  for (const segment of segments) {
-    if (!cur) {
-      return undefined;
-    }
-    if (isMap(cur)) {
-      // Find the pair whose key matches the segment
-      const pairs = getItems(cur) ?? [];
-      let matched: unknown | undefined;
-      for (const pair of pairs) {
-        const key = getKeyValue(pair);
-        if (String(key ?? '') === segment) {
-          matched = getValue(pair) ?? pair;
-          break;
-        }
-      }
-      if (matched === undefined) {
-        return undefined;
-      }
-      cur = matched;
-    } else if (isSeq(cur)) {
-      const idx = Number.parseInt(segment, 10);
-      if (!Number.isInteger(idx) || idx < 0) {
-        return undefined;
-      }
-      const item = getItems(cur)?.[idx];
-      cur = (item && (getValue(item) ?? item)) as unknown;
-    } else {
-      return undefined;
-    }
-  }
-  return cur;
-}
