@@ -2,11 +2,7 @@
 	"$schema": "https://biomejs.dev/schemas/2.4.4/schema.json",
 	"vcs": { "enabled": false, "clientKind": "git", "useIgnoreFile": false },
 	"files": {
-		"includes": [
-			"**/src/**/*.ts",
-			"**/webview/**/*.ts",
-			"**/webview/**/*.tsx"
-		],
+		"includes": ["**/src/**/*.ts", "**/webview/**/*.ts", "**/webview/**/*.tsx"],
 		"ignoreUnknown": false
 	},
 	"formatter": {
