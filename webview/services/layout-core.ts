@@ -2,10 +2,10 @@
  * Pure layout engine for transforming a TreeMap into React Flow nodes and edges.
  *
  * This module contains NO DOM dependencies (no localStorage, no window, no React).
- * It can safely run in both the main thread and a Web Worker.
+ * layoutElementsCore() is executed exclusively inside the Web Worker.
  *
  * The main-thread {@link layoutService} wraps this core with localStorage-based
- * edge settings.  The Web Worker imports this core directly.
+ * edge settings. The Web Worker imports this core directly.
  */
 
 import { isHorizontal, isReversed } from '@webview/helpers/direction';
