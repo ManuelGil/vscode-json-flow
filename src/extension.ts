@@ -29,7 +29,13 @@ import {
   JsonController,
   TransformController,
 } from './app/controllers';
-import { getSelectionMapper, logger, LogLevel } from './app/helpers';
+import {
+  FileType,
+  getSelectionMapper,
+  isFileTypeSupported,
+  LogLevel,
+  logger,
+} from './app/helpers';
 import { FeedbackProvider, FilesProvider, JSONProvider } from './app/providers';
 
 /**
@@ -907,6 +913,16 @@ export async function activate(context: vscode.ExtensionContext) {
   // -----------------------------------------------------------------
   // (Live Sync commands are registered above)
 
+  function isLiveSyncSupported(fileType: FileType): boolean {
+    return (
+      fileType === 'json' ||
+      fileType === 'jsonc' ||
+      fileType === 'json5' ||
+      fileType === 'yaml' ||
+      fileType === 'yml'
+    );
+  }
+
   // Throttling + de-duplication state for selection messages
   let selectionThrottleMs = config.liveSyncThrottleMs;
   let lastSentNodeId: string | undefined;
@@ -970,8 +986,27 @@ export async function activate(context: vscode.ExtensionContext) {
         return;
       }
 
+      const { languageId, fileName } = doc;
+
+      let fileType: string = languageId;
+      if (!isFileTypeSupported(fileType)) {
+        const baseName = fileName.split(/[\\/]/).pop() ?? fileName;
+        if (/^\.env(\..*)?$/i.test(baseName)) {
+          fileType = 'env';
+        } else {
+          const fileExtension = fileName.split('.').pop() ?? '';
+          fileType = isFileTypeSupported(fileExtension)
+            ? fileExtension
+            : 'json';
+        }
+      }
+
+      if (!isLiveSyncSupported(fileType as FileType)) {
+        return;
+      }
+
       // Use multi-format selection mapper
-      const mapper = getSelectionMapper(doc.languageId, doc.fileName);
+      const mapper = getSelectionMapper(languageId, fileName);
       if (!mapper) {
         // Pause when no mapper available for this language/file
         JSONProvider.setLiveSyncPaused(
