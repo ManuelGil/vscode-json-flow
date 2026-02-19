@@ -1,6 +1,5 @@
 {
-  "./**/*.ts": [
-    "biome format --write",
-    "biome lint --write"
+  "*.{ts,tsx}": [
+    "biome check --write --unsafe"
   ]
 }
