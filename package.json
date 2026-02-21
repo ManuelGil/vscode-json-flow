@@ -541,7 +541,9 @@
 	},
 	"pnpm": {
 		"overrides": {
-			"axios": "^1.13.5"
+			"ajv": "^8.18.0",
+			"axios": "^1.13.5",
+			"minimatch": "^10.2.2"
 		},
 		"onlyBuiltDependencies": [
 			"@compodoc/compodoc",
