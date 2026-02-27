@@ -3,7 +3,7 @@ import ignore from 'ignore';
 import { relative } from 'path';
 import { env, l10n, Range, ThemeIcon, Uri, window, workspace } from 'vscode';
 
-import { EXTENSION_ID, ExtensionConfig } from '../configs';
+import { CommandIds, EXTENSION_ID, ExtensionConfig } from '../configs';
 import {
   FileType,
   isFileTypeSupported,
@@ -95,7 +95,7 @@ export class FilesController {
           filename ?? 'Untitled',
           new ThemeIcon('file'),
           {
-            command: `${EXTENSION_ID}.json.showPreview`,
+            command: `${EXTENSION_ID}.${CommandIds.JsonShowPreview}`,
             title: 'Open Preview',
             arguments: [file],
           },
@@ -120,7 +120,7 @@ export class FilesController {
    * Opens the file associated with the given node in the editor.
    * @param node NodeModel representing the file to open.
    */
-  openFile(node: { resourceUri: Uri }) {
+  openFile(node: NodeModel) {
     if (node.resourceUri) {
       workspace.openTextDocument(node.resourceUri).then((filename) => {
         window.showTextDocument(filename);

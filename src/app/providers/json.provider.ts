@@ -14,7 +14,12 @@ import {
   window,
 } from 'vscode';
 
-import { EXTENSION_DISPLAY_NAME, EXTENSION_ID } from '../configs';
+import {
+  ContextKeys,
+  EXTENSION_DISPLAY_NAME,
+  EXTENSION_ID,
+  ViewIds,
+} from '../configs';
 import { getNonce, getSelectionMapper, logger } from '../helpers';
 
 /**
@@ -39,7 +44,7 @@ export class JSONProvider {
   /**
    * Unique identifier for the JSON Flow webview type.
    */
-  static readonly viewType: string = `${EXTENSION_ID}.jsonView`;
+  static readonly viewType: string = `${EXTENSION_ID}.${ViewIds.JsonView}`;
 
   /**
    * Tracks whether the panel is currently shown in split view (i.e., created/revealed with ViewColumn.Beside).
@@ -218,7 +223,7 @@ export class JSONProvider {
         JSONProvider.isSplitView = !!isSplit;
         commands.executeCommand(
           'setContext',
-          'jsonFlow.splitView',
+          `${EXTENSION_ID}.${ContextKeys.IsSplitView}`,
           JSONProvider.isSplitView,
         );
         // Notify listeners
@@ -262,7 +267,7 @@ export class JSONProvider {
       // Reflect split state in context for menus/UX
       commands.executeCommand(
         'setContext',
-        'jsonFlow.splitView',
+        `${EXTENSION_ID}.${ContextKeys.IsSplitView}`,
         JSONProvider.isSplitView,
       );
       // Notify listeners
@@ -280,8 +285,8 @@ export class JSONProvider {
           origin: 'extension',
           nonce: getNonce(),
         });
-      } catch {
-        // ignore
+      } catch (error: unknown) {
+        logger.error('Failed to post live sync state to webview', error);
       }
 
       return JSONProvider.currentProvider._panel;
@@ -298,7 +303,7 @@ export class JSONProvider {
     JSONProvider.isSplitView = column === ViewColumn.Beside;
     commands.executeCommand(
       'setContext',
-      'jsonFlow.splitView',
+      `${EXTENSION_ID}.${ContextKeys.IsSplitView}`,
       JSONProvider.isSplitView,
     );
 
@@ -317,8 +322,8 @@ export class JSONProvider {
         origin: 'extension',
         nonce: getNonce(),
       });
-    } catch {
-      // ignore
+    } catch (error: unknown) {
+      logger.error('Failed to post initial live sync state to webview', error);
     }
 
     return panel;
@@ -345,7 +350,11 @@ export class JSONProvider {
     JSONProvider.currentProvider = new JSONProvider(panel, extensionUri);
     // Revived panels do not imply split view; reset context to false
     JSONProvider.isSplitView = false;
-    commands.executeCommand('setContext', 'jsonFlow.splitView', false);
+    commands.executeCommand(
+      'setContext',
+      `${EXTENSION_ID}.${ContextKeys.IsSplitView}`,
+      false,
+    );
     // Notify listeners
     JSONProvider._onStateChanged.fire({ isSplitView: false });
     // Ensure webview knows current Live Sync state after revive
@@ -359,8 +368,8 @@ export class JSONProvider {
         origin: 'extension',
         nonce: getNonce(),
       });
-    } catch {
-      // ignore
+    } catch (error: unknown) {
+      logger.error('Failed to post initial live sync state to webview', error);
     }
   }
 
@@ -388,7 +397,11 @@ export class JSONProvider {
     JSONProvider.isSplitView = false;
     JSONProvider.previewedPath = undefined;
     // Reflect state in context for menus/UX
-    commands.executeCommand('setContext', 'jsonFlow.splitView', false);
+    commands.executeCommand(
+      'setContext',
+      `${EXTENSION_ID}.${ContextKeys.IsSplitView}`,
+      false,
+    );
     // Notify listeners
     JSONProvider._onStateChanged.fire({ isSplitView: false });
 
@@ -396,7 +409,7 @@ export class JSONProvider {
     if (this._panel) {
       try {
         this._panel.dispose();
-      } catch (error) {
+      } catch (error: unknown) {
         // Log disposal error for debugging but continue cleanup
         logger.error('Failed to dispose webview panel', error, {
           panelTitle: this._panel?.title,
@@ -411,7 +424,7 @@ export class JSONProvider {
       if (disposable && typeof disposable.dispose === 'function') {
         try {
           disposable.dispose();
-        } catch (error) {
+        } catch (error: unknown) {
           // Log disposal error but continue with remaining disposables
           logger.error('Failed to dispose resource', error, {
             remainingDisposables: this._disposables.length,
@@ -430,7 +443,11 @@ export class JSONProvider {
   /** Enable/disable Live Sync and update context + webview */
   static setLiveSyncEnabled(enabled: boolean) {
     JSONProvider.liveSyncEnabled = enabled;
-    commands.executeCommand('setContext', 'jsonFlow.liveSyncEnabled', enabled);
+    commands.executeCommand(
+      'setContext',
+      `${EXTENSION_ID}.${ContextKeys.LiveSyncEnabled}`,
+      enabled,
+    );
     try {
       JSONProvider.postMessageToWebview({
         command: 'liveSyncState',
@@ -441,8 +458,8 @@ export class JSONProvider {
         origin: 'extension',
         nonce: getNonce(),
       });
-    } catch {
-      // ignore
+    } catch (error: unknown) {
+      logger.error('Failed to post live sync state to webview', error);
     }
     // Notify listeners
     JSONProvider._onStateChanged.fire({ liveSyncEnabled: enabled });
@@ -462,8 +479,8 @@ export class JSONProvider {
         origin: 'extension',
         nonce: getNonce(),
       });
-    } catch {
-      // ignore
+    } catch (error: unknown) {
+      logger.error('Failed to post live sync state to webview', error);
     }
   }
 
@@ -518,8 +535,8 @@ export class JSONProvider {
   static shutdown(): void {
     try {
       JSONProvider._onStateChanged.dispose();
-    } catch {
-      // ignore
+    } catch (error: unknown) {
+      logger.error('Failed to dispose state change emitter', error);
     }
     // Reinitialize to ensure a valid emitter on next activation
     JSONProvider._onStateChanged = new EventEmitter<{

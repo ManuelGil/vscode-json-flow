@@ -8,7 +8,7 @@ import {
   TreeItem,
 } from 'vscode';
 
-import { EXTENSION_ID } from '../configs';
+import { CommandIds, EXTENSION_ID } from '../configs';
 import { FeedbackController } from '../controllers';
 import { NodeModel } from '../models';
 
@@ -123,7 +123,7 @@ export class FeedbackProvider implements TreeDataProvider<TreeItem> {
         label: l10n.t('About JSON Flow'),
         icon: new ThemeIcon('globe'),
         command: {
-          command: `${EXTENSION_ID}.feedback.aboutUs`,
+          command: `${EXTENSION_ID}.${CommandIds.FeedbackAboutUs}`,
           title: l10n.t('Open Extension Website'),
         },
       },
@@ -131,7 +131,7 @@ export class FeedbackProvider implements TreeDataProvider<TreeItem> {
         label: l10n.t('Report an Issue'),
         icon: new ThemeIcon('bug'),
         command: {
-          command: `${EXTENSION_ID}.feedback.reportIssues`,
+          command: `${EXTENSION_ID}.${CommandIds.FeedbackReportIssues}`,
           title: l10n.t('Report an Issue'),
         },
       },
@@ -139,7 +139,7 @@ export class FeedbackProvider implements TreeDataProvider<TreeItem> {
         label: l10n.t('Rate This Extension'),
         icon: new ThemeIcon('star-full'),
         command: {
-          command: `${EXTENSION_ID}.feedback.rateUs`,
+          command: `${EXTENSION_ID}.${CommandIds.FeedbackRateUs}`,
           title: l10n.t('Rate This Extension'),
         },
       },

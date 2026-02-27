@@ -133,7 +133,7 @@ function processJsonData(
 
     const processingTime = Math.round(performance.now() - startTime);
     return { nodes, edges, processingTime };
-  } catch (error) {
+  } catch (error: unknown) {
     if (
       processingCanceled &&
       error instanceof Error &&
@@ -185,7 +185,7 @@ self.onmessage = (event: MessageEvent<WorkerRequestMessage>) => {
               nodesCount: nodes.length,
             },
           });
-        } catch (error) {
+        } catch (error: unknown) {
           if (
             error instanceof Error &&
             error.message === 'Processing canceled'
@@ -228,7 +228,7 @@ self.onmessage = (event: MessageEvent<WorkerRequestMessage>) => {
         console.error(`[JsonLayoutWorker] Unknown message type: ${type}`);
         throw new Error(`Unknown message type: ${type}`);
     }
-  } catch (error) {
+  } catch (error: unknown) {
     // Send error message back to main thread
     console.error(`[JsonLayoutWorker] Error in message handler:`, error);
     self.postMessage({

@@ -1,4 +1,5 @@
 .vscode-test/
+.vscode-test.mjs
 *.vsix
 compodoc/
 dist
@@ -29,3 +30,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# TypeScript build cache
+*.tsbuildinfo

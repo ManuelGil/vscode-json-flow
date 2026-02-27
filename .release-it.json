@@ -4,14 +4,9 @@
 		"commitMessage": "chore: :bookmark: release ${version}"
 	},
 	"github": {
-		"release": true
+		"release": false
 	},
 	"npm": {
 		"publish": false
-	},
-	"plugins": {
-		"@release-it/keep-a-changelog": {
-			"filename": "CHANGELOG.md"
-		}
 	}
 }

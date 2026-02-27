@@ -28,8 +28,6 @@ jobs:
       # Install pnpm explicitly for deterministic CI behavior
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 10
 
       # Align Node.js version with local development (.nvmrc)
       - name: Setup Node.js

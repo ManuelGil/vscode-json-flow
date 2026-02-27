@@ -289,8 +289,8 @@ export class JsonController {
     // Track the previewed path so selection sync can filter to the active document
     try {
       JSONProvider.setPreviewedPath(path);
-    } catch {
-      // ignore
+    } catch (error: unknown) {
+      logger.error('Failed to set previewed path', error);
     }
 
     setTimeout(() => {

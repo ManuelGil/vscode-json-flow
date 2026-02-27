@@ -158,47 +158,216 @@ Acknowledged structural debt:
 - Webview i18n scaffold incomplete
 - dockercompose is not treated as a first-class format and is outside the 2.5.x Live Sync whitelist
 
-## 6. Forward Progression
+## 6. Forward Progression (Minimalist, Non-Structural Track)
 
-Forward progression describes hypothetical controlled tracks beyond 2.5.0.
+Forward progression beyond 2.5.0 remains strictly non-structural.
 
-Forward tracks are hypothetical and require explicit version reclassification before execution.
+These versions are UI-layer refinements only and do not introduce new system capabilities.
 
-No forward track is automatically approved.
-Each track requires explicit re-validation of all frozen invariants before execution.
+Structural feature expansion requires major version reclassification.
 
-Forward tracks do not imply commitment, timeline, or guarantee of implementation.
+All versions in this track:
 
-### 2.6.x – Conditional Track: Gated Single-File Editing
+- Must not modify Worker.
+- Must not modify layout-core.
+- Must not modify identity logic.
+- Must not modify `LARGE_GRAPH_THRESHOLD`.
+- Must not modify message protocol.
+- Must not expand Live Sync whitelist.
+- Must not introduce new identity domains.
+- Must not introduce persistent Worker state.
+- Must not introduce new persistent UI panels.
+- Must not reduce usable canvas area.
+- Must not increase cognitive load.
 
-This track is conditional and not committed.
+Releases are intentionally small, incremental, and reversible.
 
-If pursued, it must comply with all 2.5.0 invariants.
+Preference order:
 
-Permitted scope:
+1. Remove friction.
+2. Reduce visual noise.
+3. Improve stability.
+4. Refine interaction.
+5. Avoid expanding surface area.
 
-- Graph-driven editing for the currently previewed file only.
-- Editing routed exclusively through extension host.
-- Use `WorkspaceEdit` with document version validation.
-- Disabled by default via explicit user setting.
-- Worker remains uninvolved in edit execution.
-- Editing must not alter existing node identity determinism.
-- Editing must not modify pointer construction rules.
-- Editing must not introduce new identity domains.
+Forward tracks are incremental refinements, not feature expansions.
 
-Strict constraints:
+### 2.6.0 – Invisible UX Stabilization
 
-- No cross-file editing.
-- No identity modification.
-- No Worker protocol changes.
-- No Worker message shape changes.
-- No layout pipeline modification.
-- No introduction of layout outside Worker.
-- No persistent state in Worker.
-- No schema changes to existing message types.
-- Any new editing message type must be strictly additive and isolated.
+Scope limited to subtle refinements.
 
-If any invariant conflict is detected, this track must be suspended.
+Permitted:
+
+- Persist layout direction across sessions.
+- Maintain a simple progress bar (no additional metrics, percentages, or timing displays).
+- Minor scroll and focus refinements.
+- CSS-level spacing and alignment corrections.
+- Removal of small visual inconsistencies.
+
+Explicitly prohibited:
+
+- New panels.
+- New badges.
+- New overlays.
+- Visible performance metrics.
+- Structural state changes.
+
+Objective:
+
+> Improve perceived stability without adding surface area.
+
+### 2.7.0 – Canvas Clarity Refinement
+
+Scope limited to friction reduction inside the existing canvas.
+
+Permitted:
+
+- Improve node selection clarity (visual refinement only).
+- Subtle refinement of collapse/expand affordances.
+- Improve hitbox precision for interaction elements.
+- Remove minor UI distractions if identified.
+
+Explicitly prohibited:
+
+- New interaction modes.
+- Additional controls.
+- Changes to collapse logic.
+- Layout recalculation changes.
+- Persistent informational components.
+
+Objective:
+
+> Make the canvas feel cleaner without adding elements.
+
+### 2.8.0 – Search Behavior Polishing
+
+Scope limited to refinement of existing search behavior.
+
+Permitted:
+
+- Improve match visibility within existing rendering.
+- Minor keyboard navigation refinement.
+- Improve consistency when search result is collapsed.
+- Smooth viewport centering adjustments.
+
+Explicitly prohibited:
+
+- Worker involvement in search.
+- Search-based structural filtering.
+- Graph mutation.
+- Persistent search overlays.
+- New search configuration surface.
+
+Objective:
+
+> Refine search experience without expanding functionality.
+
+### 2.9.0 – Interaction Stability Pass
+
+Scope focused on stability during rapid interactions.
+
+Permitted:
+
+- Cancel outdated async UI updates.
+- Prevent race conditions during rapid file switching.
+- Defensive guards for transient states.
+- Improve selection consistency under fast edits.
+
+Explicitly prohibited:
+
+- Worker protocol changes.
+- New message types.
+- Identity changes.
+- Layout strategy changes.
+- Threshold modifications.
+
+Objective:
+
+> Reduce edge-case friction under heavy interaction.
+
+### 2.10.0 – Render Efficiency Micro-Optimizations
+
+Scope limited to UI-layer efficiency.
+
+Permitted:
+
+- Reduce unnecessary re-renders.
+- Improve memoization of derived UI state.
+- Avoid redundant object recreation in render path.
+- Minor boundary optimizations without altering layout logic.
+
+Explicitly prohibited:
+
+- Changing layout algorithm.
+- Modifying threshold.
+- Introducing caching inside Worker.
+- Altering deterministic output.
+- Modifying message contract.
+
+Objective:
+
+> Improve responsiveness without changing behavior.
+
+### 2.11.0 – Collapse & Selection Consistency
+
+Scope limited to visual and interaction consistency.
+
+Permitted:
+
+- Clarify selection state when parent is collapsed.
+- Improve focus restoration after expand.
+- Minor visual refinements within existing UI space.
+
+Explicitly prohibited:
+
+- Structural tree mutation changes.
+- Layout pipeline modification.
+- Identity mapping changes.
+- Live Sync core modification.
+- Additional state persistence.
+
+Objective:
+
+> Make collapse behavior predictable and friction-free.
+
+### 2.12.0 – UI Simplification & Noise Reduction
+
+Scope focused on reducing cognitive load.
+
+Permitted:
+
+- Remove redundant UI elements if identified.
+- Simplify existing control grouping.
+- Refine spacing for improved visual hierarchy.
+- Normalize small inconsistencies across themes.
+
+Explicitly prohibited:
+
+- Adding new persistent components.
+- Expanding configuration surface.
+- Introducing new user settings.
+- Increasing canvas obstruction.
+- Expanding feature scope.
+
+Objective:
+
+> Reduce visual complexity while preserving capability.
+
+### Determinism and Contract Preservation
+
+No version in this range changes:
+
+- Observable graph structure.
+- Node identity values.
+- Layout positioning output.
+- Worker authority.
+- Adaptive threshold behavior.
+- Live Sync whitelist.
+- Message schema.
+
+Deterministic behavior must remain identical across identical inputs.
+
+Executable code defines truth.
 
 ## 7. i18n Isolation (Formalized in 2.5.0)
 

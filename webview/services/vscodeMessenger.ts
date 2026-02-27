@@ -37,7 +37,7 @@ function validateAndSendMessage(message: unknown): boolean {
     const vscode = getVscodeApi();
     vscode.postMessage(validMessage);
     return true;
-  } catch (error) {
+  } catch (error: unknown) {
     throwError('Invalid message format', error);
     return false;
   }

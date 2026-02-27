@@ -76,7 +76,7 @@ export const isFileTypeSupported = (value: unknown): value is FileType => {
  *
  * @example
  * const obj = parseJsonContent('{ "foo": 1 }', 'json');
- * if (obj) { console.log(obj.foo); }
+ * if (obj) { window.showInformationMessage(`Value: ${obj.foo}`); }
  */
 export const parseJsonContent = (
   content: string,
