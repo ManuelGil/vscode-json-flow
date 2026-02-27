@@ -1,3 +1,4 @@
+import { GRAPH_ROOT_ID } from '@src/shared/graph-identity';
 import {
   Button,
   DropdownMenu,
@@ -7,7 +8,8 @@ import {
   DropdownMenuTrigger,
   Input,
 } from '@webview/components';
-import { useNodes, useReactFlow, useViewport } from '@xyflow/react';
+import { focusNode } from '@webview/utils/viewport';
+import { useReactFlow, useViewport } from '@xyflow/react';
 import { ChevronDown, Focus, Maximize, ZoomIn, ZoomOut } from 'lucide-react';
 import { useCallback } from 'react';
 
@@ -17,9 +19,9 @@ import { useCallback } from 'react';
  * All handlers are memoized for performance.
  */
 export function ZoomControl() {
-  const { zoomIn, zoomOut, fitView, setCenter } = useReactFlow();
+  const reactFlow = useReactFlow();
+  const { zoomIn, zoomOut, fitView } = reactFlow;
   const { zoom } = useViewport();
-  const nodes = useNodes();
 
   /**
    * Sets the zoom level of the canvas.
@@ -27,9 +29,9 @@ export function ZoomControl() {
    */
   const setZoomLevel = useCallback(
     (level: number) => {
-      setCenter(0, 0, { zoom: level / 100, duration: 800 });
+      reactFlow.zoomTo(level / 100, { duration: 600 });
     },
-    [setCenter],
+    [reactFlow],
   );
 
   /**
@@ -37,15 +39,20 @@ export function ZoomControl() {
    * Memoized for performance.
    */
   const focusFirstNode = useCallback(() => {
-    if (nodes.length > 0) {
-      const node = nodes[0];
-      const width = node.measured?.width ?? 0;
-      const height = node.measured?.height ?? 0;
-      const x = node.position.x + width / 2;
-      const y = node.position.y + height / 2;
-      setCenter(x, y, { zoom: 1.5, duration: 800 });
+    const allNodes = reactFlow.getNodes();
+    if (!allNodes.length) {
+      return;
     }
-  }, [nodes, setCenter]);
+
+    const selectedNode = allNodes.find((n) => n.selected);
+    const rootNode = allNodes.find((n) => n.id === GRAPH_ROOT_ID);
+
+    const nodeToFocus = selectedNode ?? rootNode;
+
+    if (nodeToFocus) {
+      focusNode(reactFlow, nodeToFocus);
+    }
+  }, [reactFlow]);
 
   return (
     <DropdownMenu>

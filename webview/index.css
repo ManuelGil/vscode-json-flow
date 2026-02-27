@@ -85,6 +85,10 @@
   }
 }
 
+.react-flow__node {
+  will-change: transform;
+}
+
 .react-flow__edge:hover path,
 .react-flow__edge:focus path {
   filter: brightness(1.5);

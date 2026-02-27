@@ -14,6 +14,7 @@ import { useTreeDataValidator } from '@webview/hooks/useTreeDataValidator';
 import { useVscodeMessageHandler } from '@webview/hooks/useVscodeMessageHandler';
 import { vscodeService } from '@webview/services/vscodeService';
 import type { Direction, TreeMap } from '@webview/types';
+import { fitGraph, focusNode } from '@webview/utils/viewport';
 import type {
   Connection,
   Edge,
@@ -49,9 +50,6 @@ import { useSelectedNode } from './useSelectedNode';
  * Snapshot of edge appearance settings for re-application after worker sync.
  */
 const GLOBAL_EDGE_COLOR: string = 'hsl(var(--muted-foreground))';
-
-/** Stable empty array to avoid new references when edges are deferred. */
-const EMPTY_EDGES: Edge[] = [];
 
 const BASE_GAP = 50;
 
@@ -241,7 +239,7 @@ export const FlowCanvas = memo(function FlowCanvas() {
       elementsSelectable: isDraggable,
       proOptions: { hideAttribution: true },
       minZoom: 0.1,
-      maxZoom: 1.5,
+      maxZoom: 3,
     }),
     [nodeTypes, isDraggable],
   );
@@ -329,10 +327,7 @@ export const FlowCanvas = memo(function FlowCanvas() {
     ) {
       requestAnimationFrame(() => {
         try {
-          reactFlowInstanceRef.current?.fitView({
-            padding: 0.2,
-            includeHiddenNodes: true,
-          });
+          fitGraph(reactFlowInstanceRef.current as ReactFlowInstance);
         } catch {
           // Swallowed: fitView may fail when nodes are not yet rendered
         }
@@ -375,7 +370,6 @@ export const FlowCanvas = memo(function FlowCanvas() {
 
     // At least one input changed — reset graph readiness immediately
     setGraphReady(false);
-    didFitViewRef.current = false;
 
     lastDataRef.current = jsonData;
     lastDirectionRef.current = flowData.orientation;
@@ -478,12 +472,7 @@ export const FlowCanvas = memo(function FlowCanvas() {
       selectNode(target);
       // Center viewport on the selected node so it is visible
       if (target && reactFlowInstanceRef.current) {
-        reactFlowInstanceRef.current.fitView({
-          nodes: [{ id: target.id }],
-          padding: 0.3,
-          duration: 500,
-          includeHiddenNodes: false,
-        });
+        focusNode(reactFlowInstanceRef.current, target);
       }
     },
     [selectNode],
@@ -497,11 +486,6 @@ export const FlowCanvas = memo(function FlowCanvas() {
   });
   const handleReactFlowInit = useCallback((instance: ReactFlowInstance) => {
     reactFlowInstanceRef.current = instance;
-    try {
-      instance.fitView({ padding: 0.2, includeHiddenNodes: true });
-    } catch {
-      // Swallowed: fitView may fail during initial render
-    }
     // Ensure the graph is ready after initial render
     requestAnimationFrame(() => {
       const count = document.querySelectorAll('.react-flow__node').length;
@@ -517,11 +501,11 @@ export const FlowCanvas = memo(function FlowCanvas() {
     };
   }, []);
 
-  // Render-only virtualization: defer edges until the graph is ready
-  const renderedEdges = graphReady ? renderEdges : EMPTY_EDGES;
+  // Render edges immediately to avoid visual flicker
+  const renderedEdges = renderEdges;
   const reactFlowKey = useMemo(() => {
-    return `${currentDirection}:${flowData.data ? 'loaded' : 'empty'}`;
-  }, [currentDirection, flowData.data]);
+    return currentDirection;
+  }, [currentDirection]);
 
   if (!workerNodes && isValidTree) {
     return <Loading />;

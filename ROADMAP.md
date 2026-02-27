@@ -1,16 +1,21 @@
-# JSON Flow - Formal Technical Roadmap and Execution Contract
+# JSON Flow — Formal Technical Roadmap and Execution Contract
 
 Version: 2.5.0
 Scope: Single-file graph mode unless explicitly stated otherwise.
 
-This document defines:
+This document expresses strategic intent and architectural constraints.
 
-- Verified executable state.
-- Structural invariants.
-- Versioned progression.
-- Permitted and prohibited changes.
+Executable code defines runtime truth.
+In case of contradiction, the codebase prevails.
 
-If code contradicts this document, executable code defines reality until this document is updated.
+This document contains three distinct categories of information:
+
+1. Verified executable state (validated against the repository).
+2. Structural invariants and governance constraints.
+3. Versioned forward progression (design intent).
+
+Only verified executable state reflects current runtime reality.
+Forward progression sections represent planned intent and are not executable truth until implemented and revalidated.
 
 No inference beyond explicit statements is allowed.
 
@@ -129,245 +134,340 @@ Cross-file synchronization is prohibited.
 - Reducer is primary UI data authority for flow state.
 - Auxiliary ephemeral runtime state (refs, worker handles) exists but is not layout-authoritative.
 
-## 4. Structural Invariants
+## 4. Structural Baseline (2.5.0)
 
-The following must always hold:
+This section describes the structural characteristics of version 2.5.0.
 
-1. Worker is sole layout authority.
-2. Node identity logic must not diverge.
-3. Live Sync must remain single-file.
-4. Worker must remain stateless.
-5. Adaptive threshold must not change without benchmark evidence and explicit version escalation.
-6. No cross-file graph behavior may be introduced implicitly.
-7. entitree-flex integration must not be replaced or duplicated.
-8. requestId must remain mandatory in worker protocol.
-9. No identity mutation during editing.
-10. No shadow layout state.
-11. No persistent worker state.
-12. i18n domains must remain isolated.
+These characteristics define the current architectural baseline.
+They reflect implemented behavior at the time of release.
 
-## 5. Controlled Debt (Non-Blocking)
+If future versions modify any of these characteristics,
+a new architectural baseline should be declared.
 
-Acknowledged structural debt:
+### 4.1 Layout Authority
 
-- descendantsCache worst-case O(N²)
-- No automated invariant tests
-- No automated performance benchmarks
-- No schema validation layer on messaging protocol
-- No runtime invariant enforcement
-- Webview i18n scaffold incomplete
-- dockercompose is not treated as a first-class format and is outside the 2.5.x Live Sync whitelist
+- Layout computation occurs exclusively inside the Web Worker.
+- The main thread does not execute layout logic.
+- `layoutElementsCore()` is invoked from the Worker context.
+- The adaptive threshold mechanism operates inside the Worker.
+- No alternative layout engine is present.
 
-## 6. Forward Progression (Minimalist, Non-Structural Track)
+This reflects the 2.5.0 runtime structure.
 
-Forward progression beyond 2.5.0 remains strictly non-structural.
+### 4.2 Identity Model
 
-These versions are UI-layer refinements only and do not introduce new system capabilities.
+The system contains two identity domains:
 
-Structural feature expansion requires major version reclassification.
+1. Structural root identifier (`GRAPH_ROOT_ID`)
+2. Data node identifiers (RFC 6901 JSON Pointers)
 
-All versions in this track:
+Characteristics:
 
-- Must not modify Worker.
-- Must not modify layout-core.
-- Must not modify identity logic.
-- Must not modify `LARGE_GRAPH_THRESHOLD`.
-- Must not modify message protocol.
-- Must not expand Live Sync whitelist.
-- Must not introduce new identity domains.
-- Must not introduce persistent Worker state.
-- Must not introduce new persistent UI panels.
-- Must not reduce usable canvas area.
-- Must not increase cognitive load.
+- Data node identifiers are generated through `buildPointer()`.
+- Data node identifiers begin with `/`.
+- `GRAPH_ROOT_ID` does not begin with `/`.
+- Identity generation is deterministic based on document content.
 
-Releases are intentionally small, incremental, and reversible.
+This separation defines the identity structure of 2.5.0.
 
-Preference order:
+### 4.3 Live Sync Scope
 
-1. Remove friction.
-2. Reduce visual noise.
-3. Improve stability.
-4. Refine interaction.
-5. Avoid expanding surface area.
+Live Sync behavior in 2.5.0 is limited to:
 
-Forward tracks are incremental refinements, not feature expansions.
+- Single-file context
+- Explicit activation
+- Whitelisted formats:
+  - json
+  - jsonc
+  - json5
+  - yaml
+  - yml
 
-### 2.6.0 – Invisible UX Stabilization
+Live Sync behavior is implemented through Extension Host mediation.
+The Worker is not involved in selection mapping.
 
-Scope limited to subtle refinements.
+### 4.4 Adaptive Threshold
 
-Permitted:
+- `LARGE_GRAPH_THRESHOLD = 2000`
+- At or below threshold: entitree-flex layout
+- Above threshold: linear breadth-first layout
+- Both paths produce identical node and edge structures
 
-- Persist layout direction across sessions.
-- Maintain a simple progress bar (no additional metrics, percentages, or timing displays).
-- Minor scroll and focus refinements.
-- CSS-level spacing and alignment corrections.
-- Removal of small visual inconsistencies.
+The threshold is encapsulated within the Worker.
 
-Explicitly prohibited:
+### 4.5 Worker State Model
 
-- New panels.
-- New badges.
-- New overlays.
-- Visible performance metrics.
-- Structural state changes.
+- The Worker processes requests independently.
+- No persistent cache is maintained between requests.
+- `requestId` is part of the messaging protocol.
+- Cancellation is supported.
 
-Objective:
+This describes current operational behavior.
 
-> Improve perceived stability without adding surface area.
+### 4.6 Webview State Model
 
-### 2.7.0 – Canvas Clarity Refinement
+- Flow state is managed through a reducer.
+- Worker output is projected into render nodes and edges.
+- Transient UI state (selection, collapse, search) remains local to the Webview.
+- No layout computation occurs in the UI thread.
 
-Scope limited to friction reduction inside the existing canvas.
+### 4.7 Interpretation Rule
 
-Permitted:
+Section 4 documents implemented architectural structure in 2.5.0.
 
-- Improve node selection clarity (visual refinement only).
-- Subtle refinement of collapse/expand affordances.
-- Improve hitbox precision for interaction elements.
-- Remove minor UI distractions if identified.
+It is descriptive of runtime behavior,
+not prescriptive of all future possibilities.
 
-Explicitly prohibited:
+If architectural structure changes in a later version,
+this section should be updated alongside the new baseline.
 
-- New interaction modes.
-- Additional controls.
-- Changes to collapse logic.
-- Layout recalculation changes.
-- Persistent informational components.
+## 5. Observed Limitations and Non-Blocking Considerations (Non-Binding)
 
-Objective:
+This section documents known characteristics and areas that may warrant future attention.
 
-> Make the canvas feel cleaner without adding elements.
+It is descriptive, not prescriptive.
 
-### 2.8.0 – Search Behavior Polishing
+It does not imply defect, failure, or required remediation.
+It does not create implementation obligation.
+It does not define a deadline.
+It does not represent an approved work queue.
 
-Scope limited to refinement of existing search behavior.
+All items listed here are informational.
 
-Permitted:
+### 5.1 Performance Characteristics
 
-- Improve match visibility within existing rendering.
-- Minor keyboard navigation refinement.
-- Improve consistency when search result is collapsed.
-- Smooth viewport centering adjustments.
+Certain internal mechanisms may have performance characteristics that could become relevant at scale.
 
-Explicitly prohibited:
+Examples include:
 
-- Worker involvement in search.
-- Search-based structural filtering.
-- Graph mutation.
-- Persistent search overlays.
-- New search configuration surface.
+- Tree traversal operations that may exhibit non-linear behavior in extreme cases.
+- Rendering overhead under very large node counts.
+- React reconciliation costs during rapid state transitions.
 
-Objective:
+These characteristics are not classified as defects.
 
-> Refine search experience without expanding functionality.
+They are normal trade-offs within the current architectural model.
 
-### 2.9.0 – Interaction Stability Pass
+No performance change is required unless measurable degradation is demonstrated.
 
-Scope focused on stability during rapid interactions.
+### 5.2 Testing and Verification Scope
 
-Permitted:
+The project intentionally operates without unit tests as a strategic decision.
 
-- Cancel outdated async UI updates.
-- Prevent race conditions during rapid file switching.
-- Defensive guards for transient states.
-- Improve selection consistency under fast edits.
+There is:
 
-Explicitly prohibited:
+- No automated invariant verification layer.
+- No automated deterministic snapshot validation.
+- No formal benchmark harness.
 
-- Worker protocol changes.
-- New message types.
-- Identity changes.
-- Layout strategy changes.
-- Threshold modifications.
+This is an explicit trade-off, not an omission.
 
-Objective:
+Future reconsideration of verification mechanisms would require a separate architectural evaluation phase.
 
-> Reduce edge-case friction under heavy interaction.
+### 5.3 Messaging Contract Validation
 
-### 2.10.0 – Render Efficiency Micro-Optimizations
+The current message protocol between Extension Host, Webview, and Worker is stable and deterministic.
 
-Scope limited to UI-layer efficiency.
+However:
 
-Permitted:
+- There is no schema validation layer.
+- There is no runtime structural enforcement beyond TypeScript typing.
 
-- Reduce unnecessary re-renders.
-- Improve memoization of derived UI state.
-- Avoid redundant object recreation in render path.
-- Minor boundary optimizations without altering layout logic.
+This is acceptable under the current scope.
 
-Explicitly prohibited:
+No additional validation layer is required unless protocol complexity increases.
 
-- Changing layout algorithm.
-- Modifying threshold.
-- Introducing caching inside Worker.
-- Altering deterministic output.
-- Modifying message contract.
+### 5.4 Bundle Inspection and Artifact Transparency
 
-Objective:
+Manual verification confirms separation of Worker and main bundles.
 
-> Improve responsiveness without changing behavior.
+There is currently:
 
-### 2.11.0 – Collapse & Selection Consistency
+- No automated bundle size regression guard.
+- No automated duplicate dependency detection layer.
 
-Scope limited to visual and interaction consistency.
+These are operational observations, not architectural weaknesses.
 
-Permitted:
+### 5.5 Format Classification Boundaries
 
-- Clarify selection state when parent is collapsed.
-- Improve focus restoration after expand.
-- Minor visual refinements within existing UI space.
+Some formats rely on host classification (e.g., YAML-based file types).
 
-Explicitly prohibited:
+The system does not attempt semantic differentiation beyond declared scope.
 
-- Structural tree mutation changes.
-- Layout pipeline modification.
-- Identity mapping changes.
-- Live Sync core modification.
-- Additional state persistence.
+This is intentional.
 
-Objective:
+Future refinement of format classification would require explicit scope expansion.
 
-> Make collapse behavior predictable and friction-free.
+## 5.6 Interpretation Rule
 
-### 2.12.0 – UI Simplification & Noise Reduction
+Section 5 is informational only.
 
-Scope focused on reducing cognitive load.
+It does not:
 
-Permitted:
+- Mandate remediation.
+- Define backlog.
+- Imply hidden instability.
+- Create technical debt pressure.
 
-- Remove redundant UI elements if identified.
-- Simplify existing control grouping.
-- Refine spacing for improved visual hierarchy.
-- Normalize small inconsistencies across themes.
+All items remain optional for future evaluation.
 
-Explicitly prohibited:
+Executable code defines current system truth.
 
-- Adding new persistent components.
-- Expanding configuration surface.
-- Introducing new user settings.
-- Increasing canvas obstruction.
-- Expanding feature scope.
+## 6. Forward Design Tracks (Directional — Non-Contractual)
 
-Objective:
+This section outlines a possible evolutionary path beyond 2.5.0.
 
-> Reduce visual complexity while preserving capability.
+These tracks describe strategic direction.
+They are not commitments or delivery guarantees.
+They illustrate how the system could evolve while preserving its architectural baseline.
 
-### Determinism and Contract Preservation
+Future versions become real only when implemented in code.
 
-No version in this range changes:
+### 2.6.0 — Perceptual Stability
 
-- Observable graph structure.
-- Node identity values.
-- Layout positioning output.
-- Worker authority.
-- Adaptive threshold behavior.
-- Live Sync whitelist.
-- Message schema.
+Theme:
+Make the system feel calmer without changing what it does.
 
-Deterministic behavior must remain identical across identical inputs.
+Focus:
+Refine visual and interaction polish while leaving architecture untouched.
 
-Executable code defines truth.
+Identity:
+A refinement release centered on perceived smoothness and visual consistency.
+
+Typical scope examples:
+
+- Reduction of perceptual jitter.
+- Scroll centering refinement.
+- Minor alignment adjustments.
+- Subtle UI consistency improvements.
+
+This version strengthens confidence without expanding capability.
+
+### 2.7.0 — Interaction Resilience
+
+Theme:
+Strengthen behavior under stress.
+
+Focus:
+Improve predictability during rapid interaction and larger data scenarios.
+
+Identity:
+A reinforcement release focused on making interactions feel dependable.
+
+Typical scope examples:
+
+- Cancellation flow refinement.
+- Rapid file switching handling.
+- Collapse and selection consistency improvements.
+
+This version reinforces stability beyond visual polish.
+
+### 2.8.0 — Explorability Enhancement
+
+Theme:
+Improve how users navigate and discover structure.
+
+Focus:
+Enhance search and navigation ergonomics without altering computation.
+
+Identity:
+A usability-centered release aimed at making structure easier to explore.
+
+Typical scope examples:
+
+- Improved search highlighting behavior.
+- Clearer collapsed subtree indicators.
+- Keyboard navigation refinements.
+- Optional non-destructive filtering view.
+
+This version deepens usability while preserving determinism.
+
+### 2.9.0 — System Transparency
+
+Theme:
+Make internal behavior more visible.
+
+Focus:
+Improve development-time observability without affecting production behavior.
+
+Identity:
+A developer-experience release increasing inspectability and clarity.
+
+Typical scope examples:
+
+- Optional debug views.
+- Development overlays.
+- Layout execution visibility tools.
+
+This version clarifies how the system behaves internally.
+
+### 2.10.0 — Performance Insight
+
+Theme:
+Understand limits before changing them.
+
+Focus:
+Introduce measurement capability to inform future decisions.
+
+Identity:
+An introspection release enabling data-informed reasoning.
+
+Typical scope examples:
+
+- Lightweight internal metrics.
+- Large graph timing visibility (development scope).
+- Controlled benchmarking utilities.
+
+This version builds understanding without modifying behavior.
+
+### 2.11.0 — Controlled Capability Expansion
+
+Theme:
+Careful extension of interaction boundaries.
+
+Focus:
+Explore graph-assisted editing within single-file constraints.
+
+Identity:
+An exploratory capability release expanding interaction carefully and incrementally.
+
+Typical scope examples:
+
+- Extension-host mediated edit operations.
+- Graph-assisted structure manipulation experiments.
+- UI-assisted editing workflows.
+
+This version represents cautious expansion grounded in prior stabilization.
+
+### 2.12.0 — Structural Consolidation
+
+Theme:
+Refine through simplification.
+
+Focus:
+Reduce surface complexity and reinforce clarity.
+
+Identity:
+A consolidation release emphasizing coherence and maintainability.
+
+Typical scope examples:
+
+- Removal of unused UI elements.
+- Documentation consolidation.
+- Minor internal cleanup.
+- Redundant state reduction.
+
+This version stabilizes the gains of previous iterations.
+
+### Interpretation Reminder
+
+The progression above represents directional intent.
+It illustrates a possible maturation path:
+
+Perception → Stability → Usability → Transparency → Insight → Expansion → Consolidation.
+
+It does not constitute a binding release plan.
+Executable code defines runtime behavior.
 
 ## 7. i18n Isolation (Formalized in 2.5.0)
 

@@ -6,6 +6,7 @@ import {
   Input,
 } from '@webview/components';
 import { useDebouncedValue } from '@webview/hooks/useDebouncedValue';
+import { focusNode } from '@webview/utils/viewport';
 import type { InternalNode } from '@xyflow/react';
 import { useReactFlow } from '@xyflow/react';
 import { Search } from 'lucide-react';
@@ -17,9 +18,6 @@ import {
   useRef,
   useState,
 } from 'react';
-
-const NODE_WIDTH_FALLBACK = 160;
-const NODE_HEIGHT_FALLBACK = 36;
 
 /** Shallow comparison of two string arrays by length and element identity. */
 function areMatchesEqual(prev: string[], next: string[]): boolean {
@@ -175,13 +173,8 @@ export function GoToSearch({
         return;
       }
 
-      const width = node.measured?.width ?? NODE_WIDTH_FALLBACK;
-      const height = node.measured?.height ?? NODE_HEIGHT_FALLBACK;
-      const centerX = node.position.x + width / 2;
-      const centerY = node.position.y + height / 2;
-
       try {
-        reactFlow.setCenter(centerX, centerY, { zoom: 1.5, duration: 800 });
+        focusNode(reactFlow, node);
       } catch {
         // Swallowed: setCenter may fail if the viewport is not ready
       }

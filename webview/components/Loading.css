@@ -8,6 +8,9 @@
   margin: auto;
   border-radius: 9999px; /* pill shape */
   outline: 1px solid hsl(var(--border) / 0.25); /* subtle outline */
+  /* Smooth fade-in for loader appearance */
+  opacity: 1;
+  transition: opacity 150ms ease;
 }
 
 .loading-bar {
@@ -22,12 +25,16 @@
   transform-origin: 0% 50%;
   /* gentle glow to be more visually appealing */
   filter: drop-shadow(0 0 2px currentColor);
+  /* GPU hint for smoother animation */
+  will-change: transform;
 }
 
 /* Disable animation when the bar is determinate (width is controlled inline) */
 .loading-bar.determinate {
   animation: none;
-  transition: width 180ms ease;
+  /* Improved easing curve for smoother width transitions */
+  transition: width 150ms ease;
+  will-change: width;
 }
 
 /* Shimmer highlight for indeterminate mode */
@@ -37,7 +44,9 @@
   inset: 0;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
   mix-blend-mode: screen;
-  animation: shimmer 1.1s infinite ease-in-out;
+  /* Slightly faster shimmer for more fluid feel */
+  animation: shimmer 1s infinite ease-in-out;
+  will-change: transform;
 }
 
 .loading-bar.determinate::after {
@@ -71,5 +80,11 @@
   }
   .loading-bar::after {
     animation-duration: 2.5s;
+  }
+  /* Disable will-change for reduced motion preference */
+  .loading,
+  .loading-bar,
+  .loading-bar::after {
+    will-change: auto;
   }
 }
