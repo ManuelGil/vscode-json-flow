@@ -1,9 +1,0 @@
-{
-	"include": [
-		"src/**/*.ts",
-		"webview/**/*.{ts,tsx}",
-	],
-	"exclude": [
-		"src/test/**/*.ts"
-	]
-}

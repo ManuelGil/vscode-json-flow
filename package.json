@@ -17,7 +17,7 @@
 	"packageManager": "pnpm@10.0.0",
 	"engines": {
 		"vscode": "^1.102.0",
-		"node": ">=22"
+		"node": ">=22.15.1"
 	},
 	"categories": [
 		"Visualization",
@@ -67,6 +67,17 @@
 	],
 	"main": "./out/extension.js",
 	"l10n": "./l10n",
+	"files": [
+		"out",
+		"dist",
+		"assets/logo.svg",
+		"package*.json",
+		"README.md",
+		"LICENSE",
+		"icon.png",
+		"schemas",
+		"l10n"
+	],
 	"capabilities": {
 		"untrustedWorkspaces": {
 			"supported": true
@@ -453,7 +464,7 @@
 	},
 	"scripts": {
 		"vscode:prepublish": "pnpm build && pnpm compile",
-		"compile": "rimraf out && tsc -p ./",
+		"compile": "esbuild src/extension.ts --bundle --platform=node --target=node22 --format=cjs --external:vscode --outfile=out/extension.js --minify",
 		"watch": "tsc -watch -p ./",
 		"pretest": "pnpm compile && pnpm lint",
 		"dev": "vite --mode development",
@@ -471,7 +482,7 @@
 		"release": "release-it"
 	},
 	"dependencies": {
-		"@hookform/resolvers": "^5.1.1",
+		"@hookform/resolvers": "^5.2.2",
 		"@radix-ui/react-dialog": "^1.1.15",
 		"@radix-ui/react-dropdown-menu": "^2.1.16",
 		"@radix-ui/react-label": "^2.1.8",
@@ -489,7 +500,7 @@
 		"dotenv": "^17.3.1",
 		"entitree-flex": "^0.4.1",
 		"fast-glob": "^3.3.3",
-		"fast-xml-parser": "^5.3.9",
+		"fast-xml-parser": "^5.4.1",
 		"hcl-parser": "^0.1.1",
 		"html-to-image": "^1.11.13",
 		"ignore": "^7.0.5",
@@ -497,9 +508,9 @@
 		"json5": "^2.2.3",
 		"lucide-react": "^0.575.0",
 		"quicktype-core": "23.2.6",
-		"react": "^19.1.5",
+		"react": "^19.2.4",
 		"react-colorful": "^5.6.1",
-		"react-dom": "^19.1.5",
+		"react-dom": "^19.2.4",
 		"react-hook-form": "^7.71.2",
 		"tailwind-merge": "^3.5.0",
 		"tailwindcss-animate": "^1.0.7",
@@ -514,7 +525,7 @@
 		"@commitlint/cli": "^19.8.1",
 		"@commitlint/config-conventional": "^19.8.1",
 		"@types/mocha": "^10.0.10",
-		"@types/node": "^22.19.12",
+		"@types/node": "^22.19.13",
 		"@types/react": "^19.2.14",
 		"@types/react-dom": "^19.2.3",
 		"@types/uuid": "^10.0.0",
@@ -525,6 +536,7 @@
 		"@vscode/test-electron": "^2.5.2",
 		"autoprefixer": "^10.4.27",
 		"cpy-cli": "^5.0.0",
+		"esbuild": "^0.27.3",
 		"glob": "^13.0.6",
 		"husky": "^9.1.7",
 		"lint-staged": "^16.2.7",
