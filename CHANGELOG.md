@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.6.1] - 2026-02-28
+
+* chore: remove unused files, update package.json dependencies and node engine version ([6e7653e](https://github.com/ManuelGil/vscode-json-flow/commit/6e7653e398322acb091fb6e0fc527fd609868a08))
+
 ## [2.6.0] - 2026-02-27
 
 * feat: enhance viewport utilities and improve node focus functionality in flow components ([d9aa243](https://github.com/ManuelGil/vscode-json-flow/commit/d9aa243ce6474f043040e00182741f14686a7cea))
@@ -221,7 +225,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * build: add webview path ([960fb18](https://github.com/ManuelGil/vscode-json-flow/commit/960fb18))
 * fix: :rotating_light: fix compilation settings ([1ccbfa5](https://github.com/ManuelGil/vscode-json-flow/commit/1ccbfa5))
 
-[Unreleased]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.6.0...HEAD
+[Unreleased]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.6.1...HEAD
+[2.6.1]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.6.0...v2.6.1
 [2.6.0]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.4.0...v2.5.0
 [2.4.0]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.3.2...v2.4.0
