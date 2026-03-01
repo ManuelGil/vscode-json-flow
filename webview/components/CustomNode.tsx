@@ -114,10 +114,14 @@ export const CustomNode = memo<CustomNodeProps>(
       () =>
         cn(
           'selectable relative inline-flex h-9 text-sm rounded-lg border shadow-sm w-40',
-          'focus:ring-2 focus:ring-offset-0 transition-all duration-200',
+          'focus:ring-2 focus:ring-offset-0 transition-[border-color,box-shadow,opacity] duration-200 transition-opacity',
           ...colors.node,
           selected && colors.nodeSelected,
-          isSearchMatch && 'ring-2 ring-primary',
+          // Visual-only: ring for matches, opacity for non-matches.
+          // Attenuation must not alter render projection or disable interaction.
+          isSearchMatch === true &&
+            'ring-2 ring-primary ring-offset-1 ring-offset-background focus-visible:ring-ring',
+          isSearchMatch === false && 'opacity-50',
         ),
       [colors.node, colors.nodeSelected, selected, isSearchMatch],
     );
