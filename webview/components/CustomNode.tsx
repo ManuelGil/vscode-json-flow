@@ -27,9 +27,16 @@ interface CustomNodeProps {
 }
 
 /**
- * CustomNode is a memoized React component representing a single node in the flow graph.
- * It visualizes node properties, handles connection points, and provides controls for collapsing/expanding children.
- * Tooltip and badge elements are used for enhanced user experience.
+ * Pure view component representing a single node in the flow graph.
+ *
+ * Renders deterministically from its `data` prop. Layout authority resides
+ * exclusively in the Worker and layout-core; this component never derives
+ * or modifies node positions.
+ *
+ * Visual-state evolution is permitted here: highlight modes, emphasis modes,
+ * filtering attenuation, and additional display enrichments may be introduced
+ * through projection-supplied data properties without affecting structural
+ * identity or layout computation.
  *
  * @param data - The node's data object containing display and state properties.
  * @param selected - Indicates if the node is currently selected in the graph.
@@ -277,8 +284,14 @@ export const CustomNode = memo<CustomNodeProps>(
   },
 
   /**
-   * Memoization comparison function for CustomNode.
-   * Only triggers a re-render when critical properties change, optimizing performance for large graphs.
+   * Memoization comparator: enumerates identity-relevant and appearance-relevant
+   * properties. Structural arrays (children, siblings, spouses) are compared by
+   * length because their element identity is stable from the Worker — content
+   * changes always accompany length changes in tree regeneration.
+   *
+   * Visual-only fields (isSearchMatch, isCollapsed) may evolve or be extended
+   * without affecting structural identity; new visual properties should be
+   * added to this comparator when they influence rendering.
    *
    * @param prevProps - The previous props of the component.
    * @param nextProps - The next props of the component.

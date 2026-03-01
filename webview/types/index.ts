@@ -16,6 +16,19 @@ export interface TreeData {
 export type Direction = 'TB' | 'LR' | 'BT' | 'RL';
 
 /**
+ * Search projection modes for the UI render pipeline.
+ * Controls how non-matching nodes are treated after collapse filtering.
+ *
+ * - `highlight`: all post-collapse nodes visible; matches emphasized, non-matches attenuated.
+ * - `focus-context`: only matches and their ancestors visible.
+ * - `focus-strict`: only matches visible.
+ */
+export type SearchProjectionMode =
+  | 'highlight'
+  | 'focus-context'
+  | 'focus-strict';
+
+/**
  * Extended node data for React Flow nodes. All relationships are by ID.
  * No UI handlers or functions should be included.
  */

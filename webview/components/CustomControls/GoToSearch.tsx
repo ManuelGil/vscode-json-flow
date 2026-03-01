@@ -6,6 +6,7 @@ import {
   Input,
 } from '@webview/components';
 import { useDebouncedValue } from '@webview/hooks/useDebouncedValue';
+import type { SearchProjectionMode } from '@webview/types';
 import { focusNode } from '@webview/utils/viewport';
 import type { InternalNode } from '@xyflow/react';
 import { useReactFlow } from '@xyflow/react';
@@ -32,21 +33,43 @@ function areMatchesEqual(prev: string[], next: string[]): boolean {
   return true;
 }
 
+const PROJECTION_MODES: {
+  value: SearchProjectionMode;
+  label: string;
+  title: string;
+}[] = [
+  {
+    value: 'highlight',
+    label: 'All',
+    title: 'Highlight matches, show all nodes',
+  },
+  {
+    value: 'focus-context',
+    label: 'Tree',
+    title: 'Show matches and ancestor path',
+  },
+  { value: 'focus-strict', label: 'Only', title: 'Show matches only' },
+];
+
 /**
- * GoToSearch component provides a search interface to focus and navigate between nodes
- * whose label or data includes a search term. Navigation is possible between all matches.
- *
- * @returns A dropdown menu with a search input and navigation controls for node navigation.
+ * GoToSearch provides a search interface to focus and navigate between nodes
+ * whose label includes a search term, with configurable projection modes.
  */
 interface GoToSearchProps {
   nodes: InternalNode[];
+  searchableNodes: InternalNode[];
   allNodes?: InternalNode[];
+  searchProjectionMode: SearchProjectionMode;
+  onSearchProjectionModeChange: (mode: SearchProjectionMode) => void;
   onMatchChange?: (matchedIds: Set<string>) => void;
 }
 
 export function GoToSearch({
   nodes,
+  searchableNodes,
   allNodes,
+  searchProjectionMode,
+  onSearchProjectionModeChange,
   onMatchChange,
 }: GoToSearchProps) {
   const [search, setSearch] = useState<string>('');
@@ -57,8 +80,6 @@ export function GoToSearch({
 
   const reactFlow = useReactFlow();
 
-  // Tracks whether the next focus should actually center the viewport.
-  // Only set to true by explicit user actions (search term change, prev/next).
   const shouldCenterRef = useRef<boolean>(false);
   const prevSearchRef = useRef<string>('');
 
@@ -72,7 +93,8 @@ export function GoToSearch({
     shouldCenterRef.current = false;
     setMatches([]);
     setCurrentMatchIdx(-1);
-  }, [allNodes]);
+    onSearchProjectionModeChange('highlight');
+  }, [allNodes, onSearchProjectionModeChange]);
 
   const buildLabelIndex = useCallback(
     (nodeList: InternalNode[]): Map<string, string[]> => {
@@ -96,9 +118,10 @@ export function GoToSearch({
     [],
   );
 
+  // Match computation uses searchableNodes (post-collapse, pre-projection)
   const labelIndex = useMemo(
-    () => buildLabelIndex(nodes),
-    [nodes, buildLabelIndex],
+    () => buildLabelIndex(searchableNodes),
+    [searchableNodes, buildLabelIndex],
   );
 
   const allLabelIndex = useMemo(
@@ -107,9 +130,9 @@ export function GoToSearch({
   );
 
   /**
-   * Finds all node ids whose label or data includes the search term (case-insensitive).
-   * Uses the label index for exact matches, and falls back to partial search if no exact match is found.
-   * @param term The search term
+   * Finds all node IDs whose label includes the search term (case-insensitive).
+   * Searches within searchableNodes (post-collapse, pre-projection) to decouple
+   * match computation from projection output.
    */
   const findMatchingNodeIds = useCallback(
     (term: string): string[] => {
@@ -119,20 +142,18 @@ export function GoToSearch({
         return [];
       }
 
-      if (!nodes.length) {
+      if (!searchableNodes.length) {
         setSearchError('Graph not ready yet');
         return [];
       }
 
       setSearchError(null);
 
-      // Exact match using the index
       if (labelIndex.has(lowerTerm)) {
         return labelIndex.get(lowerTerm)!;
       }
 
-      // Partial match fallback
-      return nodes
+      return searchableNodes
         .filter((node) => {
           if (!node || !node.id) {
             return false;
@@ -144,12 +165,12 @@ export function GoToSearch({
         })
         .map((node) => node.id);
     },
-    [nodes, labelIndex],
+    [searchableNodes, labelIndex],
   );
 
   /**
    * Focuses the node at the given index in the matches array.
-   * @param idx Index in matches array
+   * Uses `nodes` (post-projection) for viewport centering.
    */
   const focusMatch = useCallback(
     (idx: number) => {
@@ -182,55 +203,40 @@ export function GoToSearch({
     [nodes, matches, reactFlow],
   );
 
-  /**
-   * Handles changes in the search input field. Debounces the search and updates matches.
-   * @param event The change event from the input field.
-   */
   const handleChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     if (event && event.target) {
       setSearch(event.target.value || '');
     }
   }, []);
 
-  /**
-   * Navigates to the previous match.
-   */
   const goToPrev = useCallback(() => {
     if (!Array.isArray(matches) || matches.length === 0) {
       return;
     }
 
-    // Ensure currentMatchIdx is a valid number
     const currentIdx =
       typeof currentMatchIdx === 'number' ? currentMatchIdx : 0;
     const newIdx = (currentIdx - 1 + matches.length) % matches.length;
 
     shouldCenterRef.current = true;
     setCurrentMatchIdx(newIdx);
-    // focusMatch(newIdx) removed; effect will handle focusing
   }, [matches, currentMatchIdx]);
 
-  /**
-   * Navigates to the next match.
-   */
   const goToNext = useCallback(() => {
     if (!Array.isArray(matches) || matches.length === 0) {
       return;
     }
 
-    // Ensure currentMatchIdx is a valid number
     const currentIdx =
       typeof currentMatchIdx === 'number' ? currentMatchIdx : 0;
     const newIdx = (currentIdx + 1) % matches.length;
 
     shouldCenterRef.current = true;
     setCurrentMatchIdx(newIdx);
-    // focusMatch(newIdx) removed; effect will handle focusing
   }, [matches, currentMatchIdx]);
 
   useEffect(() => {
     try {
-      // Validate value before processing
       const trimmedSearch = debouncedSearch?.trim() || '';
       const searchTermChanged = trimmedSearch !== prevSearchRef.current;
       prevSearchRef.current = trimmedSearch;
@@ -238,20 +244,15 @@ export function GoToSearch({
       if (trimmedSearch.length >= 2) {
         try {
           const found = findMatchingNodeIds(trimmedSearch);
-          // Ensure found is always an array
           const safeFound = Array.isArray(found) ? found : [];
 
           setMatches((prev) =>
             areMatchesEqual(prev, safeFound) ? prev : safeFound,
           );
-          // Only reset navigation index and trigger centering when the
-          // search term itself changed — not when the node list changed
-          // due to collapse/expand.
           if (searchTermChanged) {
             shouldCenterRef.current = true;
             setCurrentMatchIdx(safeFound.length > 0 ? 0 : -1);
           }
-          // focusMatch(0) removed to avoid infinite loop
         } catch {
           setMatches([]);
           setCurrentMatchIdx(-1);
@@ -266,15 +267,12 @@ export function GoToSearch({
     }
   }, [debouncedSearch, findMatchingNodeIds]);
 
-  // Notify parent when matched node IDs change
   useEffect(() => {
     onMatchChange?.(new Set(matches));
   }, [matches, onMatchChange]);
 
-  // Reset search state when the dataset changes (e.g. new worker result)
   useEffect(resetSearchOnDatasetChange, [resetSearchOnDatasetChange]);
 
-  // Clamp currentMatchIdx when matches shrink (e.g. after orientation change)
   useEffect(() => {
     if (matches.length === 0) {
       if (currentMatchIdx !== -1) {
@@ -287,7 +285,6 @@ export function GoToSearch({
     }
   }, [matches, currentMatchIdx]);
 
-  // Focus the current match only when triggered by an explicit user action
   useEffect(() => {
     if (shouldCenterRef.current && matches.length > 0 && currentMatchIdx >= 0) {
       shouldCenterRef.current = false;
@@ -295,7 +292,6 @@ export function GoToSearch({
     }
   }, [matches, currentMatchIdx, focusMatch]);
 
-  // Memoize state info for rendering
   const matchCount = useMemo(() => {
     return Array.isArray(matches) ? matches.length : 0;
   }, [matches]);
@@ -323,8 +319,9 @@ export function GoToSearch({
 
   const hasMatches = matchCount > 0;
   const currentMatch = hasMatches ? currentMatchIdx + 1 : 0;
+  const showHiddenIndicator =
+    searchProjectionMode === 'highlight' && !hasMatches && hiddenMatchCount > 0;
 
-  // Only render when there is valid content
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -349,7 +346,24 @@ export function GoToSearch({
             maxLength={64}
           />
         </div>
-        <div className="my-1 border-t border-muted" />
+        <div className="flex items-center gap-0.5 rounded-md border border-input bg-muted p-0.5">
+          {PROJECTION_MODES.map((mode) => (
+            <Button
+              key={mode.value}
+              size="sm"
+              variant={
+                searchProjectionMode === mode.value ? 'default' : 'ghost'
+              }
+              onClick={() => onSearchProjectionModeChange(mode.value)}
+              tooltip={mode.title}
+              aria-label={mode.title}
+              className="h-6 flex-1 rounded px-2 text-xs"
+            >
+              {mode.label}
+            </Button>
+          ))}
+        </div>
+        <div className="my-0 border-t border-muted" />
         <div className="flex items-center justify-between gap-1">
           <span
             className={`text-xs px-2 py-1 rounded-md font-mono ${hasMatches ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}
@@ -358,7 +372,7 @@ export function GoToSearch({
             {searchError
               ? searchError
               : hasMatches
-                ? `${currentMatch}/${matchCount}${hiddenMatchCount > 0 ? ` (+${hiddenMatchCount} hidden)` : ''}`
+                ? `${currentMatch}/${matchCount}${searchProjectionMode === 'highlight' && hiddenMatchCount > 0 ? ` (+${hiddenMatchCount} hidden)` : ''}`
                 : '0/0'}
           </span>
           <div className="flex items-center gap-0.5 rounded-md border border-input bg-muted px-1 py-0.5">
@@ -386,7 +400,7 @@ export function GoToSearch({
             </Button>
           </div>
         </div>
-        {!hasMatches && hiddenMatchCount > 0 && (
+        {showHiddenIndicator && (
           <div
             className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-xs text-amber-900"
             role="status"

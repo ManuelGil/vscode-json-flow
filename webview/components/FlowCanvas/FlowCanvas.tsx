@@ -12,8 +12,12 @@ import { useEditorSync } from '@webview/hooks/useEditorSync';
 import { useFlowSettings } from '@webview/hooks/useFlowSettings';
 import { useTreeDataValidator } from '@webview/hooks/useTreeDataValidator';
 import { useVscodeMessageHandler } from '@webview/hooks/useVscodeMessageHandler';
+import {
+  buildParentMap,
+  collectAncestors,
+} from '@webview/services/treeService';
 import { vscodeService } from '@webview/services/vscodeService';
-import type { Direction, TreeMap } from '@webview/types';
+import type { Direction, SearchProjectionMode, TreeMap } from '@webview/types';
 import { fitGraph, focusNode } from '@webview/utils/viewport';
 import type {
   Connection,
@@ -137,6 +141,10 @@ export const FlowCanvas = memo(function FlowCanvas() {
   const [searchMatchIds, setSearchMatchIds] = useState<Set<string>>(
     () => new Set<string>(),
   );
+
+  // Search projection mode: controls visibility of non-matching nodes
+  const [searchProjectionMode, setSearchProjectionMode] =
+    useState<SearchProjectionMode>('highlight');
 
   // Counter to trigger render-sync re-application when edge settings change
   const [_edgeSettingsVersion, setEdgeSettingsVersion] = useState<number>(0);
@@ -281,6 +289,36 @@ export const FlowCanvas = memo(function FlowCanvas() {
     edges: workerEdges,
   } = useLayoutWorker();
 
+  // Post-collapse, pre-projection node list. Stable input for GoToSearch
+  // match computation and for the projection effect below.
+  const visibleNodes = useMemo(
+    () => (workerNodes ?? []).filter((n) => !collapsedNodes.has(n.id)),
+    [workerNodes, collapsedNodes],
+  );
+
+  const parentMap = useMemo(
+    () => buildParentMap(safeTreeData as TreeMap),
+    [safeTreeData],
+  );
+
+  // Determines which node IDs survive the search projection filter.
+  // null = no filtering (highlight mode or no active search).
+  const searchContextSet = useMemo(() => {
+    if (searchProjectionMode === 'highlight' || searchMatchIds.size === 0) {
+      return null;
+    }
+    if (searchProjectionMode === 'focus-strict') {
+      return new Set(searchMatchIds);
+    }
+    // focus-context: matches + ancestors
+    const context = new Set(searchMatchIds);
+    const ancestors = collectAncestors(searchMatchIds, parentMap);
+    for (const id of ancestors) {
+      context.add(id);
+    }
+    return context;
+  }, [searchProjectionMode, searchMatchIds, parentMap]);
+
   const controlsProps = useMemo(
     () => ({
       isDraggable,
@@ -289,7 +327,10 @@ export const FlowCanvas = memo(function FlowCanvas() {
       onLayoutRotate: handleRotation,
       onSettingsChange: debouncedHandleEdgeSettingsChange,
       nodes: renderNodes as InternalNode[],
+      searchableNodes: visibleNodes as InternalNode[],
       allNodes: (workerNodes ?? []) as InternalNode[],
+      searchProjectionMode,
+      onSearchProjectionModeChange: setSearchProjectionMode,
       onSearchMatchChange: (next: Set<string>) => {
         setSearchMatchIds((prev) => {
           if (prev.size === next.size) {
@@ -314,7 +355,9 @@ export const FlowCanvas = memo(function FlowCanvas() {
       handleRotation,
       debouncedHandleEdgeSettingsChange,
       renderNodes,
+      visibleNodes,
       workerNodes,
+      searchProjectionMode,
     ],
   );
 
@@ -408,23 +451,57 @@ export const FlowCanvas = memo(function FlowCanvas() {
     }
   }, []);
 
-  // Sync render state when layout source or collapse state changes
+  // ---------------------------------------------------------------------------
+  // Projection layer: derives visible render state from Worker output.
+  //
+  // Pipeline: workerNodes → collapse filter (visibleNodes useMemo)
+  //           → search projection filter → enrich → setRenderNodes
+  //
+  // Constraints:
+  //   - Node ordering is Worker-defined and must be preserved.
+  //   - Worker output arrays (workerNodes, workerEdges) must not be mutated.
+  //   - Node positions come from the Worker; no repositioning here.
+  //
+  // UI enrichment (onToggleChildren, isCollapsed, isSearchMatch, edge
+  // appearance) is an extensibility surface: filtering, highlighting,
+  // and navigation enhancements may evolve within this projection
+  // without affecting Worker output or layout computation.
+  // ---------------------------------------------------------------------------
   useEffect(() => {
-    const sourceNodes = workerNodes ?? [];
     const sourceEdges = workerEdges ?? [];
 
-    if (!sourceNodes?.length) {
+    if (!visibleNodes.length) {
       setRenderNodes([]);
       setRenderEdges([]);
       return;
     }
 
-    const visibleNodes = sourceNodes.filter(
-      (node) => !collapsedNodes.has(node.id),
-    );
+    // Search projection: further filter visibleNodes when a focus mode is active
+    const projectedNodes =
+      searchContextSet !== null
+        ? visibleNodes.filter((n) => searchContextSet.has(n.id))
+        : visibleNodes;
+
+    // Compute isSearchMatch per mode:
+    //   highlight:      tri-state (undefined / true / false)
+    //   focus-context:  true for matches, undefined for ancestors
+    //   focus-strict:   undefined for all (every projected node is a match)
+    const computeSearchMatch = (nodeId: string): boolean | undefined => {
+      if (searchMatchIds.size === 0) {
+        return undefined;
+      }
+      if (searchProjectionMode === 'highlight') {
+        return searchMatchIds.has(nodeId);
+      }
+      if (searchProjectionMode === 'focus-context') {
+        return searchMatchIds.has(nodeId) ? true : undefined;
+      }
+      // focus-strict: all projected nodes are matches
+      return undefined;
+    };
 
     setRenderNodes(
-      visibleNodes.map((node) => ({
+      projectedNodes.map((node) => ({
         ...node,
         data: {
           ...node.data,
@@ -432,28 +509,28 @@ export const FlowCanvas = memo(function FlowCanvas() {
           isCollapsed: (descendantsCache.get(node.id) ?? []).some(
             (descendantId) => collapsedNodes.has(descendantId),
           ),
-          // Tri-state: undefined = no active search, true = match, false = not a match.
-          // Used for visual precedence only — must not drive structural filtering.
-          isSearchMatch:
-            searchMatchIds.size > 0 ? searchMatchIds.has(node.id) : undefined,
+          isSearchMatch: computeSearchMatch(node.id),
         },
       })),
     );
 
-    const filteredEdges = (sourceEdges ?? []).filter(
-      (edge) =>
-        !collapsedNodes.has(edge.source) && !collapsedNodes.has(edge.target),
+    // Edge filtering: both endpoints must be in the projected node set
+    const projectedIds = new Set(projectedNodes.map((n) => n.id));
+    const filteredEdges = sourceEdges.filter(
+      (edge) => projectedIds.has(edge.source) && projectedIds.has(edge.target),
     );
     setRenderEdges(
       applyEdgeSettingsToList(filteredEdges, edgeSettingsRef.current),
     );
   }, [
-    workerNodes,
+    visibleNodes,
     workerEdges,
     collapsedNodes,
+    searchContextSet,
     descendantsCache,
     handleToggleChildren,
     searchMatchIds,
+    searchProjectionMode,
   ]);
 
   // Unified change handlers for ReactFlow interactivity (drag, select)

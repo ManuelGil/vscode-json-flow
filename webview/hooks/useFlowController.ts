@@ -90,6 +90,13 @@ export function useFlowController({
     return !!treeData && !!treeRootId && Object.keys(treeData).length > 0;
   }, [treeData, treeRootId]);
 
+  /**
+   * Pure derivation: maps each nodeId to its full list of descendant IDs.
+   * Collapse is a projection concern — it controls visibility in the UI
+   * layer and must not affect Worker layout computation.  Collapse logic
+   * may evolve at the UI level (e.g. multi-level expand, selective reveal)
+   * without altering structural contracts.
+   */
   const descendantsCache = useMemo(() => {
     const cache = new Map<string, string[]>();
     if (isValidTreeData) {
@@ -100,6 +107,7 @@ export function useFlowController({
     return cache;
   }, [treeData, isValidTreeData]);
 
+  /** Pure derivation: maps each nodeId to its direct children. */
   const immediateChildrenCache = useMemo(() => {
     const cache = new Map<string, string[]>();
     if (isValidTreeData) {

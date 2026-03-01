@@ -354,15 +354,20 @@ function layoutLinearSimple(
 }
 
 /**
- * Calculates node and edge layouts for a tree.
+ * Canonical layout entry point for the entire project.
  *
+ * Transforms a TreeMap into positioned React Flow nodes and edges.
  * For graphs with up to {@link LARGE_GRAPH_THRESHOLD} nodes the full
  * entitree-flex algorithm is used.  Larger graphs are routed to an O(n)
- * linear layout to prevent UI freezes.
+ * linear layout to keep the UI responsive.
  *
- * This is the single layout engine for the entire project.
  * Both the main thread (via layoutService wrapper) and the Web Worker
  * call this function to guarantee identical output.
+ *
+ * The output node positions are authoritative. UI layers may enrich
+ * nodes visually (e.g. collapse indicators, search highlighting) but
+ * must not reposition them. The output shape (arrays of Node and Edge)
+ * is structurally stable.
  *
  * @param tree - The tree data as a TreeMap.
  * @param rootId - The root node ID.

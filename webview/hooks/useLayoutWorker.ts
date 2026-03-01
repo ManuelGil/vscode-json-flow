@@ -223,8 +223,12 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
   }, []);
 
   /**
-   * Handle messages coming from the worker. Only the messages whose
-   * requestId matches the current in-flight job are processed.
+   * Handle messages coming from the worker. Only messages whose
+   * requestId matches the current in-flight job are processed;
+   * stale responses from prior requests are discarded.
+   *
+   * Request correlation via requestId is a structural guard integral
+   * to the Worker communication contract — not an expansion surface.
    */
   const handleWorkerMessage = useCallback(
     (event: MessageEvent) => {

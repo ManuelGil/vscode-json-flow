@@ -3,6 +3,9 @@
  *
  * Keeping these in a single place prevents drift between the producer (worker)
  * and the consumer (webview hook) and improves type-safety.
+ *
+ * Changes to this contract are structural changes. UI-level features
+ * must operate within the existing message types, not extend them.
  */
 import type { Edge, Node } from '@xyflow/react';
 
