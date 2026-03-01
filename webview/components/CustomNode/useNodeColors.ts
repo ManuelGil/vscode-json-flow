@@ -15,7 +15,7 @@ export function useNodeColors() {
       'bg-card border-border hover:border-muted focus:ring-ring',
       `theme-${color}`, // For color-specific overrides if defined in CSS
     ],
-    nodeSelected: 'border-primary',
+    nodeSelected: 'border-primary border-2',
     handle: ['bg-popover border-muted hover:border-primary', `theme-${color}`],
     toggleButton: [
       'border-muted bg-secondary hover:bg-secondary/80',

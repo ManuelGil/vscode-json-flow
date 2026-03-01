@@ -425,7 +425,10 @@ export const FlowCanvas = memo(function FlowCanvas() {
           isCollapsed: (descendantsCache.get(node.id) ?? []).some(
             (descendantId) => collapsedNodes.has(descendantId),
           ),
-          isSearchMatch: searchMatchIds.has(node.id),
+          // Tri-state: undefined = no active search, true = match, false = not a match.
+          // Used for visual precedence only — must not drive structural filtering.
+          isSearchMatch:
+            searchMatchIds.size > 0 ? searchMatchIds.has(node.id) : undefined,
         },
       })),
     );
