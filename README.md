@@ -53,6 +53,7 @@ Runs 100% locally. No telemetry. No uploads. No background network access.
     - [Extension Host](#extension-host)
     - [Webview (React UI)](#webview-react-ui)
     - [Web Worker](#web-worker)
+  - [2.x Architectural Stability](#2x-architectural-stability)
   - [Identity Model](#identity-model)
   - [How the Graph Is Generated](#how-the-graph-is-generated)
   - [Performance Characteristics](#performance-characteristics)
@@ -338,6 +339,26 @@ The Web Worker is the sole layout authority.
 - **Lightweight**: Contains no DOM dependencies or React runtime
 
 No layout logic runs in the main thread.
+
+## 2.x Architectural Stability
+
+The 2.x series is intentionally architecturally stable.
+
+If you plan to contribute, please keep in mind that the following core properties are considered fixed throughout 2.x:
+
+- Layout computation runs exclusively inside a Web Worker.
+- Identity is based on RFC 6901 JSON Pointer.
+- Graph mode is single-file only.
+- No cross-file synchronization.
+- No persistent Worker state.
+- No incremental layout strategies.
+- The adaptive layout threshold remains unchanged.
+
+Improvements in 2.x are expected to enhance usability and interaction within this structure.
+
+Contributions that alter layout authority, identity construction rules, the Worker protocol, or the single-file scope model should be discussed before implementation.
+
+The goal of 2.x is to evolve safely without introducing structural drift.
 
 ## Identity Model
 
