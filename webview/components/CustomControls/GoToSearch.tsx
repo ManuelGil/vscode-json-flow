@@ -10,9 +10,10 @@ import type { SearchProjectionMode } from '@webview/types';
 import { focusNode } from '@webview/utils/viewport';
 import type { InternalNode } from '@xyflow/react';
 import { useReactFlow } from '@xyflow/react';
-import { Search } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import {
   type ChangeEvent,
+  type KeyboardEvent,
   useCallback,
   useEffect,
   useMemo,
@@ -20,7 +21,10 @@ import {
   useState,
 } from 'react';
 
-/** Shallow comparison of two string arrays by length and element identity. */
+// ---------------------------------------------------------------------------
+// Pure utility: shallow array comparison
+// ---------------------------------------------------------------------------
+
 function areMatchesEqual(prev: string[], next: string[]): boolean {
   if (prev.length !== next.length) {
     return false;
@@ -32,6 +36,136 @@ function areMatchesEqual(prev: string[], next: string[]): boolean {
   }
   return true;
 }
+
+// ---------------------------------------------------------------------------
+// Advanced Search Lite — token model and pure evaluator
+// ---------------------------------------------------------------------------
+
+type ParsedToken =
+  | { kind: 'key'; value: string }
+  | { kind: 'value'; value: string }
+  | { kind: 'type'; value: string }
+  | { kind: 'path'; value: string }
+  | { kind: 'depth'; op: '>' | '<' | '='; n: number }
+  | { kind: 'text'; value: string };
+
+const STRUCTURED_PREFIXES = ['key:', 'value:', 'type:', 'path:'] as const;
+
+/**
+ * Parses an active search term into structured tokens.
+ * Tokens are separated by whitespace with implicit AND semantics.
+ *
+ * Supported formats: key:v, value:v, type:v, path:v, depth>n, depth<n, depth=n, plainText.
+ */
+function parseSearchTokens(term: string): ParsedToken[] {
+  const parts = term.trim().split(/\s+/);
+  const tokens: ParsedToken[] = [];
+
+  for (const raw of parts) {
+    if (!raw) {
+      continue;
+    }
+
+    let matched = false;
+    for (const prefix of STRUCTURED_PREFIXES) {
+      if (raw.length > prefix.length && raw.toLowerCase().startsWith(prefix)) {
+        const val = raw.slice(prefix.length);
+        tokens.push({
+          kind: prefix.slice(0, -1) as 'key' | 'value' | 'type' | 'path',
+          value: val,
+        });
+        matched = true;
+        break;
+      }
+    }
+    if (matched) {
+      continue;
+    }
+
+    const depthMatch =
+      raw.length >= 7 &&
+      raw.toLowerCase().startsWith('depth') &&
+      (raw[5] === '>' || raw[5] === '<' || raw[5] === '=');
+    if (depthMatch) {
+      const op = raw[5] as '>' | '<' | '=';
+      const nStr = raw.slice(6);
+      const n = Number.parseInt(nStr, 10);
+      if (!Number.isNaN(n)) {
+        tokens.push({ kind: 'depth', op, n });
+        continue;
+      }
+    }
+
+    tokens.push({ kind: 'text', value: raw });
+  }
+
+  return tokens;
+}
+
+/** Extracts the key portion from a "key: value" label, or the full label. */
+function extractKey(label: string): string {
+  const sepIdx = label.indexOf(': ');
+  return sepIdx >= 0 ? label.slice(0, sepIdx) : label;
+}
+
+/** Extracts the value portion from a "key: value" label, or empty string. */
+function extractValue(label: string): string {
+  const sepIdx = label.indexOf(': ');
+  return sepIdx >= 0 ? label.slice(sepIdx + 2) : '';
+}
+
+/** Computes depth from a JSON Pointer node ID. Graph root sentinel returns 0. */
+function getDepth(nodeId: string): number {
+  if (!nodeId.startsWith('/')) {
+    return 0;
+  }
+  return nodeId.split('/').length - 1;
+}
+
+/**
+ * Evaluates a single parsed token against a node.
+ * Pure, O(1) per call. All string comparisons are case-insensitive.
+ */
+function evaluateToken(node: InternalNode, token: ParsedToken): boolean {
+  const label = String((node.data as Record<string, unknown>)?.label || '');
+  const lowerLabel = label.toLowerCase();
+
+  switch (token.kind) {
+    case 'text':
+      return lowerLabel.includes(token.value.toLowerCase());
+    case 'key':
+      return extractKey(label)
+        .toLowerCase()
+        .includes(token.value.toLowerCase());
+    case 'value':
+      return extractValue(label)
+        .toLowerCase()
+        .includes(token.value.toLowerCase());
+    case 'type': {
+      const nodeData = (node.data as Record<string, unknown>)?.data as
+        | Record<string, unknown>
+        | undefined;
+      const nodeType = String(nodeData?.type || '').toLowerCase();
+      return nodeType === token.value.toLowerCase();
+    }
+    case 'path':
+      return node.id.toLowerCase().includes(token.value.toLowerCase());
+    case 'depth': {
+      const depth = getDepth(node.id);
+      if (token.op === '>') {
+        return depth > token.n;
+      }
+      if (token.op === '<') {
+        return depth < token.n;
+      }
+      return depth === token.n;
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Component constants
+// ---------------------------------------------------------------------------
 
 const PROJECTION_MODES: {
   value: SearchProjectionMode;
@@ -51,9 +185,15 @@ const PROJECTION_MODES: {
   { value: 'focus-strict', label: 'Only', title: 'Show matches only' },
 ];
 
+// ---------------------------------------------------------------------------
+// GoToSearch component
+// ---------------------------------------------------------------------------
+
 /**
- * GoToSearch provides a search interface to focus and navigate between nodes
- * whose label includes a search term, with configurable projection modes.
+ * GoToSearch provides a search interface to focus and navigate between nodes.
+ * Supports structured query tokens (key:, value:, type:, path:, depth) and
+ * configurable projection modes. Input and active search term are separated:
+ * typing updates input only; debounce or Enter commits the active term.
  */
 interface GoToSearchProps {
   nodes: InternalNode[];
@@ -72,18 +212,43 @@ export function GoToSearch({
   onSearchProjectionModeChange,
   onMatchChange,
 }: GoToSearchProps) {
-  const [search, setSearch] = useState<string>('');
+  const [searchTermInput, setSearchTermInput] = useState<string>('');
+  const [activeSearchTerm, setActiveSearchTerm] = useState<string | null>(null);
+  const debouncedInput = useDebouncedValue<string>(searchTermInput, 250);
+
   const [matches, setMatches] = useState<string[]>([]);
   const [currentMatchIdx, setCurrentMatchIdx] = useState<number>(-1);
   const [searchError, setSearchError] = useState<string | null>(null);
-  const debouncedSearch = useDebouncedValue<string>(search, 250);
+
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const reactFlow = useReactFlow();
 
   const shouldCenterRef = useRef<boolean>(false);
-  const prevSearchRef = useRef<string>('');
+  const prevActiveTermRef = useRef<string | null>(null);
 
   const previousAllNodesRef = useRef<InternalNode[] | undefined>(undefined);
+
+  // --- Clear / Reset ---
+
+  const clearSearch = useCallback(() => {
+    setSearchTermInput('');
+    setActiveSearchTerm(null);
+    setMatches([]);
+    setCurrentMatchIdx(-1);
+    setSearchError(null);
+    onSearchProjectionModeChange('highlight');
+  }, [onSearchProjectionModeChange]);
+
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      setDropdownOpen(open);
+      if (!open) {
+        clearSearch();
+      }
+    },
+    [clearSearch],
+  );
 
   const resetSearchOnDatasetChange = useCallback((): void => {
     if (previousAllNodesRef.current === allNodes) {
@@ -91,16 +256,31 @@ export function GoToSearch({
     }
     previousAllNodesRef.current = allNodes;
     shouldCenterRef.current = false;
+    setSearchTermInput('');
+    setActiveSearchTerm(null);
     setMatches([]);
     setCurrentMatchIdx(-1);
     onSearchProjectionModeChange('highlight');
   }, [allNodes, onSearchProjectionModeChange]);
 
+  // --- Commit: debounce → activeSearchTerm ---
+
+  useEffect(() => {
+    const trimmed = debouncedInput?.trim() || '';
+    if (trimmed.length >= 2) {
+      setActiveSearchTerm(trimmed);
+    }
+    // Clearing the input does NOT clear activeSearchTerm;
+    // only the explicit Clear button does that.
+  }, [debouncedInput]);
+
+  // --- Label index (fast path for single plain-text tokens) ---
+
   const buildLabelIndex = useCallback(
     (nodeList: InternalNode[]): Map<string, string[]> => {
       const map = new Map<string, string[]>();
       for (const node of nodeList) {
-        const raw = node.data?.label;
+        const raw = (node.data as Record<string, unknown>)?.label;
         if (!raw) {
           continue;
         }
@@ -118,7 +298,6 @@ export function GoToSearch({
     [],
   );
 
-  // Match computation uses searchableNodes (post-collapse, pre-projection)
   const labelIndex = useMemo(
     () => buildLabelIndex(searchableNodes),
     [searchableNodes, buildLabelIndex],
@@ -129,16 +308,16 @@ export function GoToSearch({
     [allNodes, labelIndex, buildLabelIndex],
   );
 
+  // --- Match computation with ASL token evaluator ---
+
   /**
-   * Finds all node IDs whose label includes the search term (case-insensitive).
-   * Searches within searchableNodes (post-collapse, pre-projection) to decouple
-   * match computation from projection output.
+   * Finds all node IDs matching the active search term.
+   * Supports structured tokens (key:, value:, type:, path:, depth) with
+   * implicit AND across tokens. Falls back to label-includes for plain text.
    */
   const findMatchingNodeIds = useCallback(
     (term: string): string[] => {
-      const lowerTerm = term.toLowerCase().trim();
-
-      if (!lowerTerm || lowerTerm.length === 0) {
+      if (!term || term.trim().length === 0) {
         return [];
       }
 
@@ -149,8 +328,17 @@ export function GoToSearch({
 
       setSearchError(null);
 
-      if (labelIndex.has(lowerTerm)) {
-        return labelIndex.get(lowerTerm)!;
+      const tokens = parseSearchTokens(term);
+      if (tokens.length === 0) {
+        return [];
+      }
+
+      // Fast path: single plain-text token with exact label index hit
+      if (tokens.length === 1 && tokens[0].kind === 'text') {
+        const lowerVal = tokens[0].value.toLowerCase();
+        if (labelIndex.has(lowerVal)) {
+          return labelIndex.get(lowerVal)!;
+        }
       }
 
       return searchableNodes
@@ -158,20 +346,15 @@ export function GoToSearch({
           if (!node || !node.id) {
             return false;
           }
-
-          return String(node.data?.label || '')
-            .toLowerCase()
-            .includes(lowerTerm);
+          return tokens.every((token) => evaluateToken(node, token));
         })
         .map((node) => node.id);
     },
     [searchableNodes, labelIndex],
   );
 
-  /**
-   * Focuses the node at the given index in the matches array.
-   * Uses `nodes` (post-projection) for viewport centering.
-   */
+  // --- Navigation ---
+
   const focusMatch = useCallback(
     (idx: number) => {
       if (
@@ -205,9 +388,21 @@ export function GoToSearch({
 
   const handleChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     if (event && event.target) {
-      setSearch(event.target.value || '');
+      setSearchTermInput(event.target.value || '');
     }
   }, []);
+
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLInputElement>) => {
+      if (event.key === 'Enter') {
+        const trimmed = searchTermInput.trim();
+        if (trimmed.length >= 2) {
+          setActiveSearchTerm(trimmed);
+        }
+      }
+    },
+    [searchTermInput],
+  );
 
   const goToPrev = useCallback(() => {
     if (!Array.isArray(matches) || matches.length === 0) {
@@ -235,21 +430,23 @@ export function GoToSearch({
     setCurrentMatchIdx(newIdx);
   }, [matches, currentMatchIdx]);
 
+  // --- Effects ---
+
+  // Compute matches from activeSearchTerm
   useEffect(() => {
     try {
-      const trimmedSearch = debouncedSearch?.trim() || '';
-      const searchTermChanged = trimmedSearch !== prevSearchRef.current;
-      prevSearchRef.current = trimmedSearch;
+      const activeTermChanged = activeSearchTerm !== prevActiveTermRef.current;
+      prevActiveTermRef.current = activeSearchTerm;
 
-      if (trimmedSearch.length >= 2) {
+      if (activeSearchTerm && activeSearchTerm.length >= 2) {
         try {
-          const found = findMatchingNodeIds(trimmedSearch);
+          const found = findMatchingNodeIds(activeSearchTerm);
           const safeFound = Array.isArray(found) ? found : [];
 
           setMatches((prev) =>
             areMatchesEqual(prev, safeFound) ? prev : safeFound,
           );
-          if (searchTermChanged) {
+          if (activeTermChanged) {
             shouldCenterRef.current = true;
             setCurrentMatchIdx(safeFound.length > 0 ? 0 : -1);
           }
@@ -265,7 +462,7 @@ export function GoToSearch({
       setMatches([]);
       setCurrentMatchIdx(-1);
     }
-  }, [debouncedSearch, findMatchingNodeIds]);
+  }, [activeSearchTerm, findMatchingNodeIds]);
 
   useEffect(() => {
     onMatchChange?.(new Set(matches));
@@ -292,15 +489,17 @@ export function GoToSearch({
     }
   }, [matches, currentMatchIdx, focusMatch]);
 
+  // --- Derived render values ---
+
   const matchCount = useMemo(() => {
     return Array.isArray(matches) ? matches.length : 0;
   }, [matches]);
 
   const hiddenMatchCount = useMemo(() => {
-    if (!allNodes || !debouncedSearch) {
+    if (!allNodes || !activeSearchTerm) {
       return 0;
     }
-    const trimmed = debouncedSearch.trim().toLowerCase();
+    const trimmed = activeSearchTerm.trim().toLowerCase();
     if (trimmed.length < 2) {
       return 0;
     }
@@ -309,21 +508,23 @@ export function GoToSearch({
       totalCount = allLabelIndex.get(trimmed)!.length;
     } else {
       totalCount = allNodes.filter((node) =>
-        String(node.data?.label || '')
+        String((node.data as Record<string, unknown>)?.label || '')
           .toLowerCase()
           .includes(trimmed),
       ).length;
     }
     return Math.max(0, totalCount - matchCount);
-  }, [allNodes, allLabelIndex, debouncedSearch, matchCount]);
+  }, [allNodes, allLabelIndex, activeSearchTerm, matchCount]);
 
   const hasMatches = matchCount > 0;
   const currentMatch = hasMatches ? currentMatchIdx + 1 : 0;
   const showHiddenIndicator =
     searchProjectionMode === 'highlight' && !hasMatches && hiddenMatchCount > 0;
+  const showClearButton =
+    searchTermInput.length > 0 || activeSearchTerm !== null;
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={dropdownOpen} onOpenChange={handleOpenChange}>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" tooltip="Search nodes">
           <Search />
@@ -337,14 +538,25 @@ export function GoToSearch({
           </span>
           <Input
             type="text"
-            value={search || ''}
+            value={searchTermInput}
             onChange={handleChange}
-            className="w-full rounded-md border border-input py-1.5 pl-8 pr-2 text-sm transition-all focus:border-primary focus:ring-2 focus:ring-primary/30"
+            onKeyDown={handleKeyDown}
+            className={`w-full rounded-md border border-input py-1.5 pl-8 text-sm transition-all focus:border-primary focus:ring-2 focus:ring-primary/30 ${showClearButton ? 'pr-8' : 'pr-2'}`}
             placeholder="Search nodes..."
             autoFocus
             spellCheck={false}
             maxLength={64}
           />
+          {showClearButton && (
+            <button
+              type="button"
+              onClick={clearSearch}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              aria-label="Clear search"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-0.5 rounded-md border border-input bg-muted p-0.5">
           {PROJECTION_MODES.map((mode) => (
