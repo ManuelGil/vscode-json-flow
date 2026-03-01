@@ -9,12 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.6.1] - 2026-02-28
 
-* chore: remove unused files, update package.json dependencies and node engine version ([6e7653e](https://github.com/ManuelGil/vscode-json-flow/commit/6e7653e398322acb091fb6e0fc527fd609868a08))
+* chore: remove unused files, update package.json dependencies and node engine version ([6e7653e](https://github.com/ManuelGil/vscode-json-flow/commit/6e7653e))
 
 ## [2.6.0] - 2026-02-27
 
-* feat: enhance viewport utilities and improve node focus functionality in flow components ([d9aa243](https://github.com/ManuelGil/vscode-json-flow/commit/d9aa243ce6474f043040e00182741f14686a7cea))
-* chore: streamline CI, update .gitignore and .vscodeignore, refine release config and roadmap ([398d37c](https://github.com/ManuelGil/vscode-json-flow/commit/398d37cd39f4657cad2692b00e1a8c24593f0dcf))
+* feat: enhance viewport utilities and improve node focus functionality in flow components ([d9aa243](https://github.com/ManuelGil/vscode-json-flow/commit/d9aa243))
+* chore: streamline CI, update .gitignore and .vscodeignore, refine release config and roadmap ([398d37c](https://github.com/ManuelGil/vscode-json-flow/commit/398d37c))
 
 ## [2.5.0] - 2026-02-19
 

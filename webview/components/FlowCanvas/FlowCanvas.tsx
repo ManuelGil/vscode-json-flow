@@ -178,6 +178,13 @@ export const FlowCanvas = memo(function FlowCanvas() {
 
   const { selectedNode, onNodeClick, selectNode } = useSelectedNode();
 
+  // Clear selection if the selected node becomes hidden due to collapse
+  useEffect(() => {
+    if (selectedNode && collapsedNodes.has(selectedNode.id)) {
+      selectNode(null);
+    }
+  }, [selectedNode, collapsedNodes, selectNode]);
+
   const onDirectionChange = useCallback((direction: Direction) => {
     dispatch({
       type: 'SET_ORIENTATION',
