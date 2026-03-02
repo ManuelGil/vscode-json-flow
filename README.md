@@ -39,6 +39,11 @@ Runs 100% locally. No telemetry. No uploads. No background network access.
     - [Interactive Graph Visualization](#interactive-graph-visualization)
     - [Graph Export](#graph-export)
     - [Node Search](#node-search)
+    - [Advanced Search \& Projection Modes](#advanced-search--projection-modes)
+      - [Structured Tokens](#structured-tokens)
+      - [Projection Modes](#projection-modes)
+      - [Hidden Matches](#hidden-matches)
+      - [Lifecycle](#lifecycle)
     - [Appearance and Settings](#appearance-and-settings)
     - [Live Sync](#live-sync)
     - [Format Conversion](#format-conversion)
@@ -128,13 +133,67 @@ Export from the toolbar inside the webview panel.
 
 ### Node Search
 
-Label-based navigation control.
+Interactive structural search and navigation control.
 
-- Case-insensitive, debounced text search
-- Exact match priority with partial match fallback
+- Case-insensitive, debounced search
+- Structured query tokens (see **Advanced Search & Projection Modes**)
+- Exact full-label match priority with indexed lookup
 - Prev/Next navigation with match counter
-- Hidden match indicator for collapsed branches
-- Auto-reset on dataset change
+- Hidden match indicator when matches exist outside the current view
+- Explicit lifecycle with deterministic reset behavior
+
+### Advanced Search & Projection Modes
+
+Search supports structured tokens and projection-based visualization without modifying layout, identity, or Worker behavior.
+
+#### Structured Tokens
+
+Search terms are whitespace-separated and combined with implicit **AND** semantics.
+
+Supported tokens:
+
+- `text` — Case-insensitive label substring
+- `key:` — Match key portion of `key: value`
+- `value:` — Match value portion
+- `type:` — Match node data type
+- `path:` — Match JSON Pointer substring
+- `depth>n`, `depth<n`, `depth=n` — Match by structural depth
+
+Example:
+
+```text
+key:user type:string depth>2
+```
+
+Only nodes satisfying all tokens are matched.
+
+#### Projection Modes
+
+Matches can be visualized using three modes:
+
+- **All** — Highlight matches, show full visible graph
+- **Tree** — Show matches and their ancestor path
+- **Only** — Show matched nodes only
+
+Projection is applied after collapse filtering and affects rendering only.
+No layout recalculation occurs.
+
+#### Hidden Matches
+
+The match counter may display `(+N hidden)` when additional matches exist outside the current visible projection:
+
+- Collapsed branches (**All** mode)
+- Projection filtering (**Tree** mode)
+
+In **Only** mode, all projected nodes are matches.
+
+#### Lifecycle
+
+- Typing updates input only.
+- Debounce or Enter commits search.
+- Explicit clear resets search and projection.
+- Closing the panel or changing dataset resets search.
+- Navigation operates on the current render projection.
 
 ### Appearance and Settings
 

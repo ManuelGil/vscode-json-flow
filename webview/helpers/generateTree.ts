@@ -11,27 +11,19 @@ import {
 } from '../../src/shared/node-pointer';
 
 /**
- * Recursively generates a tree structure (TreeMap) from a JSON value.
- * Supports objects, arrays, and primitives, assigning unique JSON Pointer
- * IDs and line numbers.
+ * Recursively generates a TreeMap from a JSON value.
  *
- * The graph structural root uses {@link GRAPH_ROOT_ID} (not a JSON Pointer)
- * so that it can never collide with the RFC 6901 pointer "/" which
- * represents an empty-string key.  All data-level nodes use valid JSON
- * Pointer IDs built via {@link buildPointer}.
+ * All nodes now include a structural `type` field:
+ * - "object"
+ * - "array"
+ * - "string"
+ * - "number"
+ * - "boolean"
+ * - "null"
  *
- * @param json - The JSON value to convert into a tree.
- * @param parentId - (Optional) Parent node ID for recursion. Defaults to GRAPH_ROOT_ID.
- * @param lineNumber - (Optional) Starting line number for the root node. Defaults to 1.
- * @returns TreeMap representing the hierarchical structure of the input JSON.
- *
- * ARCHITECTURAL INVARIANT (frozen):
- * GRAPH_ROOT_ID and POINTER_ROOT belong to separate identity domains.
- * They must never be merged.
- * GRAPH_ROOT_ID must never start with '/'.
- *
- * @example
- * const tree = generateTree({ foo: [1, 2] });
+ * The type is defined at the TreeNode root level to ensure
+ * structural metadata is always available to higher layers
+ * (projection, search, filtering).
  */
 export function generateTree(
   json: JsonValue,
@@ -55,74 +47,120 @@ export function generateTree(
 
   const isGraphRoot: boolean = parentId === GRAPH_ROOT_ID;
 
+  /**
+   * Determines the structural JSON type of a value.
+   */
+  const determineType = (value: JsonValue): string => {
+    if (value === null) {
+      return 'null';
+    }
+
+    if (Array.isArray(value)) {
+      return 'array';
+    }
+
+    return typeof value;
+  };
   if (Array.isArray(json)) {
+    const nodeType = 'array';
+
     tree[parentId] = {
       id: parentId,
       name: isGraphRoot
         ? GRAPH_ROOT_LABEL
         : (lastSegment(parentId) ?? parentId),
+      type: nodeType,
       children: [],
-      data: { line: lineNumber },
+      data: { type: nodeType, line: lineNumber },
     };
 
     let currentLine = lineNumber + 1;
+
     for (const [index, value] of json.entries()) {
-      if (typeof value === 'object' && value !== null) {
-        const objectId = buildPointer(pointerParent, String(index));
-        tree = { ...tree, ...generateTree(value, objectId, currentLine) };
-        tree[parentId].children?.push(objectId);
-        currentLine += Object.keys(value).length + 2; // +2 for brackets
+      const valueType = determineType(value);
+      const valueId = buildPointer(pointerParent, String(index));
+
+      if (valueType === 'object' || valueType === 'array') {
+        tree = {
+          ...tree,
+          ...generateTree(value, valueId, currentLine),
+        };
+        tree[parentId].children?.push(valueId);
+        currentLine +=
+          typeof value === 'object' && value !== null
+            ? Object.keys(value).length + 2
+            : 1;
       } else {
-        const valueId = buildPointer(pointerParent, String(index));
         tree[valueId] = {
           id: valueId,
           name: `${index}: ${String(value)}`,
-          data: { type: typeof value, line: currentLine },
+          type: valueType,
+          data: { type: valueType, line: currentLine },
         };
         tree[parentId].children?.push(valueId);
         currentLine++;
       }
     }
   } else if (typeof json === 'object' && json !== null) {
+    const nodeType = 'object';
+
     tree[parentId] = {
       id: parentId,
       name: isGraphRoot
         ? GRAPH_ROOT_LABEL
         : (lastSegment(parentId) ?? parentId),
+      type: nodeType,
       children: [],
-      data: { line: lineNumber },
+      data: { type: nodeType, line: lineNumber },
     };
 
     let currentLine = lineNumber + 1;
     const entries = Object.entries(json);
+
     for (const [key, value] of entries) {
-      if (typeof value === 'object' && value !== null) {
-        const keyId = buildPointer(pointerParent, key);
+      const valueType = determineType(value);
+      const keyId = buildPointer(pointerParent, key);
+
+      if (valueType === 'object' || valueType === 'array') {
         tree[keyId] = {
           id: keyId,
           name: key,
+          type: valueType,
           children: [],
-          data: { line: currentLine },
+          data: { type: valueType, line: currentLine },
         };
+
         tree[parentId].children?.push(keyId);
-        tree = { ...tree, ...generateTree(value, keyId, currentLine + 1) };
-        currentLine += Object.keys(value).length + 2; // +2 for brackets
+
+        tree = {
+          ...tree,
+          ...generateTree(value, keyId, currentLine + 1),
+        };
+
+        currentLine +=
+          typeof value === 'object' && value !== null
+            ? Object.keys(value).length + 2
+            : 1;
       } else {
-        const keyId = buildPointer(pointerParent, key);
         tree[keyId] = {
           id: keyId,
           name: `${key}: ${String(value)}`,
-          data: { type: typeof value, line: currentLine },
+          type: valueType,
+          data: { type: valueType, line: currentLine },
         };
+
         tree[parentId].children?.push(keyId);
         currentLine++;
       }
     }
   } else {
+    const nodeType = determineType(json);
+
     tree[parentId] = {
       id: parentId,
       name: String(json),
-      data: { type: typeof json, line: lineNumber },
+      type: nodeType,
+      data: { type: nodeType, line: lineNumber },
     };
   }
 

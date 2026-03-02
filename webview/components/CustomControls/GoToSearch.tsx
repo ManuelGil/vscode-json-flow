@@ -6,6 +6,7 @@ import {
   Input,
 } from '@webview/components';
 import { useDebouncedValue } from '@webview/hooks/useDebouncedValue';
+import { computeMatches } from '@webview/services/searchService';
 import type { SearchProjectionMode } from '@webview/types';
 import { focusNode } from '@webview/utils/viewport';
 import type { InternalNode } from '@xyflow/react';
@@ -35,132 +36,6 @@ function areMatchesEqual(prev: string[], next: string[]): boolean {
     }
   }
   return true;
-}
-
-// ---------------------------------------------------------------------------
-// Advanced Search Lite — token model and pure evaluator
-// ---------------------------------------------------------------------------
-
-type ParsedToken =
-  | { kind: 'key'; value: string }
-  | { kind: 'value'; value: string }
-  | { kind: 'type'; value: string }
-  | { kind: 'path'; value: string }
-  | { kind: 'depth'; op: '>' | '<' | '='; n: number }
-  | { kind: 'text'; value: string };
-
-const STRUCTURED_PREFIXES = ['key:', 'value:', 'type:', 'path:'] as const;
-
-/**
- * Parses an active search term into structured tokens.
- * Tokens are separated by whitespace with implicit AND semantics.
- *
- * Supported formats: key:v, value:v, type:v, path:v, depth>n, depth<n, depth=n, plainText.
- */
-function parseSearchTokens(term: string): ParsedToken[] {
-  const parts = term.trim().split(/\s+/);
-  const tokens: ParsedToken[] = [];
-
-  for (const raw of parts) {
-    if (!raw) {
-      continue;
-    }
-
-    let matched = false;
-    for (const prefix of STRUCTURED_PREFIXES) {
-      if (raw.length > prefix.length && raw.toLowerCase().startsWith(prefix)) {
-        const val = raw.slice(prefix.length);
-        tokens.push({
-          kind: prefix.slice(0, -1) as 'key' | 'value' | 'type' | 'path',
-          value: val,
-        });
-        matched = true;
-        break;
-      }
-    }
-    if (matched) {
-      continue;
-    }
-
-    const depthMatch =
-      raw.length >= 7 &&
-      raw.toLowerCase().startsWith('depth') &&
-      (raw[5] === '>' || raw[5] === '<' || raw[5] === '=');
-    if (depthMatch) {
-      const op = raw[5] as '>' | '<' | '=';
-      const nStr = raw.slice(6);
-      const n = Number.parseInt(nStr, 10);
-      if (!Number.isNaN(n)) {
-        tokens.push({ kind: 'depth', op, n });
-        continue;
-      }
-    }
-
-    tokens.push({ kind: 'text', value: raw });
-  }
-
-  return tokens;
-}
-
-/** Extracts the key portion from a "key: value" label, or the full label. */
-function extractKey(label: string): string {
-  const sepIdx = label.indexOf(': ');
-  return sepIdx >= 0 ? label.slice(0, sepIdx) : label;
-}
-
-/** Extracts the value portion from a "key: value" label, or empty string. */
-function extractValue(label: string): string {
-  const sepIdx = label.indexOf(': ');
-  return sepIdx >= 0 ? label.slice(sepIdx + 2) : '';
-}
-
-/** Computes depth from a JSON Pointer node ID. Graph root sentinel returns 0. */
-function getDepth(nodeId: string): number {
-  if (!nodeId.startsWith('/')) {
-    return 0;
-  }
-  return nodeId.split('/').length - 1;
-}
-
-/**
- * Evaluates a single parsed token against a node.
- * Pure, O(1) per call. All string comparisons are case-insensitive.
- */
-function evaluateToken(node: InternalNode, token: ParsedToken): boolean {
-  const label = String((node.data as Record<string, unknown>)?.label || '');
-  const lowerLabel = label.toLowerCase();
-
-  switch (token.kind) {
-    case 'text':
-      return lowerLabel.includes(token.value.toLowerCase());
-    case 'key':
-      return extractKey(label)
-        .toLowerCase()
-        .includes(token.value.toLowerCase());
-    case 'value':
-      return extractValue(label)
-        .toLowerCase()
-        .includes(token.value.toLowerCase());
-    case 'type': {
-      const nodeData = (node.data as Record<string, unknown>)?.data as
-        | Record<string, unknown>
-        | undefined;
-      const nodeType = String(nodeData?.type || '').toLowerCase();
-      return nodeType === token.value.toLowerCase();
-    }
-    case 'path':
-      return node.id.toLowerCase().includes(token.value.toLowerCase());
-    case 'depth': {
-      const depth = getDepth(node.id);
-      if (token.op === '>') {
-        return depth > token.n;
-      }
-      if (token.op === '<') {
-        return depth < token.n;
-      }
-      return depth === token.n;
-    }
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -217,6 +92,7 @@ export function GoToSearch({
   const debouncedInput = useDebouncedValue<string>(searchTermInput, 250);
 
   const [matches, setMatches] = useState<string[]>([]);
+  const [hiddenMatchCountState, setHiddenMatchCountState] = useState<number>(0);
   const [currentMatchIdx, setCurrentMatchIdx] = useState<number>(-1);
   const [searchError, setSearchError] = useState<string | null>(null);
 
@@ -235,6 +111,7 @@ export function GoToSearch({
     setSearchTermInput('');
     setActiveSearchTerm(null);
     setMatches([]);
+    setHiddenMatchCountState(0);
     setCurrentMatchIdx(-1);
     setSearchError(null);
     onSearchProjectionModeChange('highlight');
@@ -259,6 +136,7 @@ export function GoToSearch({
     setSearchTermInput('');
     setActiveSearchTerm(null);
     setMatches([]);
+    setHiddenMatchCountState(0);
     setCurrentMatchIdx(-1);
     onSearchProjectionModeChange('highlight');
   }, [allNodes, onSearchProjectionModeChange]);
@@ -299,59 +177,36 @@ export function GoToSearch({
   );
 
   const labelIndex = useMemo(
-    () => buildLabelIndex(searchableNodes),
-    [searchableNodes, buildLabelIndex],
+    () => buildLabelIndex(allNodes || []),
+    [allNodes, buildLabelIndex],
   );
 
-  const allLabelIndex = useMemo(
-    () => (allNodes ? buildLabelIndex(allNodes) : labelIndex),
-    [allNodes, labelIndex, buildLabelIndex],
-  );
-
-  // --- Match computation with ASL token evaluator ---
+  // --- Match computation using searchService ---
 
   /**
    * Finds all node IDs matching the active search term.
-   * Supports structured tokens (key:, value:, type:, path:, depth) with
-   * implicit AND across tokens. Falls back to label-includes for plain text.
+   * Delegates to searchService for pure domain logic.
    */
-  const findMatchingNodeIds = useCallback(
-    (term: string): string[] => {
-      if (!term || term.trim().length === 0) {
-        return [];
-      }
+  const findMatchingNodeIds = useCallback(() => {
+    if (!activeSearchTerm || activeSearchTerm.trim().length < 2) {
+      return { visible: [], hiddenCount: 0 };
+    }
 
-      if (!searchableNodes.length) {
-        setSearchError('Graph not ready yet');
-        return [];
-      }
+    if (!allNodes || !allNodes.length) {
+      setSearchError('Graph not ready yet');
+      return { visible: [], hiddenCount: 0 };
+    }
 
-      setSearchError(null);
+    setSearchError(null);
 
-      const tokens = parseSearchTokens(term);
-      if (tokens.length === 0) {
-        return [];
-      }
+    const matches = computeMatches(activeSearchTerm, allNodes, labelIndex);
+    const visibleIdSet = new Set(searchableNodes.map((n) => n.id));
 
-      // Fast path: single plain-text token with exact label index hit
-      if (tokens.length === 1 && tokens[0].kind === 'text') {
-        const lowerVal = tokens[0].value.toLowerCase();
-        if (labelIndex.has(lowerVal)) {
-          return labelIndex.get(lowerVal)!;
-        }
-      }
+    const visible = matches.filter((id) => visibleIdSet.has(id));
+    const hiddenCount = matches.filter((id) => !visibleIdSet.has(id)).length;
 
-      return searchableNodes
-        .filter((node) => {
-          if (!node || !node.id) {
-            return false;
-          }
-          return tokens.every((token) => evaluateToken(node, token));
-        })
-        .map((node) => node.id);
-    },
-    [searchableNodes, labelIndex],
-  );
+    return { visible, hiddenCount };
+  }, [activeSearchTerm, allNodes, searchableNodes, labelIndex]);
 
   // --- Navigation ---
 
@@ -440,26 +295,31 @@ export function GoToSearch({
 
       if (activeSearchTerm && activeSearchTerm.length >= 2) {
         try {
-          const found = findMatchingNodeIds(activeSearchTerm);
-          const safeFound = Array.isArray(found) ? found : [];
+          const { visible, hiddenCount } = findMatchingNodeIds();
+          const safeFound = Array.isArray(visible) ? visible : [];
 
           setMatches((prev) =>
             areMatchesEqual(prev, safeFound) ? prev : safeFound,
           );
+          setHiddenMatchCountState(hiddenCount);
+
           if (activeTermChanged) {
             shouldCenterRef.current = true;
             setCurrentMatchIdx(safeFound.length > 0 ? 0 : -1);
           }
         } catch {
           setMatches([]);
+          setHiddenMatchCountState(0);
           setCurrentMatchIdx(-1);
         }
       } else {
         setMatches([]);
+        setHiddenMatchCountState(0);
         setCurrentMatchIdx(-1);
       }
     } catch {
       setMatches([]);
+      setHiddenMatchCountState(0);
       setCurrentMatchIdx(-1);
     }
   }, [activeSearchTerm, findMatchingNodeIds]);
@@ -495,31 +355,11 @@ export function GoToSearch({
     return Array.isArray(matches) ? matches.length : 0;
   }, [matches]);
 
-  const hiddenMatchCount = useMemo(() => {
-    if (!allNodes || !activeSearchTerm) {
-      return 0;
-    }
-    const trimmed = activeSearchTerm.trim().toLowerCase();
-    if (trimmed.length < 2) {
-      return 0;
-    }
-    let totalCount = 0;
-    if (allLabelIndex.has(trimmed)) {
-      totalCount = allLabelIndex.get(trimmed)!.length;
-    } else {
-      totalCount = allNodes.filter((node) =>
-        String((node.data as Record<string, unknown>)?.label || '')
-          .toLowerCase()
-          .includes(trimmed),
-      ).length;
-    }
-    return Math.max(0, totalCount - matchCount);
-  }, [allNodes, allLabelIndex, activeSearchTerm, matchCount]);
+  const hiddenMatchCount = hiddenMatchCountState;
 
   const hasMatches = matchCount > 0;
   const currentMatch = hasMatches ? currentMatchIdx + 1 : 0;
-  const showHiddenIndicator =
-    searchProjectionMode === 'highlight' && !hasMatches && hiddenMatchCount > 0;
+  const showHiddenIndicator = !hasMatches && hiddenMatchCount > 0;
   const showClearButton =
     searchTermInput.length > 0 || activeSearchTerm !== null;
 
@@ -584,7 +424,7 @@ export function GoToSearch({
             {searchError
               ? searchError
               : hasMatches
-                ? `${currentMatch}/${matchCount}${searchProjectionMode === 'highlight' && hiddenMatchCount > 0 ? ` (+${hiddenMatchCount} hidden)` : ''}`
+                ? `${currentMatch}/${matchCount}${hiddenMatchCount > 0 ? ` (+${hiddenMatchCount} hidden)` : ''}`
                 : '0/0'}
           </span>
           <div className="flex items-center gap-0.5 rounded-md border border-input bg-muted px-1 py-0.5">

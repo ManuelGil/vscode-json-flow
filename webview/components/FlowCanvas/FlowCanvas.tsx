@@ -7,7 +7,11 @@ import {
 import { DEFAULT_SETTINGS } from '@webview/components/CustomControls/Settings';
 import { flowReducer } from '@webview/context/FlowContext';
 import { generateTree, getRootId } from '@webview/helpers/generateTree';
-import { useFlowController, useLayoutWorker } from '@webview/hooks';
+import {
+  useFlowController,
+  useLayoutWorker,
+  useSearchProjection,
+} from '@webview/hooks';
 import { useEditorSync } from '@webview/hooks/useEditorSync';
 import { useFlowSettings } from '@webview/hooks/useFlowSettings';
 import { useTreeDataValidator } from '@webview/hooks/useTreeDataValidator';
@@ -291,10 +295,13 @@ export const FlowCanvas = memo(function FlowCanvas() {
 
   // Post-collapse, pre-projection node list. Stable input for GoToSearch
   // match computation and for the projection effect below.
-  const visibleNodes = useMemo(
-    () => (workerNodes ?? []).filter((n) => !collapsedNodes.has(n.id)),
-    [workerNodes, collapsedNodes],
-  );
+  const visibleNodes = useMemo(() => {
+    if (!workerNodes) {
+      return [];
+    }
+
+    return workerNodes.filter((n) => !collapsedNodes.has(n.id));
+  }, [workerNodes, collapsedNodes]);
 
   const parentMap = useMemo(
     () => buildParentMap(safeTreeData as TreeMap),
@@ -455,7 +462,7 @@ export const FlowCanvas = memo(function FlowCanvas() {
   // Projection layer: derives visible render state from Worker output.
   //
   // Pipeline: workerNodes → collapse filter (visibleNodes useMemo)
-  //           → search projection filter → enrich → setRenderNodes
+  //           → search projection filter → enrich → renderNodes/renderEdges
   //
   // Constraints:
   //   - Node ordering is Worker-defined and must be preserved.
@@ -467,71 +474,25 @@ export const FlowCanvas = memo(function FlowCanvas() {
   // and navigation enhancements may evolve within this projection
   // without affecting Worker output or layout computation.
   // ---------------------------------------------------------------------------
+  const { renderNodes: projectedNodes, renderEdges: projectedEdges } =
+    useSearchProjection({
+      visibleNodes,
+      workerEdges,
+      searchContextSet,
+      searchMatchIds,
+      searchProjectionMode,
+      descendantsCache,
+      collapsedNodes,
+      edgeSettingsSnapshot: edgeSettingsRef.current,
+      handleToggleChildren,
+      applyEdgeSettings: applyEdgeSettingsToList,
+    });
+
+  // Sync projection output to render state
   useEffect(() => {
-    const sourceEdges = workerEdges ?? [];
-
-    if (!visibleNodes.length) {
-      setRenderNodes([]);
-      setRenderEdges([]);
-      return;
-    }
-
-    // Search projection: further filter visibleNodes when a focus mode is active
-    const projectedNodes =
-      searchContextSet !== null
-        ? visibleNodes.filter((n) => searchContextSet.has(n.id))
-        : visibleNodes;
-
-    // Compute isSearchMatch per mode:
-    //   highlight:      tri-state (undefined / true / false)
-    //   focus-context:  true for matches, undefined for ancestors
-    //   focus-strict:   undefined for all (every projected node is a match)
-    const computeSearchMatch = (nodeId: string): boolean | undefined => {
-      if (searchMatchIds.size === 0) {
-        return undefined;
-      }
-      if (searchProjectionMode === 'highlight') {
-        return searchMatchIds.has(nodeId);
-      }
-      if (searchProjectionMode === 'focus-context') {
-        return searchMatchIds.has(nodeId) ? true : undefined;
-      }
-      // focus-strict: all projected nodes are matches
-      return undefined;
-    };
-
-    setRenderNodes(
-      projectedNodes.map((node) => ({
-        ...node,
-        data: {
-          ...node.data,
-          onToggleChildren: handleToggleChildren,
-          isCollapsed: (descendantsCache.get(node.id) ?? []).some(
-            (descendantId) => collapsedNodes.has(descendantId),
-          ),
-          isSearchMatch: computeSearchMatch(node.id),
-        },
-      })),
-    );
-
-    // Edge filtering: both endpoints must be in the projected node set
-    const projectedIds = new Set(projectedNodes.map((n) => n.id));
-    const filteredEdges = sourceEdges.filter(
-      (edge) => projectedIds.has(edge.source) && projectedIds.has(edge.target),
-    );
-    setRenderEdges(
-      applyEdgeSettingsToList(filteredEdges, edgeSettingsRef.current),
-    );
-  }, [
-    visibleNodes,
-    workerEdges,
-    collapsedNodes,
-    searchContextSet,
-    descendantsCache,
-    handleToggleChildren,
-    searchMatchIds,
-    searchProjectionMode,
-  ]);
+    setRenderNodes(projectedNodes);
+    setRenderEdges(projectedEdges);
+  }, [projectedNodes, projectedEdges]);
 
   // Unified change handlers for ReactFlow interactivity (drag, select)
   const onNodesChange = useCallback((changes: NodeChange[]) => {
