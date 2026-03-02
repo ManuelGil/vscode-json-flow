@@ -19,6 +19,7 @@ import { useVscodeMessageHandler } from '@webview/hooks/useVscodeMessageHandler'
 import {
   buildParentMap,
   collectAncestors,
+  computeNodesWithCollapsedDescendants,
 } from '@webview/services/treeService';
 import { vscodeService } from '@webview/services/vscodeService';
 import type { Direction, SearchProjectionMode, TreeMap } from '@webview/types';
@@ -183,7 +184,6 @@ export const FlowCanvas = memo(function FlowCanvas() {
     rotateLayout,
     collapsedNodes,
     toggleNodeChildren,
-    descendantsCache,
   } = useFlowController(flowControllerParams);
 
   const { zoom } = useViewport();
@@ -308,6 +308,11 @@ export const FlowCanvas = memo(function FlowCanvas() {
     [safeTreeData],
   );
 
+  const nodesWithCollapsedDescendants = useMemo(
+    () => computeNodesWithCollapsedDescendants(collapsedNodes, parentMap),
+    [collapsedNodes, parentMap],
+  );
+
   // Determines which node IDs survive the search projection filter.
   // null = no filtering (highlight mode or no active search).
   const searchContextSet = useMemo(() => {
@@ -326,6 +331,24 @@ export const FlowCanvas = memo(function FlowCanvas() {
     return context;
   }, [searchProjectionMode, searchMatchIds, parentMap]);
 
+  const handleSearchMatchChange = useCallback((next: Set<string>) => {
+    setSearchMatchIds((prev) => {
+      if (prev.size === next.size) {
+        let equal = true;
+        for (const v of prev) {
+          if (!next.has(v)) {
+            equal = false;
+            break;
+          }
+        }
+        if (equal) {
+          return prev;
+        }
+      }
+      return next;
+    });
+  }, []);
+
   const controlsProps = useMemo(
     () => ({
       isDraggable,
@@ -338,23 +361,7 @@ export const FlowCanvas = memo(function FlowCanvas() {
       allNodes: (workerNodes ?? []) as InternalNode[],
       searchProjectionMode,
       onSearchProjectionModeChange: setSearchProjectionMode,
-      onSearchMatchChange: (next: Set<string>) => {
-        setSearchMatchIds((prev) => {
-          if (prev.size === next.size) {
-            let equal = true;
-            for (const v of prev) {
-              if (!next.has(v)) {
-                equal = false;
-                break;
-              }
-            }
-            if (equal) {
-              return prev;
-            }
-          }
-          return next;
-        });
-      },
+      onSearchMatchChange: handleSearchMatchChange,
     }),
     [
       isDraggable,
@@ -365,6 +372,7 @@ export const FlowCanvas = memo(function FlowCanvas() {
       visibleNodes,
       workerNodes,
       searchProjectionMode,
+      handleSearchMatchChange,
     ],
   );
 
@@ -481,8 +489,7 @@ export const FlowCanvas = memo(function FlowCanvas() {
       searchContextSet,
       searchMatchIds,
       searchProjectionMode,
-      descendantsCache,
-      collapsedNodes,
+      nodesWithCollapsedDescendants,
       edgeSettingsSnapshot: edgeSettingsRef.current,
       handleToggleChildren,
       applyEdgeSettings: applyEdgeSettingsToList,

@@ -21,8 +21,7 @@ interface UseSearchProjectionParams {
   searchMatchIds: Set<string>;
   searchProjectionMode: SearchProjectionMode;
   safeTreeData?: TreeMap;
-  descendantsCache: Map<string, string[]>;
-  collapsedNodes: Set<string>;
+  nodesWithCollapsedDescendants: Set<string>;
   edgeSettingsSnapshot: EdgeSettingsSnapshot;
   handleToggleChildren: (nodeId: string) => void;
   applyEdgeSettings: (edges: Edge[], settings: EdgeSettingsSnapshot) => Edge[];
@@ -67,8 +66,7 @@ export function useSearchProjection({
   searchContextSet,
   searchMatchIds,
   searchProjectionMode,
-  descendantsCache,
-  collapsedNodes,
+  nodesWithCollapsedDescendants,
   edgeSettingsSnapshot,
   handleToggleChildren,
   applyEdgeSettings,
@@ -90,9 +88,7 @@ export function useSearchProjection({
         data: {
           ...node.data,
           onToggleChildren: handleToggleChildren,
-          isCollapsed: (descendantsCache.get(node.id) ?? []).some(
-            (descendantId) => collapsedNodes.has(descendantId),
-          ),
+          isCollapsed: nodesWithCollapsedDescendants.has(node.id),
           isSearchMatch: computeSearchMatch(
             node.id,
             searchMatchIds,
@@ -104,8 +100,7 @@ export function useSearchProjection({
   }, [
     visibleNodes,
     searchContextSet,
-    descendantsCache,
-    collapsedNodes,
+    nodesWithCollapsedDescendants,
     handleToggleChildren,
     searchMatchIds,
     searchProjectionMode,

@@ -215,10 +215,13 @@ const createNode = (
           : node.y || 0,
     },
     data: {
+      // CONTRACT: `label` is consumed by searchService and GoToSearch.
+      // Renaming this field silently breaks search functionality.
       label: node.name,
       direction,
       isRoot: node.id === rootId,
       line: tree[node.id]?.data?.line,
+      type: tree[node.id]?.data?.type,
       ...node,
     },
     sourcePosition: source as Position,

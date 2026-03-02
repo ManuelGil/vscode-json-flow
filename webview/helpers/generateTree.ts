@@ -12,23 +12,12 @@ import {
 
 /**
  * Recursively generates a TreeMap from a JSON value.
- *
- * All nodes now include a structural `type` field:
- * - "object"
- * - "array"
- * - "string"
- * - "number"
- * - "boolean"
- * - "null"
- *
- * The type is defined at the TreeNode root level to ensure
- * structural metadata is always available to higher layers
- * (projection, search, filtering).
  */
 export function generateTree(
   json: JsonValue,
   parentId: string = GRAPH_ROOT_ID,
   lineNumber = 1,
+  acc: TreeMap = {},
 ): TreeMap {
   // DEV-only: fail fast if the sentinel ever gets corrupted to a pointer.
   if (IS_DEV && GRAPH_ROOT_ID.startsWith('/')) {
@@ -36,8 +25,6 @@ export function generateTree(
       'GRAPH_ROOT_ID must never start with "/". The graph identity domain and the JSON Pointer domain must remain disjoint.',
     );
   }
-
-  let tree: TreeMap = {};
 
   // When the current node is the graph root, child JSON Pointers must be
   // built relative to POINTER_ROOT ("/"), not relative to the sentinel
@@ -47,124 +34,88 @@ export function generateTree(
 
   const isGraphRoot: boolean = parentId === GRAPH_ROOT_ID;
 
-  /**
-   * Determines the structural JSON type of a value.
-   */
-  const determineType = (value: JsonValue): string => {
-    if (value === null) {
-      return 'null';
-    }
-
-    if (Array.isArray(value)) {
-      return 'array';
-    }
-
-    return typeof value;
-  };
   if (Array.isArray(json)) {
-    const nodeType = 'array';
-
-    tree[parentId] = {
+    acc[parentId] = {
       id: parentId,
       name: isGraphRoot
         ? GRAPH_ROOT_LABEL
         : (lastSegment(parentId) ?? parentId),
-      type: nodeType,
       children: [],
-      data: { type: nodeType, line: lineNumber },
+      data: { type: typeof json, line: lineNumber },
     };
 
     let currentLine = lineNumber + 1;
 
     for (const [index, value] of json.entries()) {
-      const valueType = determineType(value);
       const valueId = buildPointer(pointerParent, String(index));
 
-      if (valueType === 'object' || valueType === 'array') {
-        tree = {
-          ...tree,
-          ...generateTree(value, valueId, currentLine),
-        };
-        tree[parentId].children?.push(valueId);
-        currentLine +=
-          typeof value === 'object' && value !== null
-            ? Object.keys(value).length + 2
-            : 1;
+      if (typeof value === 'object' && value !== null) {
+        generateTree(value, valueId, currentLine, acc);
+        acc[parentId].children?.push(valueId);
+        currentLine += Object.keys(value).length + 2;
       } else {
-        tree[valueId] = {
+        // CONTRACT: Leaf node names use ": " separator.
+        // searchService.extractKey/extractValue depend on this exact format.
+        acc[valueId] = {
           id: valueId,
           name: `${index}: ${String(value)}`,
-          type: valueType,
-          data: { type: valueType, line: currentLine },
+          data: { type: typeof value, line: currentLine },
         };
-        tree[parentId].children?.push(valueId);
+        acc[parentId].children?.push(valueId);
         currentLine++;
       }
     }
   } else if (typeof json === 'object' && json !== null) {
-    const nodeType = 'object';
-
-    tree[parentId] = {
+    acc[parentId] = {
       id: parentId,
       name: isGraphRoot
         ? GRAPH_ROOT_LABEL
         : (lastSegment(parentId) ?? parentId),
-      type: nodeType,
       children: [],
-      data: { type: nodeType, line: lineNumber },
+      data: { type: typeof json, line: lineNumber },
     };
 
     let currentLine = lineNumber + 1;
     const entries = Object.entries(json);
 
     for (const [key, value] of entries) {
-      const valueType = determineType(value);
       const keyId = buildPointer(pointerParent, key);
 
-      if (valueType === 'object' || valueType === 'array') {
-        tree[keyId] = {
+      if (typeof value === 'object' && value !== null) {
+        acc[keyId] = {
           id: keyId,
           name: key,
-          type: valueType,
           children: [],
-          data: { type: valueType, line: currentLine },
+          data: { type: typeof value, line: currentLine },
         };
 
-        tree[parentId].children?.push(keyId);
+        acc[parentId].children?.push(keyId);
 
-        tree = {
-          ...tree,
-          ...generateTree(value, keyId, currentLine + 1),
-        };
+        generateTree(value, keyId, currentLine + 1, acc);
 
-        currentLine +=
-          typeof value === 'object' && value !== null
-            ? Object.keys(value).length + 2
-            : 1;
+        currentLine += Object.keys(value).length + 2;
       } else {
-        tree[keyId] = {
+        // CONTRACT: Leaf node names use ": " separator.
+        // searchService.extractKey/extractValue depend on this exact format.
+        acc[keyId] = {
           id: keyId,
           name: `${key}: ${String(value)}`,
-          type: valueType,
-          data: { type: valueType, line: currentLine },
+          data: { type: typeof value, line: currentLine },
         };
 
-        tree[parentId].children?.push(keyId);
+        acc[parentId].children?.push(keyId);
         currentLine++;
       }
     }
   } else {
-    const nodeType = determineType(json);
-
-    tree[parentId] = {
+    acc[parentId] = {
       id: parentId,
       name: String(json),
-      type: nodeType,
-      data: { type: nodeType, line: lineNumber },
+      data: { type: typeof json, line: lineNumber },
     };
   }
 
-  return tree;
+  return acc;
 }
 
 /**

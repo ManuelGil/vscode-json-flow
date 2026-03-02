@@ -90,6 +90,8 @@ export function extractValue(label: string): string {
   return sepIdx >= 0 ? label.slice(sepIdx + 2) : '';
 }
 
+// CONTRACT: Depth derived from JSON Pointer "/" segmentation.
+// GRAPH_ROOT_ID must never start with "/".
 /** Computes depth from a JSON Pointer node ID. Graph root sentinel returns 0. */
 export function getDepth(nodeId: string): number {
   if (!nodeId.startsWith('/')) {

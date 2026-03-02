@@ -1,29 +1,34 @@
 import type { TreeData, TreeMap } from '@webview/types';
 
 /**
- * Recursively collects all descendant node IDs for a given node in a tree.
+ * Iterative (stack-based) variant of {@link getAllDescendants}.
+ * Collects all descendant node IDs without recursion, avoiding
+ * stack overflow on deeply nested trees and eliminating intermediate
+ * array allocations from push(...spread).
  *
- * @param nodeId - The ID of the node to start from.
- * @param tree - The tree data as a mapping from IDs to nodes.
- * @returns An array of descendant node IDs.
- *
- * @example
- * const descendants = getAllDescendants('root', treeData);
+ * O(subtree) time, O(subtree) memory.
  */
-export function getAllDescendants(
+export function getDescendantsOf(
   nodeId: string,
   tree: Record<string, TreeData>,
 ): string[] {
-  const descendants: string[] = [];
-  const node = tree[nodeId];
-
-  if (!node?.children?.length) {
-    return descendants;
+  const root = tree[nodeId];
+  if (!root?.children?.length) {
+    return [];
   }
 
-  for (const childId of node.children) {
-    descendants.push(childId);
-    descendants.push(...getAllDescendants(childId, tree));
+  const descendants: string[] = [];
+  const stack: string[] = root.children.slice();
+
+  while (stack.length > 0) {
+    const id = stack.pop()!;
+    descendants.push(id);
+    const node = tree[id];
+    if (node?.children?.length) {
+      for (let i = node.children.length - 1; i >= 0; i--) {
+        stack.push(node.children[i]);
+      }
+    }
   }
 
   return descendants;
@@ -70,4 +75,27 @@ export function collectAncestors(
     }
   }
   return ancestors;
+}
+
+/**
+ * Returns the set of node IDs that have at least one descendant
+ * present in {@link collapsedNodes}.
+ *
+ * Walks up from each collapsed node via {@link parentMap}, short-circuiting
+ * when an already-visited ancestor is reached.
+ * O(|collapsedNodes| × depth) amortized — each node visited at most once.
+ */
+export function computeNodesWithCollapsedDescendants(
+  collapsedNodes: Set<string>,
+  parentMap: Map<string, string>,
+): Set<string> {
+  const result = new Set<string>();
+  for (const id of collapsedNodes) {
+    let current = parentMap.get(id);
+    while (current !== undefined && !result.has(current)) {
+      result.add(current);
+      current = parentMap.get(current);
+    }
+  }
+  return result;
 }

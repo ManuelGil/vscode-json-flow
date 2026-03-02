@@ -1,9 +1,9 @@
 /**
- * @file Hook for collapse, orientation, and descendant-cache management.
+ * @file Hook for collapse and orientation management.
  * Layout computation is handled exclusively by the Web Worker.
  */
 
-import { getAllDescendants } from '@webview/services/treeService';
+import { getDescendantsOf } from '@webview/services/treeService';
 import type { Direction, TreeMap } from '@webview/types';
 import { useCallback, useMemo, useReducer, useRef, useState } from 'react';
 
@@ -26,7 +26,6 @@ type UseFlowControllerReturn = {
   rotateLayout: () => Direction;
   collapsedNodes: Set<string>;
   toggleNodeChildren: (nodeId: string) => void;
-  descendantsCache: Map<string, string[]>;
 };
 
 type CollapsedNodesAction =
@@ -63,14 +62,14 @@ function collapsedNodesReducer(
 }
 
 /**
- * Hook for collapse state, orientation, and descendant-cache management.
+ * Hook for collapse state and orientation management.
  * Layout is computed exclusively by the Web Worker — this hook owns no
  * nodes/edges state.
  *
  * @param treeData - The tree data as a TreeMap
  * @param treeRootId - The root node ID
  * @param initialDirection - Initial layout direction (default 'TB')
- * @returns Collapse helpers, direction state, and descendant cache
+ * @returns Collapse helpers and direction state
  */
 export function useFlowController({
   treeData,
@@ -89,23 +88,6 @@ export function useFlowController({
   const isValidTreeData = useMemo(() => {
     return !!treeData && !!treeRootId && Object.keys(treeData).length > 0;
   }, [treeData, treeRootId]);
-
-  /**
-   * Pure derivation: maps each nodeId to its full list of descendant IDs.
-   * Collapse is a projection concern — it controls visibility in the UI
-   * layer and must not affect Worker layout computation.  Collapse logic
-   * may evolve at the UI level (e.g. multi-level expand, selective reveal)
-   * without altering structural contracts.
-   */
-  const descendantsCache = useMemo(() => {
-    const cache = new Map<string, string[]>();
-    if (isValidTreeData) {
-      Object.keys(treeData).forEach((nodeId) => {
-        cache.set(nodeId, getAllDescendants(nodeId, treeData));
-      });
-    }
-    return cache;
-  }, [treeData, isValidTreeData]);
 
   /** Pure derivation: maps each nodeId to its direct children. */
   const immediateChildrenCache = useMemo(() => {
@@ -127,7 +109,6 @@ export function useFlowController({
         return;
       }
 
-      const descendants = descendantsCache.get(nodeId) || [];
       const immediateChildren = immediateChildrenCache.get(nodeId) || [];
 
       const anyImmediateChildVisible = immediateChildren.some(
@@ -135,6 +116,7 @@ export function useFlowController({
       );
 
       if (anyImmediateChildVisible) {
+        const descendants = getDescendantsOf(nodeId, treeData);
         dispatchCollapsedNodes({
           type: 'COLLAPSE_NODES',
           payload: { nodeIds: descendants },
@@ -146,7 +128,7 @@ export function useFlowController({
         });
       }
     },
-    [descendantsCache, immediateChildrenCache, collapsedNodes, treeData],
+    [immediateChildrenCache, collapsedNodes, treeData],
   );
 
   /**
@@ -169,6 +151,5 @@ export function useFlowController({
     rotateLayout,
     collapsedNodes,
     toggleNodeChildren,
-    descendantsCache,
   };
 }
