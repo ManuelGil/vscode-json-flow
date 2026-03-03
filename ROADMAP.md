@@ -102,7 +102,7 @@ The following properties SHALL remain unchanged throughout the entire 2.x series
 9. No persistent Worker cache SHALL be introduced.
 10. No cross-file behavior SHALL be introduced.
 
-## 3. Upcoming Minor Versions
+## 3. Minor Versions
 
 Minor versions SHALL introduce observable behavior changes.
 Such changes SHALL remain within the existing structure.
@@ -115,19 +115,19 @@ Minor versions SHALL NOT modify:
 - Protocol shape.
 - Single-file scope.
 
-### 3.1 Version 2.7.0 — Explorability & Search Ergonomics
+### 3.1 Version 2.7.0 (Released) — Explorability & Search Ergonomics
 
 #### Scope
 
-Version 2.7.0 SHALL introduce the following behaviors:
+Version 2.7.0 provides the following behaviors:
 
-1. Search highlight clarity SHALL be refined.
-2. Selection and search matches SHALL be clearly distinguished.
-3. Matches located inside collapsed subtrees SHALL be indicated.
-4. Keyboard navigation SHALL be improved.
-5. Optional, non-destructive UI-level filtering SHALL be introduced.
+1. Refined search highlight clarity.
+2. Clear visual distinction between selection and search matches.
+3. Indication of matches located inside collapsed subtrees.
+4. Improved keyboard navigation.
+5. Optional, non-destructive UI-level filtering.
 
-The following invariants SHALL apply to filtering:
+The following invariants apply to filtering:
 
 1. Filtering SHALL NOT mutate graph data.
 2. Filtering SHALL NOT modify Worker output.

@@ -1,4 +1,4 @@
-# JSON Flow
+# JSON Flow — Structured JSON Graph Explorer for VS Code
 
 [![VS Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/imgildev.vscode-json-flow?style=for-the-badge&label=VS%20Marketplace&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=imgildev.vscode-json-flow)
 [![VS Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/imgildev.vscode-json-flow?style=for-the-badge&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=imgildev.vscode-json-flow)
@@ -7,62 +7,70 @@
 [![GitHub Repo Stars](https://img.shields.io/github/stars/ManuelGil/vscode-json-flow?style=for-the-badge&logo=github)](https://github.com/ManuelGil/vscode-json-flow)
 [![GitHub License](https://img.shields.io/github/license/ManuelGil/vscode-json-flow?style=for-the-badge&logo=github)](https://github.com/ManuelGil/vscode-json-flow/blob/main/LICENSE)
 
-Visualize, explore, and export structured data files as interactive graphs directly inside VS Code.
+JSON Flow is a VS Code extension for exploring complex, deeply nested, and large structured data as an interactive JSON graph. Search across the entire graph using structured tokens — `key:`, `value:`, `type:`, `path:`, `depth>` — and apply projection modes to highlight, isolate, or focus matched nodes with their ancestor chain.
 
-## What is JSON Flow?
-
-**JSON Flow** transforms structured data files into an interactive node-based graph view rendered inside a VS Code webview panel.
-
-Stop scrolling through deeply nested structured files. With JSON Flow, you can:
-
-- Navigate relationships visually
-- Expand and collapse nested structures
-- Search nodes with prev/next navigation
-- Sync selections bidirectionally
-- Export graphs as PNG, JPG, or SVG
-- Convert any supported format to JSON
-- Generate strongly-typed code using quicktype
-- Fetch and visualize JSON from a remote URL
-
-Runs 100% locally. No telemetry. No uploads. No background network access.
+Supports JSON, JSONC, JSON5, YAML, TOML, XML, CSV, HCL, and more — all converted through the same graph interface. Layout is computed in a background worker with an adaptive strategy for large documents. Built for developers working with complex and large data structures. Fully local. No telemetry. Open-source.
 
 ![JSON Flow Demo](https://raw.githubusercontent.com/ManuelGil/vscode-json-flow/main/assets/images/json-flow-1.gif)
 
+## Why JSON Flow?
+
+- **Explore deeply nested structures** — Navigate JSON as a full node graph where every object, array, and value is a visible, interactive element — regardless of nesting depth.
+- **Search with structured tokens** — Find nodes by key, value, data type, JSON Pointer path, or structural depth (`key:`, `value:`, `type:`, `path:`, `depth>`) with composable AND logic.
+- **Project search results in context** — Three projection modes: highlight matches across the full graph, show matches with their ancestor chain, or isolate matches exclusively.
+- **Collapse and expand** — Fold any branch to reduce clutter. Hidden match indicators tell you when search results exist inside collapsed subtrees.
+- **Scale to large documents** — Layout is computed in a background worker using an adaptive strategy that keeps the UI responsive for files with thousands of nodes.
+- **Multi-format graph pipeline** — JSON, JSONC, JSON5, YAML, TOML, XML, CSV, INI, ENV, HCL — all parsed and rendered through the same graph interface.
+- **Sync with your editor** — Bidirectional Live Sync links your editor cursor to the graph. Click in one, jump in the other.
+- **Export and generate** — Save graphs as PNG, JPG, or SVG. Convert formats to JSON. Generate typed code in 20+ languages.
+
+### How It Works
+
+JSON Flow parses your file, converts it into a tree structure, and computes a deterministic graph layout in a background worker. The resulting graph is rendered in a VS Code webview panel where you can search, collapse, and apply projection modes — all without modifying the underlying data or blocking the editor.
+
+## Why This Extension Stands Out
+
+- **Graph-first exploration.** Most JSON visualization tools present data as collapsible outlines or formatted text. JSON Flow renders a full node graph where every object, array, and value is a visible, navigable element — making structural relationships immediately apparent regardless of nesting depth.
+- **Structured search beyond text matching.** Beyond simple text search, JSON Flow supports composable query tokens: `key:`, `value:`, `type:`, `path:`, and `depth>` / `depth<` / `depth=`. Combine multiple tokens with AND logic to express precise structural queries across the entire graph.
+- **Projection modes for focused analysis.** Search results can be visualized in three ways: highlight matches while keeping the full graph visible, show only matches and their ancestor path for structural context, or isolate matches exclusively. This enables targeted analysis without losing orientation.
+- **Responsive on large and deeply nested documents.** Graph layout is computed in a dedicated background worker using an adaptive strategy. Small and medium files receive a hierarchical layout; large files switch automatically to a high-performance linear layout. The editor remains responsive throughout.
+- **14 formats, one interface.** JSON, JSONC, JSON5, YAML, TOML, INI, ENV, XML, CSV, TSV, HCL, Docker Compose, and Properties are all supported for graph preview and conversion — using the same interaction model across all formats.
+- **Bidirectional editor–graph synchronization.** Live Sync connects your editor cursor to the graph in both directions. Click a line in the editor to focus the corresponding node; click a node to jump to its source location. Selection mapping is format-aware.
+- **Deterministic, stable layout.** The same file content always produces the same graph layout. Node identities remain stable across re-renders, so collapse state, search results, and navigation position are preserved during updates.
+- **Collapse-aware search.** When search matches exist inside collapsed branches, the match counter reports them as hidden. You always know whether results are obscured by the current view state.
+- **Code generation in 20+ languages.** Generate typed data structures from any supported file using quicktype — TypeScript, Python, Rust, Go, Java, Kotlin, C#, and more.
+- **Cross-editor compatibility.** Works with VS Code, VSCodium, Cursor, WindSurf, and any VS Code–compatible editor or platform.
+- **Fully local, fully private.** All parsing, layout, search, and rendering runs inside your editor. No data is transmitted. No telemetry. No analytics. No external dependencies at runtime.
+
 ## Table of Contents
 
-- [JSON Flow](#json-flow)
-  - [What is JSON Flow?](#what-is-json-flow)
+- [JSON Flow — Structured JSON Graph Explorer for VS Code](#json-flow--structured-json-graph-explorer-for-vs-code)
+  - [Why JSON Flow?](#why-json-flow)
+    - [How It Works](#how-it-works)
+  - [Why This Extension Stands Out](#why-this-extension-stands-out)
   - [Table of Contents](#table-of-contents)
   - [Supported Formats](#supported-formats)
   - [Format Capability Matrix](#format-capability-matrix)
-  - [Core Features](#core-features)
-    - [Interactive Graph Visualization](#interactive-graph-visualization)
-    - [Graph Export](#graph-export)
-    - [Node Search](#node-search)
-    - [Advanced Search \& Projection Modes](#advanced-search--projection-modes)
-      - [Structured Tokens](#structured-tokens)
-      - [Projection Modes](#projection-modes)
-      - [Hidden Matches](#hidden-matches)
-      - [Lifecycle](#lifecycle)
-    - [Appearance and Settings](#appearance-and-settings)
-    - [Live Sync](#live-sync)
-    - [Format Conversion](#format-conversion)
-    - [Partial Operations](#partial-operations)
-    - [Code Generation](#code-generation)
-    - [Fetch JSON from URL](#fetch-json-from-url)
+  - [Installation](#installation)
+  - [Getting Started](#getting-started)
+  - [Interactive JSON Graph Visualization](#interactive-json-graph-visualization)
+  - [Graph Export](#graph-export)
+  - [Structured Search \& Projection](#structured-search--projection)
+    - [Structured Tokens](#structured-tokens)
+    - [Projection Modes](#projection-modes)
+    - [Hidden Matches](#hidden-matches)
+    - [Search Lifecycle](#search-lifecycle)
+  - [Live Sync](#live-sync)
+  - [Format Conversion \& Partial Operations](#format-conversion--partial-operations)
+  - [Code Generation](#code-generation)
+  - [Fetch JSON from URL](#fetch-json-from-url)
+  - [Appearance and Settings](#appearance-and-settings)
   - [Explorer and File Management](#explorer-and-file-management)
   - [Split View Mode](#split-view-mode)
   - [Commands](#commands)
   - [Configuration](#configuration)
-  - [Architecture](#architecture)
-    - [Extension Host](#extension-host)
-    - [Webview (React UI)](#webview-react-ui)
-    - [Web Worker](#web-worker)
-  - [2.x Architectural Stability](#2x-architectural-stability)
-  - [Identity Model](#identity-model)
-  - [How the Graph Is Generated](#how-the-graph-is-generated)
-  - [Performance Characteristics](#performance-characteristics)
-  - [Known Behavior and Limitations](#known-behavior-and-limitations)
+  - [Limitations](#limitations)
+  - [Technical Overview](#technical-overview)
   - [Security and Privacy](#security-and-privacy)
   - [Internationalization (i18n)](#internationalization-i18n)
   - [Requirements](#requirements)
@@ -108,56 +116,71 @@ JSON Flow supports preview, conversion, and graph visualization for:
 | HCL            | ✓     | ✓             | ✓               | ✓               | ✗         | Standard      |
 | Docker Compose | ✓     | ✓             | ✓               | ✓               | ✗         | —             |
 
-Live Sync is gated in the extension host. Only `json`, `jsonc`, `json5`, `yaml`, and `yml` are whitelisted. Formats like `toml` and `dockercompose` are explicitly excluded.
+Live Sync is available for `json`, `jsonc`, `json5`, `yaml`, and `yml` only. Formats like `toml` and `dockercompose` are explicitly excluded.
 
-## Core Features
+## Installation
 
-### Interactive Graph Visualization
+1. Open VS Code or any VS Code–compatible editor.
+2. Go to the Extensions view (`Ctrl+Shift+X` / `Cmd+Shift+X`).
+3. Search for **JSON Flow**.
+4. Click **Install**.
 
-- Deterministic layout computed in a Web Worker
-- Smooth zoom, pan, and fit-view controls
-- Expand/collapse subtrees per node
-- Four layout directions: Top-Bottom (TB), Left-Right (LR), Bottom-Top (BT), Right-Left (RL)
-- Rotate layout button cycles through directions
-- Minimap navigation
-- Node detail panel
-- Draggable nodes (lockable via interactivity toggle)
+Alternatively, install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=imgildev.vscode-json-flow).
 
-### Graph Export
+## Getting Started
 
-Export from the toolbar inside the webview panel.
+1. Open any supported file (JSON, YAML, TOML, etc.).
+2. Open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`).
+3. Run **JSON Flow: Show Preview**.
+
+The graph panel opens and renders your file as an interactive JSON explorer.
+
+## Interactive JSON Graph Visualization
+
+Explore structured data visually in the JSON graph view:
+
+- **Zoom and pan** — Scroll to zoom, drag empty space to pan, use Fit View to center the graph.
+- **Minimap** — Quick orientation via the minimap in the corner.
+- **Node details** — Click any node to inspect its details.
+- **Collapse and expand** — Toggle any node with children to fold or unfold its subtree. Reduces clutter and improves navigation in large and deeply nested files.
+- **Layout direction** — Rotate through Top-Bottom (TB), Left-Right (LR), Bottom-Top (BT), and Right-Left (RL).
+- **Draggable nodes** — Reposition nodes freely; lockable via the interactivity toggle.
+- **Deterministic layout** — Computed in a background Web Worker using an adaptive strategy for large documents.
+
+## Graph Export
+
+Export the current JSON visualization from the toolbar inside the graph panel.
 
 - **Formats**: PNG, JPG (2× pixel ratio), SVG, or Clipboard (PNG blob).
 - **Options**: Custom filename, background color (hex/preset/transparent).
-- **Clean Output**: UI chrome (controls, minimap) is automatically excluded.
+- **Clean output**: UI chrome (controls, minimap) is automatically excluded.
 
-### Node Search
+Use Fit View before exporting to ensure the full graph is captured.
 
-Interactive structural search and navigation control.
+## Structured Search & Projection
 
-- Case-insensitive, debounced search
-- Structured query tokens (see **Advanced Search & Projection Modes**)
-- Exact full-label match priority with indexed lookup
-- Prev/Next navigation with match counter
-- Hidden match indicator when matches exist outside the current view
-- Explicit lifecycle with deterministic reset behavior
+JSON Flow includes a structured search engine with composable query tokens and three projection modes for filtering the JSON graph view.
 
-### Advanced Search & Projection Modes
+- Case-insensitive and debounced (250ms). Minimum 2 characters to activate.
+- Enter commits search immediately, bypassing debounce.
+- Exact full-label match priority with indexed lookup.
+- Prev/Next navigation with match counter.
+- Hidden match indicator when matches exist inside collapsed branches.
 
-Search supports structured tokens and projection-based visualization without modifying layout, identity, or Worker behavior.
-
-#### Structured Tokens
+### Structured Tokens
 
 Search terms are whitespace-separated and combined with implicit **AND** semantics.
 
-Supported tokens:
-
-- `text` — Case-insensitive label substring
-- `key:` — Match key portion of `key: value`
-- `value:` — Match value portion
-- `type:` — Match node data type
-- `path:` — Match JSON Pointer substring
-- `depth>n`, `depth<n`, `depth=n` — Match by structural depth
+| Token | Format | Description |
+| --- | --- | --- |
+| `text` | plain text | Case-insensitive label substring match |
+| `key:` | `key:term` | Match the key portion of a `key: value` leaf label |
+| `value:` | `value:term` | Match the value portion of a `key: value` leaf label |
+| `type:` | `type:term` | Match node data type (exact match, e.g. `string`, `number`, `object`, `boolean`) |
+| `path:` | `path:term` | Match against the node's JSON Pointer path (substring) |
+| `depth>n` | `depth>2` | Match nodes with structural depth greater than `n` |
+| `depth<n` | `depth<5` | Match nodes with structural depth less than `n` |
+| `depth=n` | `depth=3` | Match nodes with structural depth equal to `n` |
 
 Example:
 
@@ -165,90 +188,82 @@ Example:
 key:user type:string depth>2
 ```
 
-Only nodes satisfying all tokens are matched.
+A node matches only when all tokens are satisfied. Matches are computed against the full graph, then partitioned into visible and hidden based on the current collapse state.
 
-#### Projection Modes
+### Projection Modes
 
-Matches can be visualized using three modes:
+Control how matched and non-matched nodes appear in the interactive JSON explorer:
 
-- **All** — Highlight matches, show full visible graph
-- **Tree** — Show matches and their ancestor path
-- **Only** — Show matched nodes only
+| Mode | UI Label | Behavior |
+| --- | --- | --- |
+| `highlight` | All | Full visible graph rendered. Matches receive a visual ring; non-matches are attenuated (opacity 50%). |
+| `focus-context` | Tree | Only matches and their ancestor chain are rendered. Matches receive a ring; ancestors appear at normal opacity. |
+| `focus-strict` | Only | Only matched nodes are rendered. All projected nodes are matches. |
 
-Projection is applied after collapse filtering and affects rendering only.
-No layout recalculation occurs.
+Projection operates after collapse filtering and affects rendering only. No layout recalculation occurs. Edges include only those where both endpoints are present in the projected node set.
 
-#### Hidden Matches
+### Hidden Matches
 
-The match counter may display `(+N hidden)` when additional matches exist outside the current visible projection:
+The match counter displays `(+N hidden)` when additional matches exist outside the current visible projection:
 
-- Collapsed branches (**All** mode)
-- Projection filtering (**Tree** mode)
+- Collapsed branches (**highlight** mode): matches under collapsed subtrees are not visible.
+- Projection filtering (**focus-context** mode): matches exist but ancestor filtering excludes some.
 
-In **Only** mode, all projected nodes are matches.
+When all matches are hidden (no visible matches), an indicator banner appears.
 
-#### Lifecycle
+In **focus-strict** mode, all projected nodes are matches by definition.
+
+### Search Lifecycle
 
 - Typing updates input only.
-- Debounce or Enter commits search.
+- Debounce (250ms) or Enter commits search.
+- Minimum 2 characters required to activate search.
 - Explicit clear resets search and projection.
 - Closing the panel or changing dataset resets search.
 - Navigation operates on the current render projection.
+- Clearing the input field alone does not clear the active search; only the Clear button does.
 
-### Appearance and Settings
+## Live Sync
 
-Persisted to `localStorage`.
+Bidirectional synchronization between the editor cursor and the JSON graph view. Click in the editor to focus the corresponding graph node, or click a graph node to jump to its source location.
 
-- **Theme**: Light, Dark, or System
-- **Theme Color**: Multiple named palettes
-- **Background**: Lines, Dots, or Cross
-- **Edges**: Straight, Step, Smooth Step, Simple Bezier (with optional arrows and animation)
-- **Reset**: Restore defaults button available
+**Supported formats:** `json`, `jsonc`, `json5`, `yaml`, `yml`
 
-### Live Sync
+**How to enable:**
 
-Bidirectional synchronization between editor cursor and graph.
-
-**Supported (Whitelisted):** `json`, `jsonc`, `json5`, `yaml`, `yml`
-
-**Excluded:** `toml`, `dockercompose`, and all others.
+1. Open a file in Split View (`Ctrl+Alt+F` / `Cmd+Alt+F`).
+2. Enable Live Sync via the Title Bar button or the command **JSON Flow: Enable Live Sync**.
 
 **Behavior:**
 
-- **Disabled by default**: Enable via Title Bar or command.
-- **Mouse-only**: Triggered by clicks, not keyboard/hover.
-- **Context-aware**: Active document must match previewed file.
-- **Throttled**: Configurable delay (default 100ms).
-- **Optimized**: De-duplicates redundant events.
-- **Safe**: Prevents feedback loops and pauses on mapping errors.
+- **Disabled by default.** Requires explicit activation.
+- **Mouse-only.** Triggered by clicks, not keyboard or hover.
+- **Context-aware.** Active document must match the previewed file.
+- **Throttled.** Configurable delay (default 100ms).
+- **Loop-safe.** De-duplicates redundant events and prevents feedback loops.
+- **Single-file only.** No cross-file sync.
 
-**Editor → Graph:** Click in editor → cursor offset resolved to JSON Pointer → graph focuses node.
+## Format Conversion & Partial Operations
 
-**Graph → Editor:** Click node → ID resolved to text range → editor selection updates.
+Convert structured data to JSON or generate code from full files or text selections:
 
-**Single-file mode only.** No cross-file sync.
+| Action | Scope | Output |
+| --- | --- | --- |
+| Convert to JSON | Full file | New JSON document |
+| Convert Partial to JSON | Selection | New JSON document |
+| Copy Content as JSON | Full file | Clipboard |
+| Copy Partial as JSON | Selection | Clipboard |
+| Copy Content | Full file | Clipboard (raw) |
+| Show Partial Preview | Selection | Graph panel |
+| Convert Partial to Type | Selection | Generated code |
 
-### Format Conversion
+Partial operations are available via the Editor context menu submenu.
 
-- **Convert to JSON**: Opens content as new JSON document.
-- **Convert Partial**: Converts selection to new JSON document.
-- **Copy as JSON**: Copies content/selection as JSON to clipboard.
-- **Copy Content**: Copies raw content.
+**Normalization:** JS/TS object literal selections with single quotes or trailing commas are automatically normalized to valid JSON.
 
-**Normalization:** Partial selections of JS/TS object literals (single quotes, trailing commas) are automatically normalized to valid JSON.
+## Code Generation
 
-### Partial Operations
-
-Available via Editor context menu submenu:
-
-- **Show Partial Preview**: Graph from selection.
-- **Convert Partial to JSON**: New JSON document.
-- **Convert Partial to Type**: Generate code.
-- **Copy Partial as JSON**: Clipboard.
-
-### Code Generation
-
-Generate types/data structures via quicktype.
+Generate typed data structures from any supported file using quicktype.
 
 **Supported languages:**
 TypeScript, JavaScript, Flow, Rust, Kotlin, Dart, Python, C#, Go, C++, Java, Scala, Swift, Objective-C, Elm, JSON Schema, Pike, PropTypes, Haskell, PHP, Ruby.
@@ -262,15 +277,25 @@ export interface Person {
 }
 ```
 
-### Fetch JSON from URL
+## Fetch JSON from URL
 
-Prompt for URL and visualize response.
+Fetch JSON from a remote URL and visualize it as a graph.
 
-- **HTTP GET only**. No auth/headers.
+- **HTTP GET only.** No authentication or custom headers.
 - **10s timeout** with cancellation.
-- Validates URL format before request.
-- Falls back to text parsing if content-type isn't JSON.
+- Validates URL format before sending the request.
+- Falls back to text parsing if content-type is not JSON.
 - No persistent connection.
+
+## Appearance and Settings
+
+All settings are persisted to `localStorage`.
+
+- **Theme**: Light, Dark, or System
+- **Theme Color**: Multiple named palettes
+- **Background**: Lines, Dots, or Cross
+- **Edges**: Straight, Step, Smooth Step, Simple Bezier (with optional arrows and animation)
+- **Reset**: Restore defaults button available
 
 ## Explorer and File Management
 
@@ -284,7 +309,7 @@ Adds a dedicated **JSON Explorer** to the Activity Bar.
 
 ## Split View Mode
 
-Opens graph panel beside active editor.
+Opens the graph panel beside the active editor.
 
 - Toggle via Title Bar button or `Ctrl+Alt+F` / `Cmd+Alt+F`.
 - Live Sync is available only in Split View.
@@ -315,7 +340,7 @@ Accessible via Command Palette (`Ctrl+Shift+P`).
 
 ## Configuration
 
-Configured via `jsonFlow` settings.
+Configured via `jsonFlow` settings in VS Code.
 
 ```jsonc
 {
@@ -359,95 +384,7 @@ Configured via `jsonFlow` settings.
 | `jsonFlow.files.preserveGitignoreSettings` | boolean                | `false`         | Respect `.gitignore` rules in file search           |
 | `jsonFlow.files.includeFilePath`           | boolean                | `true`          | Show relative path alongside filename in Explorer   |
 
-## Architecture
-
-JSON Flow uses a strict three-layer separation of concerns.
-
-### Extension Host
-
-The extension host is the sole backend. It runs inside the VS Code process and is responsible for:
-
-- Parsing all supported file formats
-- Building the tree structure sent to the webview
-- Handling all commands and file system operations
-- Managing Live Sync state and format gating
-- Validating all messages received from the webview
-- Handling localization
-
-The extension host never renders UI and never runs layout algorithms.
-
-### Webview (React UI)
-
-The webview is a sandboxed iframe. It is responsible for:
-
-- Rendering the interactive graph
-- Managing UI state
-- Communicating with the extension host exclusively via structured message passing
-- Persisting appearance settings
-
-The webview has no access to the VS Code API, the filesystem, or the extension host's state directly.
-
-### Web Worker
-
-The Web Worker is the sole layout authority.
-
-- Receives graph data and settings
-- Executes the layout pipeline deterministically
-- Returns positioned nodes and edges
-- **Stateless**: Processes each request independently
-- **Lightweight**: Contains no DOM dependencies or React runtime
-
-No layout logic runs in the main thread.
-
-## 2.x Architectural Stability
-
-The 2.x series is intentionally architecturally stable.
-
-If you plan to contribute, please keep in mind that the following core properties are considered fixed throughout 2.x:
-
-- Layout computation runs exclusively inside a Web Worker.
-- Identity is based on RFC 6901 JSON Pointer.
-- Graph mode is single-file only.
-- No cross-file synchronization.
-- No persistent Worker state.
-- No incremental layout strategies.
-- The adaptive layout threshold remains unchanged.
-
-Improvements in 2.x are expected to enhance usability and interaction within this structure.
-
-Contributions that alter layout authority, identity construction rules, the Worker protocol, or the single-file scope model should be discussed before implementation.
-
-The goal of 2.x is to evolve safely without introducing structural drift.
-
-## Identity Model
-
-Every node in the graph has a deterministic identity based on its structural position in the source data.
-
-- **Data nodes**: Identified by RFC 6901 JSON Pointer strings (e.g. `/users/0/name`).
-- **Graph structural root**: Uses a reserved identifier disjoint from the JSON Pointer domain.
-
-IDs are stable across re-renders for the same file content, ensuring reliable state preservation (such as expansion/collapse status) during updates.
-
-## How the Graph Is Generated
-
-1. **Host**: Parses file to object. Sends to Webview.
-2. **Webview**: Dispatches data to the Worker.
-3. **Worker**: Computes layout using an adaptive strategy.
-   - Small/Medium graphs use a layout optimized for structure and readability.
-   - Large graphs automatically switch to a high-performance linear layout.
-4. **Worker**: Returns positioned elements.
-5. **Webview**: Renders the graph.
-
-## Performance Characteristics
-
-JSON Flow utilizes an adaptive layout system to balance readability and performance.
-
-- **Standard Layout**: Used for most files. Provides optimal edge routing and hierarchical spacing.
-- **Linear Layout**: Automatically activated for large graphs (> 2000 nodes). Switches to a high-performance, O(n) breadth-first strategy to maintain responsiveness.
-
-Performance depends on structural complexity (depth, branching factor), not only file size. There is no hard file size cap.
-
-## Known Behavior and Limitations
+## Limitations
 
 - **Single-file mode only.** One file per preview panel. No cross-file graph.
 - **No cross-file Live Sync.** Live Sync only operates on the file currently open in the preview panel.
@@ -457,10 +394,21 @@ Performance depends on structural complexity (depth, branching factor), not only
 - **Live Sync is mouse-only.** Keyboard navigation in the editor does not trigger graph sync.
 - **Fetch JSON from URL is GET-only.** No POST, no authentication, no custom headers.
 - **Docker Compose has no selection mapper.** Preview and conversion work; Live Sync does not.
+- **`path:` operates on escaped JSON Pointer IDs.** The `path:` search token matches against the node's RFC 6901 JSON Pointer ID, which uses `~0` for `~` and `~1` for `/` in key segments. Searching for a literal key containing `/` requires the escaped form.
+- **`type:` uses JavaScript type categories.** Valid values are `string`, `number`, `boolean`, `object`. There is no `array` type; arrays report as `object`.
+- **Collapse state is not auto-reset on dataset swap.** When switching files, previously collapsed node IDs may reference nodes that no longer exist. The collapse filter handles this gracefully — non-existent IDs are simply never matched.
+- **`focus-strict` does not display non-projected nodes.** In `focus-strict` mode, only matched nodes are rendered. Navigation operates on the projected node set. Nodes that are not projected cannot be centered or navigated to.
+- **`focus-context` includes ancestors without match highlighting.** Ancestor nodes in `focus-context` mode appear at normal opacity without a match ring, distinguishing them visually from actual matches (ring) and non-matches (dimmed).
+- **Search minimum length.** Active search requires at least 2 characters after trimming. Single-character inputs are not committed.
+- **Depth is derived from JSON Pointer segmentation.** Depth counts the number of path segments in the node's JSON Pointer ID. The graph root (which is not a JSON Pointer) returns depth 0.
+
+## Technical Overview
+
+For detailed architecture documentation, data pipeline description, identity model, search evaluation logic, collapse and projection internals, performance characteristics, and structural guarantees, see [ARCHITECTURE.md](https://github.com/ManuelGil/vscode-json-flow/blob/main/ARCHITECTURE.md).
 
 ## Security and Privacy
 
-**Processing boundary:** All parsing, layout, and code generation runs locally inside VS Code. No data leaves the machine unless the user explicitly invokes `Fetch JSON from URL`.
+**Processing boundary:** All parsing, layout, search, and code generation runs locally inside VS Code. No data leaves the machine unless the user explicitly invokes `Fetch JSON from URL`.
 
 **Webview security:**
 
@@ -474,7 +422,7 @@ Performance depends on structural complexity (depth, branching factor), not only
 - All messages are validated before processing
 - HTML sanitization applied to all user-controlled content
 
-**Workspace Trust:** The extension respects VS Code Workspace Trust. It is declared as supporting untrusted workspaces and virtual workspaces (with limitations).
+**Workspace Trust:** The extension respects VS Code Workspace Trust. It supports untrusted workspaces and virtual workspaces (with limitations).
 
 **No telemetry. No analytics. No automatic uploads.**
 
@@ -513,7 +461,7 @@ The extension is fully localized.
 **Graph export is blank or clipped:**
 
 - Use Fit View before exporting
-- Ensure the graph has finished loading (worker completes layout before export)
+- Ensure the graph has finished loading before exporting
 
 For issues: [https://github.com/ManuelGil/vscode-json-flow/issues](https://github.com/ManuelGil/vscode-json-flow/issues)
 
@@ -526,8 +474,11 @@ Contributions are welcome.
 - Do not modify identity logic
 - Do not introduce layout computation outside the Web Worker
 - Do not alter the adaptive threshold without benchmarking
+- Do not mutate Worker output arrays
 
-Architecture stability is prioritized over feature expansion.
+Architecture stability is prioritized over feature expansion. Contributions that alter layout authority, identity construction rules, the Worker protocol, or the single-file scope model should be discussed before implementation.
+
+See [ARCHITECTURE.md](https://github.com/ManuelGil/vscode-json-flow/blob/main/ARCHITECTURE.md) for technical details on system invariants.
 
 ## Code of Conduct
 
