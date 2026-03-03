@@ -11,6 +11,31 @@ import {
 } from '../../src/shared/node-pointer';
 
 /**
+ * Resolves the canonical JSON type.
+ *
+ * IMPORTANT:
+ * JavaScript `typeof` does not distinguish between:
+ * - array  → "object"
+ * - null   → "object"
+ *
+ * SearchService expects semantic JSON types:
+ * object | array | string | number | boolean | null
+ *
+ * Any modification here directly impacts `type:` search tokens.
+ */
+const resolveJsonType = (value: unknown): string => {
+  if (value === null) {
+    return 'null';
+  }
+
+  if (Array.isArray(value)) {
+    return 'array';
+  }
+
+  return typeof value;
+};
+
+/**
  * Recursively generates a TreeMap from a JSON value.
  */
 export function generateTree(
@@ -41,7 +66,7 @@ export function generateTree(
         ? GRAPH_ROOT_LABEL
         : (lastSegment(parentId) ?? parentId),
       children: [],
-      data: { type: typeof json, line: lineNumber },
+      data: { type: resolveJsonType(json), line: lineNumber },
     };
 
     let currentLine = lineNumber + 1;
@@ -54,13 +79,15 @@ export function generateTree(
         acc[parentId].children?.push(valueId);
         currentLine += Object.keys(value).length + 2;
       } else {
-        // CONTRACT: Leaf node names use ": " separator.
+        // CONTRACT:
+        // Leaf node names MUST use ": " separator.
         // searchService.extractKey/extractValue depend on this exact format.
         acc[valueId] = {
           id: valueId,
           name: `${index}: ${String(value)}`,
-          data: { type: typeof value, line: currentLine },
+          data: { type: resolveJsonType(value), line: currentLine },
         };
+
         acc[parentId].children?.push(valueId);
         currentLine++;
       }
@@ -72,7 +99,7 @@ export function generateTree(
         ? GRAPH_ROOT_LABEL
         : (lastSegment(parentId) ?? parentId),
       children: [],
-      data: { type: typeof json, line: lineNumber },
+      data: { type: resolveJsonType(json), line: lineNumber },
     };
 
     let currentLine = lineNumber + 1;
@@ -86,7 +113,7 @@ export function generateTree(
           id: keyId,
           name: key,
           children: [],
-          data: { type: typeof value, line: currentLine },
+          data: { type: resolveJsonType(value), line: currentLine },
         };
 
         acc[parentId].children?.push(keyId);
@@ -95,12 +122,13 @@ export function generateTree(
 
         currentLine += Object.keys(value).length + 2;
       } else {
-        // CONTRACT: Leaf node names use ": " separator.
+        // CONTRACT:
+        // Leaf node names MUST use ": " separator.
         // searchService.extractKey/extractValue depend on this exact format.
         acc[keyId] = {
           id: keyId,
           name: `${key}: ${String(value)}`,
-          data: { type: typeof value, line: currentLine },
+          data: { type: resolveJsonType(value), line: currentLine },
         };
 
         acc[parentId].children?.push(keyId);
@@ -111,7 +139,7 @@ export function generateTree(
     acc[parentId] = {
       id: parentId,
       name: String(json),
-      data: { type: typeof json, line: lineNumber },
+      data: { type: resolveJsonType(json), line: lineNumber },
     };
   }
 
