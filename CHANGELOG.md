@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.0] - 2026-03-02
+
 * refactor: replace type detection with resolveJsonType function in generateTree ([db8aa94](https://github.com/ManuelGil/vscode-json-flow/commit/db8aa94))
 * refactor: enhance FlowCanvas and related hooks for improved tree structure handling ([477dbf7](https://github.com/ManuelGil/vscode-json-flow/commit/477dbf7))
 * refactor: extract search logic into searchService and add useSearchProjection hook ([ae6349a](https://github.com/ManuelGil/vscode-json-flow/commit/ae6349a))
@@ -233,7 +235,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * build: add webview path ([960fb18](https://github.com/ManuelGil/vscode-json-flow/commit/960fb18))
 * fix: :rotating_light: fix compilation settings ([1ccbfa5](https://github.com/ManuelGil/vscode-json-flow/commit/1ccbfa5))
 
-[Unreleased]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.6.1...HEAD
+[Unreleased]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.7.0...HEAD
+[2.7.0]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.6.1...v2.7.0
 [2.6.1]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.6.0...v2.6.1
 [2.6.0]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.4.0...v2.5.0
