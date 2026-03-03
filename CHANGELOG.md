@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+* refactor: replace type detection with resolveJsonType function in generateTree ([db8aa94](https://github.com/ManuelGil/vscode-json-flow/commit/db8aa94))
+* refactor: enhance FlowCanvas and related hooks for improved tree structure handling ([477dbf7](https://github.com/ManuelGil/vscode-json-flow/commit/477dbf7))
+* refactor: extract search logic into searchService and add useSearchProjection hook ([ae6349a](https://github.com/ManuelGil/vscode-json-flow/commit/ae6349a))
+* feat: enhance GoToSearch with structured query token parsing and improved search handling ([766fd0a](https://github.com/ManuelGil/vscode-json-flow/commit/766fd0a))
+* feat: implement search projection modes in GoToSearch and FlowCanvas components ([81779b6](https://github.com/ManuelGil/vscode-json-flow/commit/81779b6))
+* refactor: improve visual feedback for search matches in CustomNode and FlowCanvas components ([23c8b63](https://github.com/ManuelGil/vscode-json-flow/commit/23c8b63))
+* fix: clear selection when selected node is hidden due to collapse ([bb8b4b1](https://github.com/ManuelGil/vscode-json-flow/commit/bb8b4b1))
+
 ## [2.6.1] - 2026-02-28
 
 * chore: remove unused files, update package.json dependencies and node engine version ([6e7653e](https://github.com/ManuelGil/vscode-json-flow/commit/6e7653e))
