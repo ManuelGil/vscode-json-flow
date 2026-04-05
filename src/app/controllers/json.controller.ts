@@ -11,9 +11,12 @@ import {
 
 import { EXTENSION_DISPLAY_NAME, ExtensionConfig } from '../configs';
 import {
+  applyNodeEdit,
   FileType,
   isFileTypeSupported,
   logger,
+  MutationResult,
+  NodeEditIntent,
   normalizeToJsonString,
   parseJsonContent,
 } from '../helpers';
@@ -82,10 +85,14 @@ export class JsonController {
       }
 
       // Parse JSON content
-      const parsedJsonData = parseJsonContent(
-        document.getText(),
-        fileType as FileType,
-      );
+      const result = parseJsonContent(document.getText(), fileType as FileType);
+
+      // Guarantee fileType is always available for downstream capability checks.
+      const fileTypeFromResult = (result as { fileType?: string } | null)
+        ?.fileType;
+      fileType = (fileTypeFromResult ?? 'json').toLowerCase().trim();
+
+      const parsedJsonData = result;
 
       // Check if the JSON content is null
       if (parsedJsonData === null) {
@@ -171,7 +178,14 @@ export class JsonController {
     }
 
     // Parse JSON content
-    const parsedJsonData = parseJsonContent(text, fileType as FileType);
+    const result = parseJsonContent(text, fileType as FileType);
+
+    // Guarantee fileType is always available for downstream capability checks.
+    const fileTypeFromResult = (result as { fileType?: string } | null)
+      ?.fileType;
+    fileType = (fileTypeFromResult ?? 'json').toLowerCase().trim();
+
+    const parsedJsonData = result;
 
     // Check if the JSON content is null
     if (parsedJsonData === null) {
@@ -256,6 +270,7 @@ export class JsonController {
             parsedJsonData,
             'Fetched Data',
             this.config.graphLayoutOrientation,
+            'json',
           );
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
@@ -265,6 +280,53 @@ export class JsonController {
         }
       },
     );
+  }
+
+  /**
+   * Handles a node edit intent from the webview by delegating to the
+   * mutation pipeline. Retrieves the active TextDocument and applies
+   * the edit via full-document replace.
+   *
+   * @param intent - The edit intent describing what to change.
+   * @returns The mutation result.
+   */
+  async handleNodeEdit(intent: NodeEditIntent): Promise<MutationResult> {
+    const editor = window.activeTextEditor;
+
+    if (!editor) {
+      return { success: false, error: 'INVALID_TARGET' };
+    }
+
+    try {
+      const result: MutationResult = await applyNodeEdit(
+        intent,
+        editor.document,
+        (nodeId, warnings) => {
+          JSONProvider.postMessageToWebview({
+            command: 'mutationDiagnostics',
+            nodeId,
+            warnings,
+          });
+        },
+      );
+
+      if (!result.success) {
+        const failedResult = result as { success: false; error: string };
+        logger.error('Node edit failed', undefined, {
+          nodeId: intent.nodeId,
+          type: intent.type,
+          error: failedResult.error,
+        });
+      }
+
+      return result;
+    } catch (error: unknown) {
+      logger.error('Unexpected error during node edit', error, {
+        nodeId: intent.nodeId,
+        type: intent.type,
+      });
+      return { success: false, error: 'UNKNOWN' };
+    }
   }
 
   /**

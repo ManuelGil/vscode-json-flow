@@ -2,7 +2,7 @@
  * Graph-level identity constants.
  *
  * -----------------------------------------------------------------------
- * WHY THIS EXISTS — DO NOT MERGE GRAPH ROOT WITH JSON POINTER ROOT
+ * WHY THIS EXISTS - DO NOT MERGE GRAPH ROOT WITH JSON POINTER ROOT
  * -----------------------------------------------------------------------
  *
  * JSON Pointer (RFC 6901) uses "/" as the pointer to the empty-string

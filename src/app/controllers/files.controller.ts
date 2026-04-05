@@ -1,14 +1,15 @@
-import fg from 'fast-glob';
-import ignore from 'ignore';
-import { relative } from 'path';
 import { env, l10n, Range, ThemeIcon, Uri, window, workspace } from 'vscode';
 
 import { CommandIds, EXTENSION_ID, ExtensionConfig } from '../configs';
 import {
   FileType,
+  findFiles,
   isFileTypeSupported,
   normalizeToJsonString,
   parseJsonContent,
+  readFileContent,
+  relativePath,
+  resolveFolderResource,
 } from '../helpers';
 import { NodeModel } from '../models';
 
@@ -32,17 +33,26 @@ export class FilesController {
    * @returns Promise resolving to an array of file info objects or void if canceled.
    */
   async getFiles(): Promise<NodeModel[] | void> {
-    // Get the files in the folder
-    let folders: string[] = [];
-    let files: Uri[] = [];
-
-    if (!workspace.workspaceFolders) {
+    if (
+      !workspace.workspaceFolders ||
+      workspace.workspaceFolders.length === 0
+    ) {
       const message = l10n.t('Operation canceled');
       window.showErrorMessage(message);
       return;
     }
 
-    folders = workspace.workspaceFolders.map((folder) => folder.uri.fsPath);
+    const folderUris = workspace.workspaceFolders
+      .map((folder) => resolveFolderResource(folder.uri) ?? folder.uri)
+      .filter((uri): uri is Uri => uri !== undefined);
+
+    if (folderUris.length === 0) {
+      const message = l10n.t('Operation canceled');
+      window.showErrorMessage(message);
+      return;
+    }
+
+    const files: Uri[] = [];
 
     const {
       includedFilePatterns,
@@ -63,15 +73,15 @@ export class FilesController {
       ? excludedFilePatterns
       : [excludedFilePatterns];
 
-    for (const folder of folders) {
-      const result = await this.findFiles(
-        folder,
-        includePatterns,
-        fileExclusionPatterns,
-        maxSearchRecursionDepth,
-        supportsHiddenFiles,
-        preserveGitignoreSettings,
-      );
+    for (const folderUri of folderUris) {
+      const result = await findFiles({
+        baseDirectoryPath: folderUri.fsPath,
+        includeFilePatterns: includePatterns,
+        excludedPatterns: fileExclusionPatterns,
+        maxRecursionDepth: maxSearchRecursionDepth,
+        includeDotfiles: supportsHiddenFiles,
+        enableGitignoreDetection: preserveGitignoreSettings,
+      });
 
       files.push(...result);
     }
@@ -82,7 +92,7 @@ export class FilesController {
       files.sort((a, b) => a.path.localeCompare(b.path));
 
       for (const file of files) {
-        const path = workspace.asRelativePath(file.fsPath);
+        const path = relativePath(file, false, this.config) || file.fsPath;
         let filename = path.split('/').pop();
 
         if (filename && includeFilePath) {
@@ -132,14 +142,15 @@ export class FilesController {
    * Copies the content of the file represented by the node to the clipboard.
    * @param node NodeModel representing the file to copy.
    */
-  copyContent(node: NodeModel) {
-    if (node.resourceUri) {
-      workspace.openTextDocument(node.resourceUri).then((document) => {
-        const message = l10n.t('Content copied to clipboard');
-        env.clipboard.writeText(document.getText());
-        window.showInformationMessage(message);
-      });
+  async copyContent(node: NodeModel) {
+    if (!node.resourceUri) {
+      return;
     }
+
+    const content = await readFileContent(node.resourceUri);
+    const message = l10n.t('Content copied to clipboard');
+    env.clipboard.writeText(content);
+    window.showInformationMessage(message);
   }
 
   /**
@@ -311,77 +322,4 @@ export class FilesController {
    * // Example usage:
    * // const tsFiles = await this.findFiles('/path/to/dir', ['**\/*.ts'], ['**\/node_modules/**']);
    */
-  private async findFiles(
-    baseDir: string,
-    includeFilePatterns: string[],
-    excludedPatterns: string[] = [],
-    deep: number = 0,
-    includeDotfiles: boolean = true,
-    enableGitignoreDetection: boolean = false,
-    disableRecursive: boolean = false,
-  ): Promise<Uri[]> {
-    try {
-      // Check if any include patterns were provided
-      if (!includeFilePatterns.length) {
-        return [];
-      }
-
-      // If we need to respect .gitignore, we need to load it
-      let gitignore;
-
-      if (enableGitignoreDetection) {
-        const baseUri = Uri.file(baseDir);
-        const gitignoreUri = Uri.joinPath(baseUri, '.gitignore');
-        // Load .gitignore if it exists using VS Code workspace.fs
-        try {
-          const contentBytes = await workspace.fs.readFile(gitignoreUri);
-          const gitignoreText = new TextDecoder().decode(contentBytes);
-          gitignore = ignore().add(gitignoreText);
-        } catch (error: unknown) {
-          // Ignore missing file, rethrow other errors
-          if ((error as { code?: string }).code !== 'FileNotFound') {
-            throw error;
-          }
-        }
-      }
-
-      // Configure fast-glob options with optimizations for large projects
-      const options = {
-        cwd: baseDir, // Set the base directory for searching
-        absolute: true, // Return absolute paths for files found
-        onlyFiles: true, // Match only files, not directories
-        dot: includeDotfiles, // Include the files and directories starting with a dot
-        deep: disableRecursive ? 1 : deep === 0 ? undefined : deep, // Set the recursion depth
-        ignore: excludedPatterns, // Set the patterns to ignore files and directories
-        followSymbolicLinks: false, // Don't follow symlinks for better performance
-        cache: true, // Enable cache for better performance in large projects
-        stats: false, // Don't return stats objects for better performance
-        throwErrorOnBrokenSymbolicLink: false, // Don't throw on broken symlinks
-        objectMode: false, // Use string mode for better performance
-      };
-
-      // Use fast-glob to find matching files
-      let foundFilePaths = await fg(includeFilePatterns, options);
-
-      // Apply gitignore filtering if needed
-      if (gitignore) {
-        foundFilePaths = foundFilePaths.filter(
-          (filePath) => !gitignore.ignores(relative(baseDir, filePath)),
-        );
-      }
-
-      // Convert file paths to VS Code Uri objects
-      return foundFilePaths.sort().map((filePath) => Uri.file(filePath));
-    } catch (error: unknown) {
-      const errorDetails =
-        error instanceof Error
-          ? { message: error.message, stack: error.stack }
-          : { message: String(error) };
-
-      const message = l10n.t('Error finding files: {0}', errorDetails.message);
-      window.showErrorMessage(message);
-
-      return [];
-    }
-  }
 }

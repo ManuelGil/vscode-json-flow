@@ -1,8 +1,8 @@
-import { cn } from '@webview/lib';
-import type { CustomNodeData } from '@webview/types';
 import { Handle, Position } from '@xyflow/react';
-import { Eye, EyeOff } from 'lucide-react';
+import { AlertTriangle, Eye, EyeOff } from 'lucide-react';
 import { memo, useCallback, useMemo } from 'react';
+import { cn } from '../lib';
+import type { CustomNodeData } from '../types';
 import { Badge } from './atoms/Badge';
 import { Button } from './atoms/Button';
 import { useNodeColors } from './CustomNode/useNodeColors';
@@ -47,6 +47,7 @@ export const CustomNode = memo<CustomNodeProps>(
     // Use theme context for dynamic color classes
     const colors = useNodeColors();
     const {
+      id,
       isSpouse,
       isSibling,
       label,
@@ -54,7 +55,7 @@ export const CustomNode = memo<CustomNodeProps>(
       onToggleChildren,
       isCollapsed,
       isSearchMatch,
-      id,
+      hasInconsistencyWarning,
     } = data;
     const isHorizontal = useMemo(
       () => direction === 'LR' || direction === 'RL',
@@ -205,7 +206,7 @@ export const CustomNode = memo<CustomNodeProps>(
 
     return (
       <TooltipProvider delayDuration={300}>
-        <div tabIndex={0} className={containerClass}>
+        <div tabIndex={0} data-node-inner="true" className={containerClass}>
           {hasChildren && (
             <Handle
               type="source"
@@ -246,6 +247,11 @@ export const CustomNode = memo<CustomNodeProps>(
               <TooltipTrigger asChild>
                 <div className="flex flex-grow items-center justify-center overflow-hidden px-4">
                   <div className={labelClass}>{label}</div>
+                  {hasInconsistencyWarning && (
+                    <span title="This node has inconsistent types">
+                      <AlertTriangle className="mx-2 h-4 w-4" />
+                    </span>
+                  )}
                 </div>
               </TooltipTrigger>
               <TooltipContent className="max-w-sm overflow-auto whitespace-normal break-words">

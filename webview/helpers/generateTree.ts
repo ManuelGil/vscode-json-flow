@@ -1,14 +1,11 @@
-import { IS_DEV } from '@webview/env';
-import type { JsonValue, TreeMap } from '@webview/types';
-import {
-  GRAPH_ROOT_ID,
-  GRAPH_ROOT_LABEL,
-} from '../../src/shared/graph-identity';
+import { GRAPH_ROOT_ID, GRAPH_ROOT_LABEL } from '@src/shared/graph-identity';
 import {
   buildPointer,
   lastSegment,
   POINTER_ROOT,
-} from '../../src/shared/node-pointer';
+} from '@src/shared/node-pointer';
+import { IS_DEV } from '@webview/env';
+import type { JsonValue, TreeMap } from '@webview/types';
 
 /**
  * Resolves the canonical JSON type.

@@ -1,9 +1,11 @@
-import { generateTree } from '@webview/helpers/generateTree';
-import type { Direction, JsonValue, TreeMap } from '@webview/types';
+import { adaptTreeToGraph } from '../helpers/adaptTreeToGraph';
+import { generateTree } from '../helpers/generateTree';
+import type { Direction, GraphSnapshot, JsonValue, TreeMap } from '../types';
 
 export interface FlowState {
   data: JsonValue | null;
   treeData: TreeMap | null;
+  graphData: GraphSnapshot | null;
   orientation: Direction;
   path: string;
   fileName: string;
@@ -35,19 +37,24 @@ export type FlowAction =
  */
 export function flowReducer(state: FlowState, action: FlowAction): FlowState {
   switch (action.type) {
-    case 'UPDATE':
+    case 'UPDATE': {
+      const treeData = generateTree(action.payload.data);
+      const graphData = adaptTreeToGraph(treeData);
       return {
         data: action.payload.data,
-        treeData: generateTree(action.payload.data),
+        treeData,
+        graphData,
         orientation: action.payload.orientation,
         path: action.payload.path,
         fileName: action.payload.fileName,
       };
+    }
     case 'CLEAR':
       return {
         data: null,
         treeData: null,
-        orientation: 'TB', // Default orientation
+        graphData: null,
+        orientation: 'TB',
         path: '',
         fileName: '',
       };

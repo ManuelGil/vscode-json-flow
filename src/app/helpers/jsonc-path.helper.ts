@@ -6,7 +6,7 @@ import {
   parsePointer,
 } from '../../shared/node-pointer';
 
-type JsonNodeType =
+export type JsonNodeType =
   | 'object'
   | 'array'
   | 'string'
@@ -15,7 +15,7 @@ type JsonNodeType =
   | 'null'
   | 'property';
 
-interface AstNode {
+export interface AstNode {
   type: JsonNodeType;
   offset: number; // start byte (inclusive)
   length: number; // node length in bytes
@@ -152,7 +152,104 @@ export function rangeFromNodeId(
   }
 }
 
-function parseJsonTolerant(text: string): AstNode | undefined {
+/**
+ * Result of resolving a JSON Pointer against an AST.
+ * Contains the target node and its parent container (if any).
+ */
+export interface ResolvedAstNode {
+  /** The resolved target node. */
+  target: AstNode;
+  /** The parent container (object or array) of the target, or undefined for root. */
+  parent: AstNode | undefined;
+  /** For object parents: the property node wrapping key+value. */
+  property: AstNode | undefined;
+  /** The index of the target within its parent's children array. */
+  indexInParent: number;
+}
+
+/**
+ * Resolves a JSON Pointer string against a parsed AST, returning the
+ * target node and its parent context.
+ *
+ * @param root - The root AstNode from parseJsonTolerant.
+ * @param pointer - A valid JSON Pointer string (e.g., "/foo/bar/0").
+ * @returns The resolved node context, or undefined if the pointer cannot be resolved.
+ */
+export function resolveAstNode(
+  root: AstNode,
+  pointer: string,
+): ResolvedAstNode | undefined {
+  let segments: string[];
+  try {
+    segments = parsePointer(pointer);
+  } catch {
+    return undefined;
+  }
+
+  // Root pointer resolves to the root node itself
+  if (segments.length === 0) {
+    return {
+      target: root,
+      parent: undefined,
+      property: undefined,
+      indexInParent: -1,
+    };
+  }
+
+  let current: AstNode = root;
+  let parent: AstNode | undefined;
+  let property: AstNode | undefined;
+  let indexInParent = -1;
+
+  for (const segment of segments) {
+    if (!current || !Array.isArray(current.children)) {
+      return undefined;
+    }
+
+    parent = current;
+    property = undefined;
+
+    if (current.type === 'object') {
+      let matched: AstNode | undefined;
+      let matchedProp: AstNode | undefined;
+      let matchedIdx = -1;
+      for (let idx = 0; idx < current.children.length; idx++) {
+        const prop = current.children[idx];
+        const keyNode = prop.children?.[0];
+        if (keyNode && String(keyNode.value ?? '') === segment) {
+          matched = prop.children?.[1] ?? prop;
+          matchedProp = prop;
+          matchedIdx = idx;
+          break;
+        }
+      }
+      if (!matched) {
+        return undefined;
+      }
+      current = matched;
+      property = matchedProp;
+      indexInParent = matchedIdx;
+    } else if (current.type === 'array') {
+      const idx = Number.parseInt(segment, 10);
+      if (!Number.isInteger(idx) || idx < 0) {
+        return undefined;
+      }
+      const child = current.children[idx];
+      if (!child) {
+        return undefined;
+      }
+      current = child;
+      property = undefined;
+      indexInParent = idx;
+    } else {
+      return undefined;
+    }
+  }
+
+  return { target: current, parent, property, indexInParent };
+}
+
+export function parseJsonTolerant(text: string): AstNode | undefined {
   let i = 0;
 
   i = skipWsAndComments(text, i);

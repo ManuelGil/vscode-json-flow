@@ -1,7 +1,7 @@
 /**
  * Types definitions for service layer
  */
-import { Direction, JsonValue } from '@webview/types';
+import { Direction, JsonValue } from '../types';
 
 /**
  * VSCode message command types
@@ -65,4 +65,16 @@ export type IncomingVscodeMessage =
       nodeId?: string;
       origin?: 'webview' | 'extension';
       nonce?: string;
+    }
+  // Mutation diagnostics (extension -> webview)
+  | {
+      command: 'mutationDiagnostics';
+      nodeId: string;
+      warnings: Array<{ type: string; pointer: string }>;
+    }
+  // Editing capability (extension -> webview)
+  | {
+      command: 'editingCapability';
+      enabled: boolean;
+      path?: string;
     };

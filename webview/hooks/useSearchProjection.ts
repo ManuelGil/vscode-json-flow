@@ -1,6 +1,7 @@
-import type { SearchProjectionMode, TreeMap } from '@webview/types';
 import type { Edge, Node } from '@xyflow/react';
 import { useMemo } from 'react';
+import type { SearchProjectionMode, TreeMap } from '../types';
+import { normalizePointer } from '../utils/detectInconsistentPaths';
 
 /**
  * useSearchProjection.ts
@@ -25,6 +26,7 @@ interface UseSearchProjectionParams {
   edgeSettingsSnapshot: EdgeSettingsSnapshot;
   handleToggleChildren: (nodeId: string) => void;
   applyEdgeSettings: (edges: Edge[], settings: EdgeSettingsSnapshot) => Edge[];
+  inconsistentPaths?: Map<string, string[]>;
 }
 
 interface UseSearchProjectionResult {
@@ -70,6 +72,7 @@ export function useSearchProjection({
   edgeSettingsSnapshot,
   handleToggleChildren,
   applyEdgeSettings,
+  inconsistentPaths,
 }: Omit<UseSearchProjectionParams, 'safeTreeData'>): UseSearchProjectionResult {
   const renderNodes = useMemo(() => {
     if (!visibleNodes.length) {
@@ -82,7 +85,20 @@ export function useSearchProjection({
         ? visibleNodes.filter((n) => searchContextSet.has(n.id))
         : visibleNodes;
 
+    const shownInconsistencyForPath = new Set<string>();
+
     return projectedNodes.map((node) => {
+      const normalizedPath = normalizePointer(node.id) ?? node.id;
+      const shouldShowInconsistencyIcon = Boolean(
+        normalizedPath &&
+          inconsistentPaths?.has(normalizedPath) &&
+          !shownInconsistencyForPath.has(normalizedPath),
+      );
+
+      if (shouldShowInconsistencyIcon && normalizedPath) {
+        shownInconsistencyForPath.add(normalizedPath);
+      }
+
       return {
         ...node,
         data: {
@@ -94,6 +110,7 @@ export function useSearchProjection({
             searchMatchIds,
             searchProjectionMode,
           ),
+          hasInconsistencyWarning: shouldShowInconsistencyIcon,
         },
       };
     });
@@ -104,6 +121,7 @@ export function useSearchProjection({
     handleToggleChildren,
     searchMatchIds,
     searchProjectionMode,
+    inconsistentPaths,
   ]);
 
   const renderEdges = useMemo(() => {

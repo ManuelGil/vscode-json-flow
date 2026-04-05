@@ -46,6 +46,7 @@ export interface CustomNodeData {
   onToggleChildren?: (id: string) => void;
   isCollapsed?: boolean;
   isSearchMatch?: boolean;
+  hasInconsistencyWarning?: boolean;
   line?: number;
 }
 
@@ -91,6 +92,38 @@ export interface TreeNode {
     value?: string;
     line?: number;
   };
+}
+
+/**
+ * Graph node used by the projection and search layers.
+ */
+export interface GraphNode {
+  id: string;
+  type: string;
+  key?: string;
+  value?: string;
+  line?: number;
+}
+
+/**
+ * Graph edge used by the projection and search layers.
+ */
+export interface GraphEdge {
+  id: string;
+  source: string;
+  target: string;
+  type: string;
+}
+
+/**
+ * Immutable graph snapshot derived from a TreeMap.
+ */
+export interface GraphSnapshot {
+  nodes: Map<string, GraphNode>;
+  edges: Map<string, GraphEdge>;
+  nodesByType: Map<GraphNode['type'], string[]>;
+  nodesByKey: Map<string, string[]>;
+  edgesBySource: Map<string, string[]>;
 }
 
 /**

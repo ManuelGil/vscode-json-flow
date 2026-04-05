@@ -4,8 +4,12 @@ import {
   FlowMinimap,
   Loading,
 } from '@webview/components';
-import { DEFAULT_SETTINGS } from '@webview/components/CustomControls/Settings';
-import { flowReducer } from '@webview/context/FlowContext';
+import {
+  type BackgroundMode,
+  DEFAULT_SETTINGS,
+} from '@webview/components/CustomControls/Settings';
+import { getVscodeApi } from '@webview/getVscodeApi';
+import { adaptTreeToGraph } from '@webview/helpers/adaptTreeToGraph';
 import { generateTree, getRootId } from '@webview/helpers/generateTree';
 import {
   useFlowController,
@@ -23,6 +27,7 @@ import {
 } from '@webview/services/treeService';
 import { vscodeService } from '@webview/services/vscodeService';
 import type { Direction, SearchProjectionMode, TreeMap } from '@webview/types';
+import { detectInconsistentPaths } from '@webview/utils/detectInconsistentPaths';
 import { fitGraph, focusNode } from '@webview/utils/viewport';
 import type {
   Connection,
@@ -31,6 +36,7 @@ import type {
   InternalNode,
   Node,
   NodeChange,
+  NodeMouseHandler,
   ReactFlowInstance,
 } from '@xyflow/react';
 import {
@@ -53,6 +59,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { flowReducer } from '../../context/FlowContext';
 import { useSelectedNode } from './useSelectedNode';
 
 /**
@@ -115,9 +122,12 @@ function applyEdgeSettingsToList(
 export const FlowCanvas = memo(function FlowCanvas() {
   const initialFlowState = useMemo(() => {
     const st = vscodeService.getStateOrDefaults();
+    const treeData = st.data ? generateTree(st.data) : {};
+    const graphData = st.data ? adaptTreeToGraph(treeData) : null;
     return {
       data: st.data,
-      treeData: st.data ? generateTree(st.data) : {},
+      treeData,
+      graphData,
       orientation: st.orientation,
       path: st.path,
       fileName: st.fileName,
@@ -141,6 +151,14 @@ export const FlowCanvas = memo(function FlowCanvas() {
   // Unified render state: post-processed with collapse filtering and callbacks
   const [renderNodes, setRenderNodes] = useState<Node[]>([]);
   const [renderEdges, setRenderEdges] = useState<Edge[]>([]);
+  const lastAppliedSignature = useRef<string | null>(null);
+  const finalNodesRef = useRef<Node[]>([]);
+  finalNodesRef.current = renderNodes;
+  const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
+  const [reactFlowInstance, setReactFlowInstance] =
+    useState<ReactFlowInstance | null>(null);
+  const lastFileRef = useRef<string | null>(null);
+  const hasFittedRef = useRef(false);
 
   // Search match IDs for highlighting matched nodes
   const [searchMatchIds, setSearchMatchIds] = useState<Set<string>>(
@@ -160,7 +178,7 @@ export const FlowCanvas = memo(function FlowCanvas() {
       : DEFAULT_SETTINGS;
   }, []);
 
-  const [backgroundVariant, setBackgroundVariant] = useState<BackgroundVariant>(
+  const [backgroundVariant, setBackgroundVariant] = useState<BackgroundMode>(
     settings.backgroundVariant ?? DEFAULT_SETTINGS.backgroundVariant,
   );
 
@@ -170,25 +188,31 @@ export const FlowCanvas = memo(function FlowCanvas() {
     hasArrow: settings.hasArrow ?? false,
   });
 
+  const rootNodeId = useMemo(
+    () => getRootId(safeTreeData as TreeMap),
+    [safeTreeData],
+  );
+
   const flowControllerParams = useMemo(
     () => ({
       treeData: safeTreeData as TreeMap,
-      treeRootId: getRootId(safeTreeData as TreeMap),
+      treeRootId: rootNodeId,
       initialDirection: flowData.orientation,
     }),
-    [safeTreeData, flowData.orientation],
+    [safeTreeData, flowData.orientation, rootNodeId],
   );
 
-  const {
-    currentDirection,
-    rotateLayout,
-    collapsedNodes,
-    toggleNodeChildren,
-  } = useFlowController(flowControllerParams);
+  const { currentDirection, rotateLayout, collapsedNodes, toggleNodeChildren } =
+    useFlowController(flowControllerParams);
 
   const { zoom } = useViewport();
 
-  const { selectedNode, onNodeClick, selectNode } = useSelectedNode();
+  const { selectedNode, selectNode } = useSelectedNode();
+  const [highlightedNodeId, setHighlightedNodeId] = useState<string | null>(
+    null,
+  );
+  const highlightTimeoutRef = useRef<number | null>(null);
+  const highlightDurationMsRef = useRef<number>(800);
 
   // Clear selection if the selected node becomes hidden due to collapse
   useEffect(() => {
@@ -253,7 +277,6 @@ export const FlowCanvas = memo(function FlowCanvas() {
 
   const reactFlowProps = useMemo(
     () => ({
-      fitView: true,
       nodeTypes,
       elementsSelectable: isDraggable,
       proOptions: { hideAttribution: true },
@@ -263,27 +286,22 @@ export const FlowCanvas = memo(function FlowCanvas() {
     [nodeTypes, isDraggable],
   );
 
-  const backgroundProps = useMemo(
-    () => ({
+  const backgroundProps = useMemo(() => {
+    if (backgroundVariant === 'none') {
+      return null;
+    }
+
+    return {
       gap: dynamicGap,
-      variant: backgroundVariant as BackgroundVariant,
+      variant: backgroundVariant,
       style:
         backgroundVariant === BackgroundVariant.Dots
           ? BG_STYLE_DOTS
           : BG_STYLE_OTHER,
       className: 'bg-background',
       patternClassName: '!stroke-foreground/30',
-    }),
-    [dynamicGap, backgroundVariant],
-  );
-
-  const onNodeDoubleClick = useCallback(
-    (event: MouseEvent, node: Node) => {
-      event.preventDefault();
-      onNodeClick(event, node);
-    },
-    [onNodeClick],
-  );
+    } as const;
+  }, [dynamicGap, backgroundVariant]);
 
   const {
     processData: processWithWorker,
@@ -292,6 +310,10 @@ export const FlowCanvas = memo(function FlowCanvas() {
     nodes: workerNodes,
     edges: workerEdges,
   } = useLayoutWorker();
+
+  const inconsistentPaths = useMemo(() => {
+    return detectInconsistentPaths(workerNodes ?? []);
+  }, [workerNodes]);
 
   // Post-collapse, pre-projection node list. Stable input for GoToSearch
   // match computation and for the projection effect below.
@@ -349,67 +371,51 @@ export const FlowCanvas = memo(function FlowCanvas() {
     });
   }, []);
 
-  const controlsProps = useMemo(
-    () => ({
-      isDraggable,
-      setIsDraggable,
-      currentDirection,
-      onLayoutRotate: handleRotation,
-      onSettingsChange: debouncedHandleEdgeSettingsChange,
-      nodes: renderNodes as InternalNode[],
-      searchableNodes: visibleNodes as InternalNode[],
-      allNodes: (workerNodes ?? []) as InternalNode[],
-      searchProjectionMode,
-      onSearchProjectionModeChange: setSearchProjectionMode,
-      onSearchMatchChange: handleSearchMatchChange,
-    }),
-    [
-      isDraggable,
-      currentDirection,
-      handleRotation,
-      debouncedHandleEdgeSettingsChange,
-      renderNodes,
-      visibleNodes,
-      workerNodes,
-      searchProjectionMode,
-      handleSearchMatchChange,
-    ],
-  );
+  const graphReadyRef = useRef(false);
+  // Fit only after nodes are rendered for a file change.
+  useEffect(() => {
+    if (!reactFlowInstance) {
+      return;
+    }
 
-  const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
-  const [graphReady, setGraphReady] = useState(false);
-  // Ensure we don't call fitView repeatedly during incremental updates
-  const didFitViewRef = useRef(false);
-  // Run fitView only once after processing completes and the graph is ready
-  useEffect(() => {
-    if (
-      !isWorkerProcessing &&
-      graphReady &&
-      workerNodes &&
-      workerNodes.length > 0 &&
-      reactFlowInstanceRef.current &&
-      !didFitViewRef.current
-    ) {
-      requestAnimationFrame(() => {
-        try {
-          fitGraph(reactFlowInstanceRef.current as ReactFlowInstance);
-        } catch {
-          // Swallowed: fitView may fail when nodes are not yet rendered
-        }
-        didFitViewRef.current = true;
-      });
+    const filePath = flowData.path ?? '';
+    const isNewFile = filePath !== lastFileRef.current;
+
+    if (isNewFile) {
+      lastFileRef.current = filePath;
+      hasFittedRef.current = false;
     }
-  }, [isWorkerProcessing, graphReady, workerNodes]);
-  useEffect(() => {
-    if (!isWorkerProcessing) {
-      requestAnimationFrame(() => {
-        const count = document.querySelectorAll('.react-flow__node').length;
-        if (count > 0) {
-          setGraphReady(true);
-        }
-      });
+
+    if (hasFittedRef.current) {
+      return;
     }
-  }, [isWorkerProcessing]);
+
+    requestAnimationFrame(() => {
+      const attempt = () => {
+        const rf = reactFlowInstance;
+        if (!rf) {
+          return;
+        }
+
+        const nodes = rf.getNodes();
+        if (!nodes.length) {
+          requestAnimationFrame(attempt);
+          return;
+        }
+
+        const ready = nodes.every((node) => node.width && node.height);
+        if (!ready) {
+          requestAnimationFrame(attempt);
+          return;
+        }
+
+        hasFittedRef.current = true;
+        fitGraph(rf);
+      };
+
+      attempt();
+    });
+  }, [flowData.path, reactFlowInstance]);
 
   // Clean up debounce timer on unmount
   useEffect(() => {
@@ -426,26 +432,26 @@ export const FlowCanvas = memo(function FlowCanvas() {
       return;
     }
 
-    if (
-      lastDataRef.current === jsonData &&
-      lastDirectionRef.current === flowData.orientation
-    ) {
+    const dataChanged = lastDataRef.current !== jsonData;
+    const directionChanged = lastDirectionRef.current !== flowData.orientation;
+
+    if (!dataChanged && !directionChanged) {
       return;
     }
 
-    // At least one input changed — reset graph readiness immediately
-    setGraphReady(false);
+    if (lastDirectionRef.current !== flowData.orientation) {
+      graphReadyRef.current = false;
+    }
 
     lastDataRef.current = jsonData;
     lastDirectionRef.current = flowData.orientation;
 
-    // Debounce worker invocation to coalesce rapid Live Sync updates.
-    // The graph reset above gives instant visual feedback while the
-    // debounce prevents firing the worker on every keystroke.
     if (workerDebounceRef.current != null) {
       window.clearTimeout(workerDebounceRef.current);
     }
+
     const direction = flowData.orientation;
+
     workerDebounceRef.current = window.setTimeout(() => {
       workerDebounceRef.current = undefined;
       processWithWorker(jsonData, { direction });
@@ -465,6 +471,63 @@ export const FlowCanvas = memo(function FlowCanvas() {
       toggleChildrenRef.current(nodeId);
     }
   }, []);
+
+  // ---------------------------------------------------------------------------
+  // Deterministic viewport recovery layer (autonomous safety mechanism)
+  //
+  // This effect operates independently of flags and worker timing.
+  // It guarantees fit() execution when nodes are measurable, with no
+  // external dependencies or race conditions.
+  //
+  // Properties:
+  //   - No flag dependencies (self-contained cancellation token)
+  //   - Single execution per flowData.path change
+  //   - Deferred until all nodes have width and height
+  //   - Observable state only (reactFlowInstance, node.width/height)
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    if (!reactFlowInstance) {
+      return;
+    }
+
+    // Consume flowData.path dependency to trigger effect on file change
+    void flowData.path;
+
+    let fitAttempted = false;
+
+    const attemptViewportRecovery = () => {
+      if (fitAttempted) {
+        return;
+      }
+
+      const nodes = reactFlowInstance.getNodes();
+
+      // Wait for nodes to exist
+      if (!nodes.length) {
+        requestAnimationFrame(attemptViewportRecovery);
+        return;
+      }
+
+      // Wait for all nodes to be measured (have width and height)
+      const allMeasured = nodes.every((node) => node.width && node.height);
+
+      if (!allMeasured) {
+        requestAnimationFrame(attemptViewportRecovery);
+        return;
+      }
+
+      // All preconditions met: execute fit and mark as completed
+      fitAttempted = true;
+      fitGraph(reactFlowInstance);
+    };
+
+    requestAnimationFrame(attemptViewportRecovery);
+
+    // Cleanup: prevent execution if dependencies change before fit completes
+    return () => {
+      fitAttempted = true;
+    };
+  }, [flowData.path, reactFlowInstance]);
 
   // ---------------------------------------------------------------------------
   // Projection layer: derives visible render state from Worker output.
@@ -493,13 +556,61 @@ export const FlowCanvas = memo(function FlowCanvas() {
       edgeSettingsSnapshot: edgeSettingsRef.current,
       handleToggleChildren,
       applyEdgeSettings: applyEdgeSettingsToList,
+      inconsistentPaths,
     });
 
   // Sync projection output to render state
   useEffect(() => {
-    setRenderNodes(projectedNodes);
+    if (!projectedNodes.length) {
+      return;
+    }
+
+    const signature = projectedNodes.map((node) => node.id).join(',');
+    if (signature === lastAppliedSignature.current) {
+      return;
+    }
+    lastAppliedSignature.current = signature;
+
+    setRenderNodes((previousNodes) => {
+      if (!projectedNodes.length && previousNodes.length) {
+        return previousNodes;
+      }
+
+      if (!previousNodes.length) {
+        return projectedNodes;
+      }
+
+      const isStructuralChange = projectedNodes.length !== previousNodes.length;
+      if (isStructuralChange) {
+        return projectedNodes;
+      }
+
+      const prevNodesMap = new Map(
+        previousNodes.map((node) => [node.id, node] as const),
+      );
+
+      const merged = projectedNodes.map((node) => {
+        const prev = prevNodesMap.get(node.id);
+        return prev ? { ...node, position: prev.position } : node;
+      });
+
+      return merged;
+    });
+
     setRenderEdges(projectedEdges);
   }, [projectedNodes, projectedEdges]);
+  useEffect(() => {
+    if (!selectedNode) {
+      return;
+    }
+
+    const nodeExistsInNewGraph = renderNodes.some(
+      (node) => node.id === selectedNode.id,
+    );
+    if (!nodeExistsInNewGraph) {
+      selectNode(null);
+    }
+  }, [selectedNode, renderNodes, selectNode]);
 
   // Unified change handlers for ReactFlow interactivity (drag, select)
   const onNodesChange = useCallback((changes: NodeChange[]) => {
@@ -510,9 +621,185 @@ export const FlowCanvas = memo(function FlowCanvas() {
     setRenderEdges((eds) => applyEdgeChanges(changes, eds));
   }, []);
 
-  // Keep a ref so the stable Live Sync callback always sees the latest nodes
-  const finalNodesRef = useRef<Node[]>([]);
-  finalNodesRef.current = renderNodes;
+  const focusNodeSafe = useCallback(
+    (nodeId: string) => {
+      const tryFocus = () => {
+        const instance = reactFlowInstance;
+        if (!instance) {
+          return;
+        }
+
+        const node = instance.getNode(nodeId);
+        if (!node || !node.position) {
+          return;
+        }
+
+        const width = node.width ?? node.measured?.width;
+        const height = node.height ?? node.measured?.height;
+
+        if (!width || !height) {
+          requestAnimationFrame(tryFocus);
+          return;
+        }
+
+        focusNode(instance, node);
+      };
+
+      requestAnimationFrame(tryFocus);
+    },
+    [reactFlowInstance],
+  );
+
+  const handlePointerNavigation = useCallback(
+    (pointer: string | null | undefined) => {
+      if (!pointer) {
+        selectNode(null);
+        return;
+      }
+
+      const targetNode =
+        (finalNodesRef.current || []).find(
+          (node: Node) => node.id === pointer,
+        ) || null;
+
+      selectNode(targetNode);
+
+      if (targetNode) {
+        focusNodeSafe(pointer);
+      }
+
+      setHighlightedNodeId(pointer);
+
+      const lineNumber = targetNode?.data?.line;
+      if (typeof lineNumber === 'number') {
+        try {
+          const vscode = getVscodeApi();
+          vscode.postMessage({ type: 'revealLine', line: lineNumber });
+        } catch {
+          // Swallow errors when VS Code messaging is unavailable.
+        }
+      }
+    },
+    [selectNode, focusNodeSafe],
+  );
+
+  const handleApplyVisualFeedback = useCallback(
+    (nodeId: string) => {
+      setHighlightedNodeId(nodeId);
+      focusNodeSafe(nodeId);
+    },
+    [focusNodeSafe],
+  );
+
+  const rootNode = useMemo(() => {
+    if (!rootNodeId) {
+      return null;
+    }
+    const sourceNodes =
+      (renderNodes.length > 0 ? renderNodes : workerNodes) ?? [];
+    return (
+      (sourceNodes as Node[]).find(
+        (maybeNode) => maybeNode.id === rootNodeId,
+      ) ?? null
+    );
+  }, [renderNodes, workerNodes, rootNodeId]);
+
+  const controlsProps = useMemo(
+    () => ({
+      isDraggable,
+      setIsDraggable,
+      currentDirection,
+      onLayoutRotate: handleRotation,
+      onSettingsChange: debouncedHandleEdgeSettingsChange,
+      nodes: renderNodes as InternalNode[],
+      searchableNodes: visibleNodes as InternalNode[],
+      allNodes: (workerNodes ?? []) as InternalNode[],
+      searchProjectionMode,
+      onSearchProjectionModeChange: setSearchProjectionMode,
+      onSearchMatchChange: handleSearchMatchChange,
+      selectedNode,
+      rootNode,
+      onNavigatePointer: handlePointerNavigation,
+      onApplyVisualFeedback: handleApplyVisualFeedback,
+      graphData: flowData.graphData,
+    }),
+    [
+      isDraggable,
+      currentDirection,
+      handleRotation,
+      debouncedHandleEdgeSettingsChange,
+      renderNodes,
+      visibleNodes,
+      workerNodes,
+      searchProjectionMode,
+      handleSearchMatchChange,
+      selectedNode,
+      rootNode,
+      handlePointerNavigation,
+      handleApplyVisualFeedback,
+      flowData.graphData,
+    ],
+  );
+
+  const handleNodeClick = useCallback<NodeMouseHandler>(
+    (event, node) => {
+      event.preventDefault();
+      handlePointerNavigation(node.id);
+    },
+    [handlePointerNavigation],
+  );
+
+  const onNodeDoubleClick = useCallback(
+    (event: MouseEvent, node: Node) => {
+      event.preventDefault();
+      handlePointerNavigation(node.id);
+    },
+    [handlePointerNavigation],
+  );
+
+  useEffect(() => {
+    if (!highlightedNodeId) {
+      return;
+    }
+    const nodeElements =
+      document.querySelectorAll<HTMLElement>('.react-flow__node');
+    const wrapper = Array.from(nodeElements).find(
+      (element) => element.dataset?.id === highlightedNodeId,
+    );
+    const targetElement = wrapper?.querySelector<HTMLElement>(
+      '[data-node-inner="true"]',
+    );
+
+    if (!targetElement) {
+      return;
+    }
+
+    const highlightClasses = ['live-sync-highlight'];
+    targetElement.classList.add(...highlightClasses);
+
+    if (highlightTimeoutRef.current) {
+      window.clearTimeout(highlightTimeoutRef.current);
+    }
+
+    highlightTimeoutRef.current = window.setTimeout(() => {
+      targetElement.classList.remove(...highlightClasses);
+      setHighlightedNodeId(null);
+      highlightDurationMsRef.current = 800;
+      highlightTimeoutRef.current = null;
+    }, highlightDurationMsRef.current);
+
+    return () => {
+      targetElement?.classList.remove(...highlightClasses);
+    };
+  }, [highlightedNodeId]);
+
+  useEffect(() => {
+    return () => {
+      if (highlightTimeoutRef.current) {
+        window.clearTimeout(highlightTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Stable callback: depends only on selectNode (itself stable from useCallback)
   const handleApplyGraphSelection = useCallback(
@@ -521,16 +808,9 @@ export const FlowCanvas = memo(function FlowCanvas() {
         selectNode(null);
         return;
       }
-      const target =
-        (finalNodesRef.current || []).find((n: Node) => n.id === nodeId) ||
-        null;
-      selectNode(target);
-      // Center viewport on the selected node so it is visible
-      if (target && reactFlowInstanceRef.current) {
-        focusNode(reactFlowInstanceRef.current, target);
-      }
+      handlePointerNavigation(nodeId);
     },
-    [selectNode],
+    [handlePointerNavigation, selectNode],
   );
 
   // Live Sync: wire selection synchronization (Phase 1)
@@ -541,12 +821,10 @@ export const FlowCanvas = memo(function FlowCanvas() {
   });
   const handleReactFlowInit = useCallback((instance: ReactFlowInstance) => {
     reactFlowInstanceRef.current = instance;
-    // Ensure the graph is ready after initial render
+    setReactFlowInstance(instance);
+    // Mark graph as ready for ref-based checks
     requestAnimationFrame(() => {
-      const count = document.querySelectorAll('.react-flow__node').length;
-      if (count > 0) {
-        setGraphReady(true);
-      }
+      graphReadyRef.current = true;
     });
   }, []);
 
@@ -558,34 +836,29 @@ export const FlowCanvas = memo(function FlowCanvas() {
 
   // Render edges immediately to avoid visual flicker
   const renderedEdges = renderEdges;
-  const reactFlowKey = useMemo(() => {
-    return currentDirection;
-  }, [currentDirection]);
-
   if (!workerNodes && isValidTree) {
     return <Loading />;
   }
 
   return (
-    <div className="relative h-screen w-screen">
+    <div id="flow-canvas-root" className="relative h-screen w-screen">
       <ReactFlow
-        key={reactFlowKey}
         nodes={renderNodes}
         edges={renderedEdges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
-        onNodeClick={onNodeClick}
+        onNodeClick={handleNodeClick}
         onNodeDoubleClick={onNodeDoubleClick}
-        nodesDraggable={graphReady && isDraggable}
-        nodesConnectable={graphReady && isDraggable}
+        nodesDraggable={isDraggable}
+        nodesConnectable={isDraggable}
         onInit={handleReactFlowInit}
         defaultEdgeOptions={defaultEdgeOptions}
         {...reactFlowProps}
       >
         <CustomControls {...controlsProps} />
-        <Background {...backgroundProps} />
-        {graphReady && !isWorkerProcessing && <FlowMinimap />}
+        {backgroundProps && <Background {...backgroundProps} />}
+        {!isWorkerProcessing && <FlowMinimap />}
       </ReactFlow>
       {liveSyncPaused && (
         <div style={OVERLAY_PAUSE_STYLE}>

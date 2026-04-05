@@ -1,12 +1,22 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { BackgroundVariant } from '@xyflow/react';
+import { Settings as SettingsIcon } from 'lucide-react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { type Color, colorClasses, colors } from '../../themes/colors';
+import { EDGE_TYPE_NAMES, EdgeType } from '../../types';
+import { Button } from '../atoms/Button';
+import { Switch } from '../atoms/Switch';
 import {
-  Button,
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+} from '../organisms/Dialog';
+import {
   Form,
   FormControl,
   FormDescription,
@@ -14,27 +24,23 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+} from '../organisms/Form';
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Switch,
-  useTheme,
-} from '@webview/components';
-import { type Color, colorClasses, colors } from '@webview/themes/colors';
-import { EDGE_TYPE_NAMES, EdgeType } from '@webview/types';
-import { BackgroundVariant } from '@xyflow/react';
-import { Settings as SettingsIcon } from 'lucide-react';
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
+} from '../organisms/Select';
+import { useTheme } from '../ThemeProvider';
 
-interface Settings {
+export type BackgroundMode = BackgroundVariant | 'none';
+
+export interface SettingsConfig {
   edgeType: EdgeType;
   animated: boolean;
   hasArrow: boolean;
-  backgroundVariant: BackgroundVariant;
+  backgroundVariant: BackgroundMode;
   color: Color;
 }
 
@@ -43,12 +49,15 @@ const settingsSchema = z.object({
     edgeType: z.nativeEnum(EdgeType),
     animated: z.boolean(),
     hasArrow: z.boolean(),
-    backgroundVariant: z.nativeEnum(BackgroundVariant),
+    backgroundVariant: z.union([
+      z.nativeEnum(BackgroundVariant),
+      z.literal('none'),
+    ]),
     color: z.enum(colors),
   }),
 });
 
-export const DEFAULT_SETTINGS: Settings = {
+export const DEFAULT_SETTINGS: SettingsConfig = {
   edgeType: EdgeType.SmoothStep,
   animated: true,
   hasArrow: false,
@@ -57,7 +66,7 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 interface SettingsProps {
-  onSettingsChange: (newSettings: Settings) => void;
+  onSettingsChange: (newSettings: SettingsConfig) => void;
 }
 
 export function Settings({ onSettingsChange }: SettingsProps) {
@@ -189,6 +198,7 @@ export function Settings({ onSettingsChange }: SettingsProps) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
                         {Object.entries(BackgroundVariant).map(
                           ([key, value]) => (
                             <SelectItem key={value} value={value}>

@@ -20,7 +20,13 @@ import {
   EXTENSION_ID,
   ViewIds,
 } from '../configs';
-import { getNonce, getSelectionMapper, logger } from '../helpers';
+import {
+  applyNodeEdit,
+  getNonce,
+  getSelectionMapper,
+  logger,
+  type NodeEditIntent,
+} from '../helpers';
 
 /**
  * JSONProvider manages the JSON preview webview panel for the VSCode JSON Flow extension.
@@ -200,6 +206,54 @@ export class JSONProvider {
             }
             break;
           }
+          case 'nodeEditIntent': {
+            const intent = (message as { payload?: NodeEditIntent }).payload;
+            if (
+              !intent ||
+              typeof intent.nodeId !== 'string' ||
+              typeof intent.type !== 'string'
+            ) {
+              break;
+            }
+            const editor = window.activeTextEditor;
+            if (!editor) {
+              break;
+            }
+            if (JSONProvider.previewedPath !== editor.document.uri.fsPath) {
+              break;
+            }
+
+            // Execute edit using existing pipeline helper
+            applyNodeEdit(intent, editor.document, (nodeId, warnings) => {
+              JSONProvider.postMessageToWebview({
+                command: 'mutationDiagnostics',
+                nodeId,
+                warnings,
+              });
+            })
+              .then((result) => {
+                if (!result.success) {
+                  const failedResult = result as {
+                    success: false;
+                    error: string;
+                  };
+                  JSONProvider.postMessageToWebview({
+                    command: 'mutationDiagnostics',
+                    nodeId: intent.nodeId,
+                    warnings: [
+                      { type: failedResult.error, pointer: intent.nodeId },
+                    ],
+                  });
+                }
+              })
+              .catch((error: unknown) => {
+                logger.error('Node edit failed', error, {
+                  nodeId: intent.nodeId,
+                  type: intent.type,
+                });
+              });
+            break;
+          }
           default:
             break;
         }
@@ -274,6 +328,7 @@ export class JSONProvider {
       JSONProvider._onStateChanged.fire({
         isSplitView: JSONProvider.isSplitView,
       });
+      JSONProvider.currentProvider.sendEditingCapability();
       // Also reflect current Live Sync state to the webview when revealing
       try {
         JSONProvider.postMessageToWebview({
@@ -300,6 +355,7 @@ export class JSONProvider {
     );
 
     JSONProvider.currentProvider = new JSONProvider(panel, extensionUri);
+    JSONProvider.currentProvider.sendEditingCapability();
     JSONProvider.isSplitView = column === ViewColumn.Beside;
     commands.executeCommand(
       'setContext',
@@ -585,6 +641,32 @@ export class JSONProvider {
     const webview = this._panel.webview;
     const html = this._getHtmlForWebview(webview);
     this._panel.webview.html = html;
+  }
+
+  /**
+   * Sends the current editing capability state to the webview.
+   * Currently, editing is supported for JSON-like files.
+   */
+  public sendEditingCapability(): void {
+    const editor = window.activeTextEditor;
+    if (!editor) {
+      JSONProvider.postMessageToWebview({
+        command: 'editingCapability',
+        enabled: false,
+        path: undefined,
+      });
+      return;
+    }
+
+    const languageId = editor.document.languageId;
+    const isSupported =
+      languageId === 'json' || languageId === 'jsonc' || languageId === 'json5';
+
+    JSONProvider.postMessageToWebview({
+      command: 'editingCapability',
+      enabled: isSupported,
+      path: editor.document.uri.fsPath,
+    });
   }
 
   /**

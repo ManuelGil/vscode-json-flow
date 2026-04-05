@@ -1,5 +1,5 @@
 import type { Direction, SearchProjectionMode } from '@webview/types';
-import type { InternalNode } from '@xyflow/react';
+import type { InternalNode, Node } from '@xyflow/react';
 import { Panel } from '@xyflow/react';
 import {
   Tooltip,
@@ -11,8 +11,10 @@ import { GoToSearch } from './GoToSearch';
 import { ImageDownload } from './ImageDownload';
 import { InteractivityToggle } from './InteractivityToggle';
 import { ModeToggle } from './ModeToggle';
+import { NodePropertiesPanel } from './NodePropertiesPanel';
 import { RotateLayout } from './RotateLayout';
-import { DEFAULT_SETTINGS, Settings } from './Settings';
+import type { SettingsConfig } from './Settings';
+import { Settings } from './Settings';
 import { ZoomControl } from './ZoomControl';
 
 /**
@@ -23,13 +25,16 @@ type CustomControlsProps = {
   setIsDraggable: (value: boolean) => void;
   currentDirection: Direction;
   onLayoutRotate: () => void;
-  onSettingsChange: (newSettings: typeof DEFAULT_SETTINGS) => void;
+  onSettingsChange: (newSettings: SettingsConfig) => void;
   nodes: InternalNode[];
   searchableNodes: InternalNode[];
   allNodes?: InternalNode[];
   searchProjectionMode: SearchProjectionMode;
   onSearchProjectionModeChange: (mode: SearchProjectionMode) => void;
   onSearchMatchChange?: (matchedIds: Set<string>) => void;
+  selectedNode: Node | null;
+  rootNode: Node | null;
+  onNavigatePointer?: (pointer: string) => void;
 };
 
 /**
@@ -47,6 +52,9 @@ export function CustomControls({
   searchProjectionMode,
   onSearchProjectionModeChange,
   onSearchMatchChange,
+  selectedNode,
+  rootNode,
+  onNavigatePointer,
 }: CustomControlsProps) {
   return (
     <Panel className="flex justify-between gap-2" position="top-center">
@@ -77,6 +85,11 @@ export function CustomControls({
         searchProjectionMode={searchProjectionMode}
         onSearchProjectionModeChange={onSearchProjectionModeChange}
         onMatchChange={onSearchMatchChange}
+      />
+      <NodePropertiesPanel
+        node={selectedNode}
+        rootNode={rootNode}
+        onNavigatePointer={onNavigatePointer}
       />
       <Settings onSettingsChange={onSettingsChange} />
     </Panel>

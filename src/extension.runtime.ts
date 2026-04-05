@@ -39,7 +39,14 @@ import {
   JsonController,
   TransformController,
 } from './app/controllers';
-import { getSelectionMapper, isFileTypeSupported, logger } from './app/helpers';
+import {
+  clearCache,
+  type FileType,
+  getSelectionMapper,
+  isFileTypeSupported,
+  logger,
+  parseJsonContent,
+} from './app/helpers';
 import { NodeModel } from './app/models';
 import { FeedbackProvider, FilesProvider, JSONProvider } from './app/providers';
 
@@ -82,6 +89,9 @@ export class ExtensionRuntime {
   private warningShown: boolean = false;
   private config!: ExtensionConfig;
   private resource: WorkspaceFolder | undefined;
+
+  private readonly providers: Array<{ refresh: () => void }> = [];
+  private jsonController!: JsonController;
 
   // Live Sync state
   private selectionThrottleMs: number = 300;
@@ -141,6 +151,7 @@ export class ExtensionRuntime {
    * Starts the extension by registering all commands, providers, and listeners.
    */
   start(): void {
+    // Register workspace switch command
     const disposableChangeWorkspace = commands.registerCommand(
       `${EXTENSION_ID}.${CommandIds.ChangeWorkspace}`,
       async () => {
@@ -164,7 +175,8 @@ export class ExtensionRuntime {
         }
 
         this.resource = selectedFolder;
-        this.context.globalState.update(
+
+        await this.context.globalState.update(
           'selectedWorkspaceFolder',
           this.resource.uri.toString(),
         );
@@ -173,6 +185,7 @@ export class ExtensionRuntime {
           EXTENSION_ID,
           this.resource.uri,
         );
+
         this.config.update(workspaceConfig);
 
         window.showInformationMessage(
@@ -183,19 +196,25 @@ export class ExtensionRuntime {
 
     this.context.subscriptions.push(disposableChangeWorkspace);
 
-    // Workspace-independent command registrations
+    // Register workspace-independent controllers and providers
     this.registerJsonController();
     this.registerViewCommands();
     this.registerTransformController();
     this.registerFeedbackProvider();
-    this.registerLiveSyncListeners();
     this.registerJSONProvider();
 
-    // Workspace-dependent command registrations
+    // Register workspace-dependent controllers and providers
     this.registerFilesController();
     this.registerFilesProvider();
-  }
 
+    // Register listeners after providers are ready
+    this.registerLiveSyncListeners();
+
+    // Register filesystem watcher only when file patterns are configured
+    if (this.config.includedFilePatterns?.length) {
+      this.registerFilesystemWatcher();
+    }
+  }
   /**
    * Handles version tracking and displays appropriate notifications
    * for first-time activation or version updates.
@@ -273,10 +292,13 @@ export class ExtensionRuntime {
         }
       }
     } catch (error: unknown) {
+      // Log detailed error for diagnostics
       logger.error('Failed to check for extension updates', error, {
         extensionId: EXTENSION_ID,
         publisher: EXTENSION_USER_PUBLISHER,
       });
+
+      // Show user-friendly message
       window.showErrorMessage(
         l10n.t('Failed to check for new version of the extension'),
       );
@@ -292,7 +314,7 @@ export class ExtensionRuntime {
   private async selectWorkspaceFolder(): Promise<WorkspaceFolder | undefined> {
     const folders = workspace.workspaceFolders;
 
-    if (!folders || folders.length === 0) {
+    if (!folders?.length) {
       return undefined;
     }
 
@@ -303,6 +325,7 @@ export class ExtensionRuntime {
     const previousFolderUri = this.context.globalState.get<string>(
       'selectedWorkspaceFolder',
     );
+
     const previousFolder = previousFolderUri
       ? folders.find((folder) => folder.uri.toString() === previousFolderUri)
       : undefined;
@@ -311,28 +334,26 @@ export class ExtensionRuntime {
       window.showInformationMessage(
         l10n.t('Using workspace folder: {0}', previousFolder.name),
       );
-
       return previousFolder;
     }
 
-    const placeHolder = l10n.t(
-      '{0}: Select a workspace folder to use. This folder will be used to load workspace-specific configuration for the extension',
-      EXTENSION_DISPLAY_NAME,
-    );
     const selectedFolder = await window.showWorkspaceFolderPick({
-      placeHolder,
+      placeHolder: l10n.t(
+        '{0}: Select a workspace folder to use. This folder will be used to load workspace-specific configuration for the extension',
+        EXTENSION_DISPLAY_NAME,
+      ),
     });
 
-    if (selectedFolder) {
-      this.context.globalState.update(
-        'selectedWorkspaceFolder',
-        selectedFolder.uri.toString(),
-      );
-
-      return selectedFolder;
+    if (!selectedFolder) {
+      return undefined;
     }
 
-    return undefined;
+    this.context.globalState.update(
+      'selectedWorkspaceFolder',
+      selectedFolder.uri.toString(),
+    );
+
+    return selectedFolder;
   }
 
   /**
@@ -353,6 +374,7 @@ export class ExtensionRuntime {
         workspaceFolder.uri,
       );
 
+      // Only notify when enable flag changes
       if (
         event.affectsConfiguration(
           `${EXTENSION_ID}.enable`,
@@ -360,16 +382,21 @@ export class ExtensionRuntime {
         )
       ) {
         const isEnabled = workspaceConfig.get<boolean>('enable');
-        const message = isEnabled
-          ? l10n.t(
-              'The {0} extension is now enabled and ready to use',
-              EXTENSION_DISPLAY_NAME,
-            )
-          : l10n.t('The {0} extension is now disabled', EXTENSION_DISPLAY_NAME);
 
-        window.showInformationMessage(message);
+        window.showInformationMessage(
+          isEnabled
+            ? l10n.t(
+                'The {0} extension is now enabled and ready to use',
+                EXTENSION_DISPLAY_NAME,
+              )
+            : l10n.t(
+                'The {0} extension is now disabled',
+                EXTENSION_DISPLAY_NAME,
+              ),
+        );
       }
 
+      // Avoid unnecessary updates if nothing changed
       this.config.update(workspaceConfig);
       this.selectionThrottleMs = this.config.liveSyncThrottleMs;
     });
@@ -384,13 +411,15 @@ export class ExtensionRuntime {
    * @returns true if the extension is enabled, false otherwise
    */
   private isExtensionEnabled(): boolean {
-    if (this.config?.enable) {
+    const isEnabled = Boolean(this.config?.enable);
+
+    if (isEnabled) {
       this.warningShown = false;
       return true;
     }
 
     if (!this.warningShown) {
-      window.showErrorMessage(
+      window.showWarningMessage(
         l10n.t(
           '{0} is disabled in settings. Enable it to use its features',
           EXTENSION_DISPLAY_NAME,
@@ -457,20 +486,20 @@ export class ExtensionRuntime {
    * These commands are workspace-independent.
    */
   private registerJsonController(): void {
-    const jsonController = new JsonController(this.context, this.config);
+    this.jsonController = new JsonController(this.context, this.config);
 
     const jsonCommands = [
       {
         id: CommandIds.JsonShowPreview,
-        handler: (uri: Uri) => jsonController.showPreview(uri),
+        handler: (uri: Uri) => this.jsonController.showPreview(uri),
       },
       {
         id: CommandIds.JsonShowPartialPreview,
-        handler: () => jsonController.showPartialPreview(),
+        handler: () => this.jsonController.showPartialPreview(),
       },
       {
         id: CommandIds.JsonFetchJsonData,
-        handler: () => jsonController.fetchJsonData(),
+        handler: () => this.jsonController.fetchJsonData(),
       },
     ];
 
@@ -493,8 +522,6 @@ export class ExtensionRuntime {
    * These commands are workspace-independent.
    */
   private registerViewCommands(): void {
-    const jsonController = new JsonController(this.context, this.config);
-
     const enableSplitView = commands.registerCommand(
       `${EXTENSION_ID}.${CommandIds.ViewEnableSplitView}`,
       () => {
@@ -510,7 +537,7 @@ export class ExtensionRuntime {
           return;
         }
 
-        jsonController.showPreview(editor.document.uri, ViewColumn.Beside);
+        this.jsonController.showPreview(editor.document.uri, ViewColumn.Beside);
       },
     );
 
@@ -566,34 +593,49 @@ export class ExtensionRuntime {
     );
 
     const updateStatusBar = () => {
-      if (JSONProvider.isSplitView) {
-        splitStatusItem.text = l10n.t('{0}: Close', EXTENSION_DISPLAY_NAME);
-        splitStatusItem.tooltip = l10n.t('Close JSON Flow');
-        splitStatusItem.command = `${EXTENSION_ID}.${CommandIds.ViewDisableSplitView}`;
-      } else {
-        splitStatusItem.text = l10n.t('{0}: Open', EXTENSION_DISPLAY_NAME);
-        splitStatusItem.tooltip = l10n.t('Open JSON Flow beside');
-        splitStatusItem.command = `${EXTENSION_ID}.${CommandIds.ViewEnableSplitView}`;
-      }
-      splitStatusItem.show();
+      try {
+        const isSplit = JSONProvider.isSplitView;
+        const liveEnabled = JSONProvider.liveSyncEnabled;
 
-      if (JSONProvider.isSplitView) {
-        if (JSONProvider.liveSyncEnabled) {
-          liveStatusItem.text = l10n.t('Live Sync: On');
-          liveStatusItem.tooltip = l10n.t('Disable Live Sync');
-          liveStatusItem.command = `${EXTENSION_ID}.${CommandIds.ViewDisableLiveSync}`;
+        // Update split view status button
+        if (isSplit) {
+          splitStatusItem.text = l10n.t('{0}: Close', EXTENSION_DISPLAY_NAME);
+          splitStatusItem.tooltip = l10n.t('Close JSON Flow');
+          splitStatusItem.command = `${EXTENSION_ID}.${CommandIds.ViewDisableSplitView}`;
         } else {
-          liveStatusItem.text = l10n.t('Live Sync: Off');
-          liveStatusItem.tooltip = l10n.t('Enable Live Sync');
-          liveStatusItem.command = `${EXTENSION_ID}.${CommandIds.ViewEnableLiveSync}`;
+          splitStatusItem.text = l10n.t('{0}: Open', EXTENSION_DISPLAY_NAME);
+          splitStatusItem.tooltip = l10n.t('Open JSON Flow beside');
+          splitStatusItem.command = `${EXTENSION_ID}.${CommandIds.ViewEnableSplitView}`;
         }
-        liveStatusItem.show();
-      } else {
-        liveStatusItem.hide();
+
+        splitStatusItem.show();
+
+        // Update Live Sync status only when split view is active
+        if (isSplit) {
+          if (liveEnabled) {
+            liveStatusItem.text = l10n.t('Live Sync: On');
+            liveStatusItem.tooltip = l10n.t('Disable Live Sync');
+            liveStatusItem.command = `${EXTENSION_ID}.${CommandIds.ViewDisableLiveSync}`;
+          } else {
+            liveStatusItem.text = l10n.t('Live Sync: Off');
+            liveStatusItem.tooltip = l10n.t('Enable Live Sync');
+            liveStatusItem.command = `${EXTENSION_ID}.${CommandIds.ViewEnableLiveSync}`;
+          }
+
+          liveStatusItem.show();
+        } else {
+          liveStatusItem.hide();
+        }
+      } catch (error: unknown) {
+        // Use centralized logger instead of console
+        logger.error('Error updating status bar', error);
       }
     };
 
-    const stateListener = JSONProvider.onStateChanged(() => updateStatusBar());
+    const stateListener = JSONProvider.onStateChanged(() => {
+      updateStatusBar();
+    });
+
     updateStatusBar();
 
     this.context.subscriptions.push(
@@ -746,18 +788,121 @@ export class ExtensionRuntime {
       },
     );
 
-    const saveDisposable = workspace.onDidSaveTextDocument(() => {
-      if (this.resource) {
-        filesProvider.refresh();
-      }
-    });
+    this.providers.push(filesProvider);
 
     this.context.subscriptions.push(
       filesProvider,
       filesTreeView,
       refreshDisposable,
-      saveDisposable,
     );
+  }
+
+  /**
+   * Registers a filesystem watcher that invalidates the discovery cache
+   * when relevant files are created or deleted.
+   *
+   * @memberof ExtensionRuntime
+   *
+   * @example
+   * ```typescript
+   * this.registerFilesystemWatcher();
+   * ```
+   */
+  private registerFilesystemWatcher(): void {
+    const extensions = this.config.includedFilePatterns;
+
+    if (!extensions?.length) {
+      return;
+    }
+
+    const globPattern = `**/*.{${extensions.join(',')}}`;
+    const watcher = workspace.createFileSystemWatcher(globPattern);
+
+    // Shared handler to reduce duplication
+    const handleResourceCheck = () => {
+      if (!this.resource) {
+        return;
+      }
+
+      clearCache();
+    };
+
+    watcher.onDidCreate(handleResourceCheck);
+    watcher.onDidDelete(handleResourceCheck);
+    watcher.onDidChange(handleResourceCheck);
+
+    const saveDisposable = workspace.onDidSaveTextDocument((document) => {
+      if (!this.resource) {
+        return;
+      }
+
+      const fileName = document.fileName;
+
+      // Faster than some() for small arrays (micro-opt)
+      for (const ext of extensions) {
+        if (fileName.endsWith(`.${ext}`)) {
+          this.providers.forEach((provider) => provider.refresh());
+          break;
+        }
+      }
+    });
+
+    const changeDisposable = workspace.onDidChangeTextDocument((event) => {
+      const document = event.document;
+      const fileName = document.fileName;
+
+      // Only refresh if it's one of the watched extensions and matches the currently previewed path
+      if (JSONProvider.previewedPath === document.uri.fsPath) {
+        for (const ext of extensions) {
+          if (fileName.endsWith(`.${ext}`)) {
+            void (async () => {
+              const { graphLayoutOrientation } = this.config;
+              const { languageId } = document;
+
+              let fileType = languageId;
+              if (!isFileTypeSupported(fileType)) {
+                const baseName = fileName.split(/[\\\/]/).pop() ?? fileName;
+                if (/^\.env(\..*)?$/i.test(baseName)) {
+                  fileType = 'env';
+                } else {
+                  const fileExtension = fileName.split('.').pop();
+                  fileType = isFileTypeSupported(fileExtension)
+                    ? fileExtension
+                    : 'json';
+                }
+              }
+
+              const result = parseJsonContent(
+                document.getText(),
+                fileType as FileType,
+              );
+
+              const fileTypeFromResult = (
+                result as { fileType?: string } | null
+              )?.fileType;
+              fileType = (fileTypeFromResult ?? 'json').toLowerCase().trim();
+
+              const parsedJsonData = result;
+
+              if (parsedJsonData === null) {
+                return;
+              }
+
+              JSONProvider.postMessageToWebview({
+                command: 'update',
+                data: parsedJsonData,
+                orientation: graphLayoutOrientation,
+                path: document.uri.fsPath,
+                fileName,
+              });
+            })();
+            break;
+          }
+        }
+      }
+    });
+
+    this.context.subscriptions.push(watcher, saveDisposable, changeDisposable);
   }
 
   /**
@@ -768,13 +913,24 @@ export class ExtensionRuntime {
    * This is workspace-independent.
    */
   private registerLiveSyncListeners(): void {
-    const supportedTypes = new Set(['json', 'jsonc', 'json5', 'yaml', 'yml']);
+    const SupportedLiveSyncTypes = new Set([
+      'json',
+      'jsonc',
+      'json5',
+      'yaml',
+      'yml',
+    ]);
 
     const isLiveSyncSupported = (fileType: string): boolean =>
-      supportedTypes.has(fileType);
+      SupportedLiveSyncTypes.has(fileType);
+
+    // Cache last document text to avoid repeated full reads
+    let lastDocUri: string | undefined;
+    let lastDocText: string | undefined;
 
     const scheduleSendSelection = (nodeId?: string) => {
       this.scheduledNodeId = nodeId;
+
       if (this.selectionThrottleTimer) {
         return;
       }
@@ -787,6 +943,7 @@ export class ExtensionRuntime {
 
       this.selectionThrottleTimer = setTimeout(() => {
         this.selectionThrottleTimer = undefined;
+
         const toSend = this.scheduledNodeId;
         this.scheduledNodeId = undefined;
 
@@ -827,9 +984,10 @@ export class ExtensionRuntime {
       const { languageId, fileName } = doc;
 
       let fileType: string = languageId;
-      // Determine file type from language ID or file extension
+
       if (!isFileTypeSupported(fileType)) {
         const baseName = fileName.split(/[\/\\]/).pop() ?? fileName;
+
         if (/^\.env(\..*)?$/i.test(baseName)) {
           fileType = 'env';
         } else {
@@ -845,6 +1003,7 @@ export class ExtensionRuntime {
       }
 
       const mapper = getSelectionMapper(languageId, fileName);
+
       if (!mapper) {
         JSONProvider.setLiveSyncPaused(
           true,
@@ -859,11 +1018,17 @@ export class ExtensionRuntime {
       }
 
       const offset = doc.offsetAt(sel.active);
-      const text = doc.getText();
+
+      // Avoid calling getText() repeatedly for the same document
+      if (lastDocUri !== doc.uri.toString()) {
+        lastDocUri = doc.uri.toString();
+        lastDocText = doc.getText();
+      }
+
       let nodeId: string | undefined;
 
       try {
-        nodeId = mapper.nodeIdFromOffset(text, offset);
+        nodeId = mapper.nodeIdFromOffset(lastDocText ?? '', offset);
       } catch {
         JSONProvider.setLiveSyncPaused(
           true,

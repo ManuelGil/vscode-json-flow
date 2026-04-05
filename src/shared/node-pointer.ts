@@ -46,7 +46,7 @@ const INVALID_TILDE_PATTERN: RegExp = /~(?![01])/;
  */
 function encodeSegment(rawKey: string): string {
   // Step 1: escape tildes, Step 2: escape slashes.
-  // Order is critical — reversing it corrupts `~/` sequences.
+  // Order is critical - reversing it corrupts `~/` sequences.
   return rawKey.replace(/~/g, '~0').replace(/\//g, '~1');
 }
 
