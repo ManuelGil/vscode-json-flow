@@ -6,16 +6,9 @@ import {
   TooltipTrigger,
 } from '@webview/components/molecules/Tooltip';
 import { useNodeProperties } from '@webview/hooks/useNodeProperties';
-import type { Node } from '@xyflow/react';
+import type { InternalNode, Node } from '@xyflow/react';
 import { PanelRight } from 'lucide-react';
-import {
-  memo,
-  type ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import { memo, type ReactNode, useCallback, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { NodePropertiesContent } from './NodePropertiesContent';
 
@@ -33,25 +26,32 @@ import { NodePropertiesContent } from './NodePropertiesContent';
  */
 
 interface NodePropertiesPanelProps {
+  selectedNodeId: string | null;
   node: Node | null;
   rootNode: Node | null;
+  allNodes?: InternalNode[];
   canEdit: boolean;
+  languageId: string;
   onClose?: () => void;
+  onFocusNode?: (nodeId: string) => void;
 }
 
 export const NodePropertiesPanel = memo(
-  ({ node, rootNode, canEdit, onClose }: NodePropertiesPanelProps) => {
+  ({
+    selectedNodeId,
+    node,
+    rootNode,
+    allNodes,
+    canEdit,
+    languageId,
+    onClose,
+    onFocusNode,
+  }: NodePropertiesPanelProps) => {
     const [isOpen, setIsOpen] = useState<boolean>(false);
 
-    const effectiveNode = node ?? rootNode ?? null;
+    const effectiveNode = node ?? null;
 
     const properties = useNodeProperties(effectiveNode);
-
-    useEffect(() => {
-      if (!effectiveNode) {
-        setIsOpen(false);
-      }
-    }, [effectiveNode]);
 
     const handleTogglePanel = useCallback(() => {
       setIsOpen((previous) => !previous);
@@ -62,7 +62,7 @@ export const NodePropertiesPanel = memo(
       onClose?.();
     }, [onClose]);
 
-    const shouldRenderPanel = Boolean(isOpen && effectiveNode && properties);
+    const shouldRenderPanel = Boolean(isOpen && selectedNodeId);
 
     const displayKey = useMemo(() => {
       if (!properties || !effectiveNode) {
@@ -81,9 +81,23 @@ export const NodePropertiesPanel = memo(
         <NodePropertiesContent
           displayKey={displayKey}
           properties={properties}
+          allNodes={allNodes}
           onClose={handleClosePanel}
           canEdit={canEdit}
+          languageId={languageId}
+          onFocusNode={onFocusNode}
         />
+      );
+    } else if (shouldRenderPanel) {
+      panelContent = (
+        <aside className="flex w-[360px] flex-col rounded-lg border border-border bg-card p-5 shadow-sm">
+          <p className="text-sm font-semibold text-foreground">
+            Node Properties
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Waiting for selected node data...
+          </p>
+        </aside>
       );
     }
 
@@ -93,7 +107,7 @@ export const NodePropertiesPanel = memo(
           <TooltipTrigger asChild>
             <span>
               <Button
-                variant={isOpen && effectiveNode ? 'secondary' : 'outline'}
+                variant={isOpen && selectedNodeId ? 'secondary' : 'outline'}
                 onClick={handleTogglePanel}
                 aria-label="Show properties"
               >

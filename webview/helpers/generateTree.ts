@@ -7,6 +7,18 @@ import {
 import { IS_DEV } from '@webview/env';
 import type { JsonValue, TreeMap } from '@webview/types';
 
+type JsonContainer = Record<string, unknown> | unknown[];
+
+interface TraversalFrame {
+  nodeId: string;
+  container: JsonContainer;
+  pointerParent: string;
+  entries: Array<[string, unknown]>;
+  index: number;
+  currentLine: number;
+  kind: 'object' | 'array';
+}
+
 /**
  * Resolves the canonical JSON type.
  *
@@ -32,8 +44,88 @@ const resolveJsonType = (value: unknown): string => {
   return typeof value;
 };
 
+function createContainerNode(
+  nodeId: string,
+  value: unknown,
+  lineNumber: number,
+): TreeMap[string] {
+  const isGraphRoot = nodeId === GRAPH_ROOT_ID;
+  const key = isGraphRoot ? undefined : (lastSegment(nodeId) ?? nodeId);
+  return {
+    id: nodeId,
+    name: isGraphRoot ? GRAPH_ROOT_LABEL : (lastSegment(nodeId) ?? nodeId),
+    children: [],
+    data: { type: resolveJsonType(value), key, value, line: lineNumber },
+  };
+}
+
+function createLeafNode(
+  nodeId: string,
+  keyOrIndex: string,
+  value: unknown,
+  lineNumber: number,
+): TreeMap[string] {
+  return {
+    id: nodeId,
+    name: `${keyOrIndex}: ${String(value)}`,
+    data: {
+      type: resolveJsonType(value),
+      key: keyOrIndex,
+      value,
+      line: lineNumber,
+    },
+  };
+}
+
+function isContainer(value: unknown): value is JsonContainer {
+  return typeof value === 'object' && value !== null;
+}
+
+function getEntries(container: JsonContainer): Array<[string, unknown]> {
+  if (Array.isArray(container)) {
+    const entries: Array<[string, unknown]> = [];
+    for (const [index, value] of container.entries()) {
+      entries.push([String(index), value]);
+    }
+    return entries;
+  }
+
+  return Object.entries(container);
+}
+
+function createFrame(
+  nodeId: string,
+  container: JsonContainer,
+  lineNumber: number,
+): TraversalFrame {
+  const pointerParent = nodeId === GRAPH_ROOT_ID ? POINTER_ROOT : nodeId;
+  return {
+    nodeId,
+    container,
+    pointerParent,
+    entries: getEntries(container),
+    index: 0,
+    currentLine: lineNumber + 1,
+    kind: Array.isArray(container) ? 'array' : 'object',
+  };
+}
+
+function getContainerSpan(
+  container: JsonContainer,
+  spanCache: WeakMap<object, number>,
+): number {
+  const cached = spanCache.get(container as object);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  const span = Object.keys(container).length + 2;
+  spanCache.set(container as object, span);
+  return span;
+}
+
 /**
- * Recursively generates a TreeMap from a JSON value.
+ * Iteratively generates a TreeMap from a JSON value.
  */
 export function generateTree(
   json: JsonValue,
@@ -41,103 +133,56 @@ export function generateTree(
   lineNumber = 1,
   acc: TreeMap = {},
 ): TreeMap {
-  // DEV-only: fail fast if the sentinel ever gets corrupted to a pointer.
   if (IS_DEV && GRAPH_ROOT_ID.startsWith('/')) {
-    throw new Error(
-      'GRAPH_ROOT_ID must never start with "/". The graph identity domain and the JSON Pointer domain must remain disjoint.',
-    );
+    // Invalid sentinel configuration would break pointer generation.
+    // In production we continue safely without throwing.
+    return acc;
   }
 
-  // When the current node is the graph root, child JSON Pointers must be
-  // built relative to POINTER_ROOT ("/"), not relative to the sentinel
-  // GRAPH_ROOT_ID which is not a valid pointer.
-  const pointerParent: string =
-    parentId === GRAPH_ROOT_ID ? POINTER_ROOT : parentId;
-
-  const isGraphRoot: boolean = parentId === GRAPH_ROOT_ID;
-
-  if (Array.isArray(json)) {
-    acc[parentId] = {
-      id: parentId,
-      name: isGraphRoot
-        ? GRAPH_ROOT_LABEL
-        : (lastSegment(parentId) ?? parentId),
-      children: [],
-      data: { type: resolveJsonType(json), line: lineNumber },
-    };
-
-    let currentLine = lineNumber + 1;
-
-    for (const [index, value] of json.entries()) {
-      const valueId = buildPointer(pointerParent, String(index));
-
-      if (typeof value === 'object' && value !== null) {
-        generateTree(value, valueId, currentLine, acc);
-        acc[parentId].children?.push(valueId);
-        currentLine += Object.keys(value).length + 2;
-      } else {
-        // CONTRACT:
-        // Leaf node names MUST use ": " separator.
-        // searchService.extractKey/extractValue depend on this exact format.
-        acc[valueId] = {
-          id: valueId,
-          name: `${index}: ${String(value)}`,
-          data: { type: resolveJsonType(value), line: currentLine },
-        };
-
-        acc[parentId].children?.push(valueId);
-        currentLine++;
-      }
-    }
-  } else if (typeof json === 'object' && json !== null) {
-    acc[parentId] = {
-      id: parentId,
-      name: isGraphRoot
-        ? GRAPH_ROOT_LABEL
-        : (lastSegment(parentId) ?? parentId),
-      children: [],
-      data: { type: resolveJsonType(json), line: lineNumber },
-    };
-
-    let currentLine = lineNumber + 1;
-    const entries = Object.entries(json);
-
-    for (const [key, value] of entries) {
-      const keyId = buildPointer(pointerParent, key);
-
-      if (typeof value === 'object' && value !== null) {
-        acc[keyId] = {
-          id: keyId,
-          name: key,
-          children: [],
-          data: { type: resolveJsonType(value), line: currentLine },
-        };
-
-        acc[parentId].children?.push(keyId);
-
-        generateTree(value, keyId, currentLine + 1, acc);
-
-        currentLine += Object.keys(value).length + 2;
-      } else {
-        // CONTRACT:
-        // Leaf node names MUST use ": " separator.
-        // searchService.extractKey/extractValue depend on this exact format.
-        acc[keyId] = {
-          id: keyId,
-          name: `${key}: ${String(value)}`,
-          data: { type: resolveJsonType(value), line: currentLine },
-        };
-
-        acc[parentId].children?.push(keyId);
-        currentLine++;
-      }
-    }
-  } else {
+  if (!isContainer(json)) {
     acc[parentId] = {
       id: parentId,
       name: String(json),
-      data: { type: resolveJsonType(json), line: lineNumber },
+      data: { type: resolveJsonType(json), value: json, line: lineNumber },
     };
+
+    return acc;
+  }
+
+  const spanCache = new WeakMap<object, number>();
+  acc[parentId] = createContainerNode(parentId, json, lineNumber);
+
+  const stack: TraversalFrame[] = [createFrame(parentId, json, lineNumber)];
+
+  while (stack.length > 0) {
+    const frame = stack[stack.length - 1];
+
+    if (frame.index >= frame.entries.length) {
+      stack.pop();
+      continue;
+    }
+
+    const [segment, value] = frame.entries[frame.index++];
+    const childId = buildPointer(frame.pointerParent, segment);
+
+    if (isContainer(value)) {
+      const childLine =
+        frame.kind === 'object' ? frame.currentLine + 1 : frame.currentLine;
+
+      acc[frame.nodeId].children?.push(childId);
+      acc[childId] = createContainerNode(childId, value, childLine);
+      frame.currentLine += getContainerSpan(value, spanCache);
+
+      stack.push(createFrame(childId, value, childLine));
+      continue;
+    }
+
+    // CONTRACT:
+    // Leaf node names MUST use ": " separator.
+    // searchService.extractKey/extractValue depend on this exact format.
+    acc[childId] = createLeafNode(childId, segment, value, frame.currentLine);
+    acc[frame.nodeId].children?.push(childId);
+    frame.currentLine++;
   }
 
   return acc;

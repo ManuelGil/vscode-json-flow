@@ -8,8 +8,9 @@
  * edge settings. The Web Worker imports this core directly.
  */
 
+import { GRAPH_ROOT_ID } from '@src/shared/graph-identity';
 import { isHorizontal, isReversed } from '@webview/helpers/direction';
-import type { Direction, TreeMap } from '@webview/types';
+import type { Direction, PathSegment, TreeMap } from '@webview/types';
 import { EdgeType } from '@webview/types';
 import type { Edge, Node, Position } from '@xyflow/react';
 import { layoutFromMap } from 'entitree-flex';
@@ -201,6 +202,10 @@ const createNode = (
   tree: TreeMap,
 ): Node => {
   const { source, target } = getPositions(direction, type);
+  const treeNodeData = tree[node.id]?.data;
+
+  const pathSegments = buildPathSegments(node.id, tree);
+
   return {
     id: node.id,
     type: 'custom',
@@ -218,16 +223,50 @@ const createNode = (
       // CONTRACT: `label` is consumed by searchService and GoToSearch.
       // Renaming this field silently breaks search functionality.
       label: node.name,
+      key:
+        treeNodeData?.key ??
+        (typeof node.name === 'string' ? node.name.split(': ')[0] : undefined),
+      value: treeNodeData?.value,
+      pathSegments,
       direction,
       isRoot: node.id === rootId,
-      line: tree[node.id]?.data?.line,
-      type: tree[node.id]?.data?.type,
+      line: treeNodeData?.line,
+      type: treeNodeData?.type,
       ...node,
     },
     sourcePosition: source as Position,
     targetPosition: target as Position,
   };
 };
+
+function decodePointerToken(token: string): string {
+  return token.replace(/~1/g, '/').replace(/~0/g, '~');
+}
+
+function buildPathSegments(nodeId: string, tree: TreeMap): PathSegment[] {
+  if (!nodeId.startsWith('/')) {
+    return [];
+  }
+
+  const rawTokens = nodeId.split('/').slice(1);
+  const segments: PathSegment[] = [];
+  let currentId = '';
+
+  for (const rawToken of rawTokens) {
+    const decoded = decodePointerToken(rawToken);
+    const parentId = currentId || '/';
+    const parentType =
+      currentId === ''
+        ? tree[GRAPH_ROOT_ID]?.data?.type
+        : tree[parentId]?.data?.type;
+    const kind: PathSegment['kind'] =
+      parentType === 'array' ? 'array-index' : 'object-key';
+    segments.push({ value: decoded, kind });
+    currentId = `${currentId}/${rawToken}`;
+  }
+
+  return segments;
+}
 
 /**
  * O(n) deterministic layout for large graphs.

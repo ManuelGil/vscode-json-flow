@@ -31,10 +31,14 @@ export type NodeEditIntent =
  */
 export type MutationError =
   | 'INVALID_TARGET'
+  | 'INVALID_RANGE'
+  | 'INVALID_PARENT_TYPE'
+  | 'UNSUPPORTED_NODE_TYPE'
   | 'TYPE_MISMATCH'
   | 'DUPLICATE_KEY'
   | 'INVALID_JSON'
   | 'VERSION_CONFLICT'
+  | 'NO_TEXT_CHANGE'
   | 'UNKNOWN';
 
 /**
@@ -111,92 +115,6 @@ export const collectDiagnostics = computeNodeDiagnostics;
 
 const DEFAULT_INDENT = 2;
 // ---------------------------------------------------------------------------
-// Indentation Detection
-// ---------------------------------------------------------------------------
-
-/**
- * Detects the indentation unit used in a JSON document by scanning
- * lines for leading whitespace. Falls back to DEFAULT_INDENT spaces.
- *
- * @param text - The full document text.
- * @returns The detected indent string (spaces or tab).
- */
-function detectIndent(text: string): string {
-  const lines: string[] = text.split('\n');
-
-  for (const line of lines) {
-    const match = line.match(/^(\s+)\S/);
-    if (match) {
-      return match[1];
-    }
-  }
-
-  return ' '.repeat(DEFAULT_INDENT);
-}
-
-// ---------------------------------------------------------------------------
-// AST Serialization
-// ---------------------------------------------------------------------------
-
-/**
- * Serializes a JS value into a JSON string with the given indentation.
- *
- * @param value - The value to serialize.
- * @param indent - The indentation string.
- * @returns The serialized JSON string.
- */
-function serializeValue(value: unknown, indent: string): string {
-  const indentSize: number = indent.includes('\t') ? 1 : indent.length;
-  return JSON.stringify(value, null, indentSize);
-}
-
-/**
- * Reconstructs a JS value from the AST by walking its structure.
- * This is the canonical way to go from AST → JS object → serialized string.
- *
- * @param node - The AstNode to reconstruct.
- * @returns The reconstructed JS value.
- */
-function astToValue(node: AstNode): unknown {
-  switch (node.type) {
-    case 'object': {
-      const result: Record<string, unknown> = {};
-      for (const prop of node.children ?? []) {
-        if (
-          prop.type !== 'property' ||
-          !prop.children ||
-          prop.children.length < 2
-        ) {
-          continue;
-        }
-        const keyNode: AstNode = prop.children[0];
-        const valNode: AstNode = prop.children[1];
-        const key: string = String(keyNode.value ?? '');
-        result[key] = astToValue(valNode);
-      }
-      return result;
-    }
-    case 'array': {
-      const items: unknown[] = [];
-      for (const child of node.children ?? []) {
-        items.push(astToValue(child));
-      }
-      return items;
-    }
-    case 'string':
-      return node.value;
-    case 'number':
-      return node.value;
-    case 'boolean':
-      return node.value;
-    case 'null':
-      return null;
-    default:
-      return undefined;
-  }
-}
-
-// ---------------------------------------------------------------------------
 // Type Helpers
 // ---------------------------------------------------------------------------
 
@@ -236,6 +154,14 @@ export function astTypeCategory(node: AstNode): string {
 }
 
 type PrimitiveCategory = 'string' | 'number' | 'boolean' | 'null';
+
+function isPrimitive(value: unknown): value is string | number | boolean {
+  return (
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean'
+  );
+}
 
 interface ParsedPrimitiveInput {
   category: PrimitiveCategory | 'object' | 'array' | 'unknown';
@@ -318,19 +244,26 @@ function serializePrimitive(
   return value ? 'true' : 'false';
 }
 
-function serializePrimitiveForInsert(
-  parsedInput: ParsedPrimitiveInput,
-): string | undefined {
-  if (parsedInput.category === 'string') {
-    return JSON.stringify(String(parsedInput.value ?? ''));
+function serializePrimitiveForInsert(value: string | number | boolean): string {
+  if (typeof value === 'string') {
+    return JSON.stringify(value);
   }
-  if (parsedInput.category === 'number') {
-    return String(parsedInput.value);
+  if (typeof value === 'number') {
+    return String(value);
   }
-  if (parsedInput.category === 'boolean') {
-    return parsedInput.value ? 'true' : 'false';
-  }
-  return undefined;
+  return value ? 'true' : 'false';
+}
+
+function isValidReplaceRange(
+  start: number,
+  end: number,
+  textLength: number,
+): boolean {
+  return start >= 0 && end > start && end <= textLength;
+}
+
+function isValidInsertOffset(offset: number, textLength: number): boolean {
+  return offset >= 0 && offset <= textLength;
 }
 
 function findLineStart(text: string, offset: number): number {
@@ -368,10 +301,11 @@ function buildCreateInsertText(
   intent: Extract<NodeEditIntent, { type: 'create-child' }>,
 ): { insertOffset: number; insertText: string } | undefined {
   const parsedInput = parseIncomingPrimitiveInput(intent.value);
-  const serializedValue = serializePrimitiveForInsert(parsedInput);
-  if (!serializedValue) {
+  if (!isPrimitive(parsedInput.value)) {
     return undefined;
   }
+
+  const serializedValue = serializePrimitiveForInsert(parsedInput.value);
 
   const insertOffset = target.offset + target.length - 1;
   if (insertOffset < 0 || insertOffset > originalText.length) {
@@ -472,20 +406,15 @@ export function validateMutation(
 
   switch (intent.type) {
     case 'change-value': {
-      const targetType: string = astTypeCategory(target);
       const parsedInput = parseIncomingPrimitiveInput(intent.newValue);
 
       // Reject container targets
-      if (targetType === 'object' || targetType === 'array') {
+      if (target.type === 'object' || target.type === 'array') {
         return { success: false, error: 'TYPE_MISMATCH' };
       }
 
       // Allow changes across primitive types, but block non-primitive values.
-      if (
-        parsedInput.category !== 'string' &&
-        parsedInput.category !== 'number' &&
-        parsedInput.category !== 'boolean'
-      ) {
+      if (!isPrimitive(parsedInput.value)) {
         return { success: false, error: 'TYPE_MISMATCH' };
       }
 
@@ -493,23 +422,25 @@ export function validateMutation(
     }
 
     case 'rename-key': {
+      const normalizedNewKey = intent.newKey.trim();
+
       // Parent must be an object
       if (!parent || parent.type !== 'object' || !property) {
-        return { success: false, error: 'TYPE_MISMATCH' };
+        return { success: false, error: 'INVALID_PARENT_TYPE' };
       }
 
       // newKey must be non-empty after trimming
-      if (intent.newKey.trim().length === 0) {
+      if (normalizedNewKey.length === 0) {
         return { success: false, error: 'INVALID_TARGET' };
       }
 
-      // newKey must differ from current key
+      // Same key is valid as a no-op; duplicate checks are handled in mutation.
       const currentKeyNode = property.children?.[0];
       if (
         currentKeyNode &&
-        String(currentKeyNode.value ?? '') === intent.newKey
+        String(currentKeyNode.value ?? '').trim() === normalizedNewKey
       ) {
-        return { success: false, error: 'INVALID_TARGET' };
+        return null;
       }
 
       return null;
@@ -519,12 +450,8 @@ export function validateMutation(
       const targetType: string = astTypeCategory(target);
       const parsedInput = parseIncomingPrimitiveInput(intent.value);
 
-      if (
-        parsedInput.category !== 'string' &&
-        parsedInput.category !== 'number' &&
-        parsedInput.category !== 'boolean'
-      ) {
-        return { success: false, error: 'TYPE_MISMATCH' };
+      if (!isPrimitive(parsedInput.value)) {
+        return { success: false, error: 'UNSUPPORTED_NODE_TYPE' };
       }
 
       if (targetType === 'object') {
@@ -549,7 +476,7 @@ export function validateMutation(
 
       // Only containers can have children
       if (targetType !== 'object' && targetType !== 'array') {
-        return { success: false, error: 'TYPE_MISMATCH' };
+        return { success: false, error: 'UNSUPPORTED_NODE_TYPE' };
       }
 
       return null;
@@ -562,7 +489,7 @@ export function validateMutation(
       }
 
       if (parent.type !== 'object' && parent.type !== 'array') {
-        return { success: false, error: 'TYPE_MISMATCH' };
+        return { success: false, error: 'INVALID_PARENT_TYPE' };
       }
 
       if (parent.type === 'object') {
@@ -586,52 +513,6 @@ export function validateMutation(
 // ---------------------------------------------------------------------------
 // Mutation Operations
 // ---------------------------------------------------------------------------
-
-/**
- * Renames the key of an object property in the AST.
- * The parent must be an object and the new key must not duplicate existing keys.
- *
- * @param root - The root AST node.
- * @param nodeId - JSON Pointer of the target node.
- * @param newKey - The new property key.
- * @returns MutationResult indicating success or error.
- */
-function renameKey(
-  root: AstNode,
-  nodeId: string,
-  newKey: string,
-): MutationResult {
-  const resolved = resolveAstNode(root, nodeId);
-  if (!resolved) {
-    return { success: false, error: 'INVALID_TARGET' };
-  }
-
-  const { parent, property } = resolved;
-
-  if (!parent || parent.type !== 'object' || !property) {
-    return { success: false, error: 'TYPE_MISMATCH' };
-  }
-
-  // Check for duplicate keys among siblings
-  for (const prop of parent.children ?? []) {
-    if (prop === property) {
-      continue;
-    }
-    const keyNode = prop.children?.[0];
-    if (keyNode && String(keyNode.value ?? '') === newKey) {
-      return { success: false, error: 'DUPLICATE_KEY' };
-    }
-  }
-
-  // Mutate the key node in-place on the AST
-  const keyNode = property.children?.[0];
-  if (!keyNode) {
-    return { success: false, error: 'INVALID_TARGET' };
-  }
-  keyNode.value = newKey;
-
-  return { success: true };
-}
 
 function isWhitespace(char: string | undefined): boolean {
   return char === ' ' || char === '\t' || char === '\n' || char === '\r';
@@ -789,46 +670,34 @@ export async function applyNodeEdit(
     return validationError;
   }
 
-  // 3.6. Capture pre-mutation snapshot for diagnostics (O(1) metadata)
-  const resolvedTargetNode = resolveAstNode(root, intent.nodeId);
-  const preMutationSnapshot: PreMutationSnapshot = {
-    targetExists: Boolean(resolvedTargetNode),
-    parentType: resolvedTargetNode?.parent?.type,
-    parentChildrenCount: resolvedTargetNode?.parent?.children?.length,
-    parentNode: resolvedTargetNode?.parent,
-  };
-
   if (intent.type === 'change-value') {
     const targetNode = findNodeByPointer(root, intent.nodeId);
     if (!targetNode) {
       return { success: false, error: 'INVALID_TARGET' };
     }
 
-    const detectedType = astTypeCategory(targetNode);
     if (
-      detectedType !== 'string' &&
-      detectedType !== 'number' &&
-      detectedType !== 'boolean'
+      targetNode.type !== 'string' &&
+      targetNode.type !== 'number' &&
+      targetNode.type !== 'boolean'
     ) {
       return { success: false, error: 'TYPE_MISMATCH' };
     }
 
     const parsedInput = parseIncomingPrimitiveInput(intent.newValue);
-    if (
-      parsedInput.category !== 'string' &&
-      parsedInput.category !== 'number' &&
-      parsedInput.category !== 'boolean'
-    ) {
+    if (!isPrimitive(parsedInput.value)) {
       return { success: false, error: 'TYPE_MISMATCH' };
     }
+
+    const primitiveType = typeof parsedInput.value as
+      | 'string'
+      | 'number'
+      | 'boolean';
 
     const start = targetNode.offset;
     const end = targetNode.offset + targetNode.length;
     const originalText = document.getText();
-    const newValueText = serializePrimitive(
-      parsedInput.value,
-      parsedInput.category,
-    );
+    const newValueText = serializePrimitive(parsedInput.value, primitiveType);
     const updatedText =
       originalText.slice(0, start) + newValueText + originalText.slice(end);
 
@@ -882,7 +751,7 @@ export async function applyNodeEdit(
 
     const { target, parent, property, indexInParent } = resolvedDelete;
     if (!parent || (parent.type !== 'object' && parent.type !== 'array')) {
-      return { success: false, error: 'INVALID_TARGET' };
+      return { success: false, error: 'INVALID_PARENT_TYPE' };
     }
 
     const deletionNode = parent.type === 'object' ? property : target;
@@ -894,12 +763,6 @@ export async function applyNodeEdit(
     const deleteEnd = deletionNode.offset + deletionNode.length;
     const originalText = document.getText();
 
-    console.log('[MUTATION] DELETE_START', {
-      nodeId: intent.nodeId,
-      parentType: parent.type,
-      indexInParent,
-    });
-
     const rangeToDelete = computeDeleteRange(
       originalText,
       parent,
@@ -909,10 +772,18 @@ export async function applyNodeEdit(
     );
 
     if (!rangeToDelete) {
-      return { success: false, error: 'INVALID_TARGET' };
+      return { success: false, error: 'INVALID_RANGE' };
     }
 
-    console.log('[MUTATION] DELETE_RANGE', rangeToDelete);
+    if (
+      !isValidReplaceRange(
+        rangeToDelete.start,
+        rangeToDelete.end,
+        originalText.length,
+      )
+    ) {
+      return { success: false, error: 'INVALID_RANGE' };
+    }
 
     if (document.version !== versionAtParse) {
       return { success: false, error: 'VERSION_CONFLICT' };
@@ -945,8 +816,6 @@ export async function applyNodeEdit(
     if (diagnosticsCallback) {
       diagnosticsCallback(intent.nodeId, []);
     }
-
-    console.log('[MUTATION] DELETE_SUCCESS', { nodeId: intent.nodeId });
     return { success: true, warnings: [] };
   }
 
@@ -958,13 +827,20 @@ export async function applyNodeEdit(
 
     const { target } = resolvedCreate;
     if (target.type !== 'object' && target.type !== 'array') {
-      return { success: false, error: 'TYPE_MISMATCH' };
+      return { success: false, error: 'UNSUPPORTED_NODE_TYPE' };
     }
 
     const originalText = document.getText();
     const insertion = buildCreateInsertText(originalText, target, intent);
     if (!insertion) {
       return { success: false, error: 'INVALID_TARGET' };
+    }
+
+    if (
+      !isValidInsertOffset(insertion.insertOffset, originalText.length) ||
+      insertion.insertText.length === 0
+    ) {
+      return { success: false, error: 'INVALID_RANGE' };
     }
 
     if (document.version !== versionAtParse) {
@@ -996,81 +872,94 @@ export async function applyNodeEdit(
     return { success: true, warnings: [] };
   }
 
-  // 4. Dispatch mutation
-  let result: MutationResult;
-  switch (intent.type) {
-    case 'rename-key':
-      result = renameKey(root, intent.nodeId, intent.newKey);
-      break;
-    default:
+  if (intent.type === 'rename-key') {
+    const resolvedRename = resolveAstNode(root, intent.nodeId);
+    if (!resolvedRename) {
+      return { success: false, error: 'INVALID_TARGET' };
+    }
+
+    const { parent, property } = resolvedRename;
+    if (!parent || parent.type !== 'object' || !property) {
+      return { success: false, error: 'INVALID_PARENT_TYPE' };
+    }
+
+    const normalizedNewKey = intent.newKey.trim();
+    if (normalizedNewKey.length === 0) {
+      return { success: false, error: 'INVALID_TARGET' };
+    }
+
+    const keyNode = property.children?.[0];
+    if (!keyNode) {
+      return { success: false, error: 'INVALID_TARGET' };
+    }
+
+    if (keyNode.type !== 'string') {
+      return { success: false, error: 'UNSUPPORTED_NODE_TYPE' };
+    }
+
+    for (const siblingProperty of parent.children ?? []) {
+      if (siblingProperty === property) {
+        continue;
+      }
+      const siblingKeyNode = siblingProperty.children?.[0];
+      if (
+        siblingKeyNode &&
+        String(siblingKeyNode.value ?? '').trim() === normalizedNewKey
+      ) {
+        return { success: false, error: 'DUPLICATE_KEY' };
+      }
+    }
+
+    const start = keyNode.offset;
+    const end = keyNode.offset + keyNode.length;
+    const originalText = document.getText();
+    const newKeyText = JSON.stringify(normalizedNewKey);
+    const currentKeyText = originalText.slice(start, end);
+
+    if (!isValidReplaceRange(start, end, originalText.length)) {
+      return { success: false, error: 'INVALID_RANGE' };
+    }
+
+    const currentKeyFromAst = JSON.stringify(String(keyNode.value ?? ''));
+    if (currentKeyFromAst === newKeyText) {
+      return { success: false, error: 'NO_TEXT_CHANGE' };
+    }
+
+    if (currentKeyText === newKeyText) {
+      return { success: false, error: 'NO_TEXT_CHANGE' };
+    }
+
+    if (document.version !== versionAtParse) {
+      return { success: false, error: 'VERSION_CONFLICT' };
+    }
+
+    try {
+      const edit: WorkspaceEdit = new WorkspaceEdit();
+      edit.replace(
+        document.uri,
+        new Range(document.positionAt(start), document.positionAt(end)),
+        newKeyText,
+      );
+      const applied: boolean = await workspace.applyEdit(edit);
+      if (!applied) {
+        return { success: false, error: 'UNKNOWN' };
+      }
+    } catch {
       return { success: false, error: 'UNKNOWN' };
-  }
-
-  if (!result.success) {
-    return result;
-  }
-
-  // 4.5. Collect diagnostics (exactly once, after mutation success, before serialization)
-  const warnings: DiagnosticWarning[] = computeNodeDiagnostics(
-    preMutationSnapshot,
-    root,
-    intent,
-  );
-
-  // 5. Serialize full document from AST
-  let serialized: string;
-  try {
-    const indent: string = detectIndent(text);
-    const value: unknown = astToValue(root);
-    serialized = serializeValue(value, indent);
-    if (typeof serialized !== 'string') {
-      return { success: false, error: 'INVALID_JSON' };
     }
-    // Safety gate: never apply an edit that cannot be parsed again.
-    if (!parseJsonTolerant(serialized)) {
-      return { success: false, error: 'INVALID_JSON' };
-    }
-    // Preserve trailing newline if the original had one
-    if (text.endsWith('\n') && !serialized.endsWith('\n')) {
-      serialized += '\n';
-    }
-  } catch {
-    return { success: false, error: 'INVALID_JSON' };
-  }
 
-  // 6. Validate version unchanged
-  if (document.version !== versionAtParse) {
-    return { success: false, error: 'VERSION_CONFLICT' };
-  }
-
-  // 7. Apply full-document replace via WorkspaceEdit
-  try {
-    const fullRange: Range = new Range(
-      document.lineAt(0).range.start,
-      document.lineAt(document.lineCount - 1).range.end,
-    );
-    const edit: WorkspaceEdit = new WorkspaceEdit();
-    edit.replace(document.uri, fullRange, serialized);
-    const applied: boolean = await workspace.applyEdit(edit);
-    if (!applied) {
+    try {
+      await document.save();
+    } catch {
       return { success: false, error: 'UNKNOWN' };
     }
-  } catch {
-    return { success: false, error: 'UNKNOWN' };
+
+    if (diagnosticsCallback) {
+      diagnosticsCallback(intent.nodeId, []);
+    }
+
+    return { success: true, warnings: [] };
   }
 
-  // 8. Save document to persist changes
-  try {
-    await document.save();
-  } catch {
-    return { success: false, error: 'UNKNOWN' };
-  }
-
-  // 9. Invoke diagnostics callback if provided
-  if (diagnosticsCallback) {
-    diagnosticsCallback(intent.nodeId, warnings);
-  }
-
-  const successResult: MutationResult = { success: true, warnings };
-  return successResult;
+  return { success: false, error: 'UNKNOWN' };
 }

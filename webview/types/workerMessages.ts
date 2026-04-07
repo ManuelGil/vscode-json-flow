@@ -16,6 +16,7 @@ export type WorkerProcessingComplete = {
   type: 'PROCESSING_COMPLETE';
   payload: {
     requestId: string;
+    version?: number;
     nodes: Node[];
     edges: Edge[];
     processingTime: number;
@@ -28,7 +29,7 @@ export type WorkerProcessingComplete = {
  */
 export type WorkerProcessingProgress = {
   type: 'PROCESSING_PROGRESS';
-  payload: { requestId: string; progress: number };
+  payload: { requestId: string; version?: number; progress: number };
 };
 
 /**
@@ -36,7 +37,7 @@ export type WorkerProcessingProgress = {
  */
 export type WorkerProcessingError = {
   type: 'PROCESSING_ERROR';
-  payload: { requestId: string; error: string };
+  payload: { requestId: string; version?: number; error: string };
 };
 
 /**
@@ -44,7 +45,7 @@ export type WorkerProcessingError = {
  */
 export type WorkerProcessingCanceled = {
   type: 'PROCESSING_CANCELED';
-  payload: { requestId: string };
+  payload: { requestId: string; version?: number };
 };
 
 /**

@@ -67,7 +67,7 @@ export class TransformController {
       document.getText(),
       fileType as FileType,
     );
-    if (jsonContent === null) {
+    if (jsonContent === undefined) {
       return;
     }
 
@@ -129,7 +129,7 @@ export class TransformController {
 
     const jsonContent = parseJsonContent(text, fileType as FileType);
 
-    if (jsonContent === null) {
+    if (jsonContent === undefined) {
       return;
     }
 
@@ -173,7 +173,7 @@ export class TransformController {
       fileType as FileType,
     );
 
-    if (jsonContent === null) {
+    if (jsonContent === undefined) {
       return;
     }
 
@@ -292,8 +292,8 @@ export class TransformController {
     // Parse JSON content
     const jsonContent = parseJsonContent(text, fileType as FileType);
 
-    // Check if the JSON content is null
-    if (jsonContent === null) {
+    // Check if parsing failed
+    if (jsonContent === undefined) {
       return;
     }
 

@@ -127,6 +127,7 @@ export const FlowCanvas = memo(function FlowCanvas() {
     const graphData = st.data ? adaptTreeToGraph(treeData) : null;
     return {
       data: st.data,
+      dataVersion: 0,
       treeData,
       graphData,
       orientation: st.orientation,
@@ -208,19 +209,21 @@ export const FlowCanvas = memo(function FlowCanvas() {
 
   const { zoom } = useViewport();
 
-  const { selectedNode, selectNode } = useSelectedNode();
+  const { selectedNodeId, selectNodeId } = useSelectedNode();
   const [highlightedNodeId, setHighlightedNodeId] = useState<string | null>(
     null,
   );
   const highlightTimeoutRef = useRef<number | null>(null);
   const highlightDurationMsRef = useRef<number>(800);
+  const selectedNodeSnapshotRef = useRef<Node | null>(null);
+  const lastFocusedNodeIdRef = useRef<string | null>(null);
 
   // Clear selection if the selected node becomes hidden due to collapse
   useEffect(() => {
-    if (selectedNode && collapsedNodes.has(selectedNode.id)) {
-      selectNode(null);
+    if (selectedNodeId && collapsedNodes.has(selectedNodeId)) {
+      selectNodeId(null);
     }
-  }, [selectedNode, collapsedNodes, selectNode]);
+  }, [collapsedNodes, selectedNodeId, selectNodeId]);
 
   const onDirectionChange = useCallback((direction: Direction) => {
     dispatch({
@@ -400,7 +403,7 @@ export const FlowCanvas = memo(function FlowCanvas() {
 
   useEffect(() => {
     const jsonData = flowData.data;
-    if (!jsonData || !isValidTree) {
+    if (jsonData === undefined || !isValidTree) {
       return;
     }
 
@@ -419,12 +422,19 @@ export const FlowCanvas = memo(function FlowCanvas() {
     }
 
     const direction = flowData.orientation;
+    const version = flowData.dataVersion;
 
     workerDebounceRef.current = window.setTimeout(() => {
       workerDebounceRef.current = undefined;
-      processWithWorker(jsonData, { direction });
+      processWithWorker(jsonData, { direction, version });
     }, WORKER_DEBOUNCE_MS);
-  }, [flowData.data, flowData.orientation, isValidTree, processWithWorker]);
+  }, [
+    flowData.data,
+    flowData.dataVersion,
+    flowData.orientation,
+    isValidTree,
+    processWithWorker,
+  ]);
 
   // Stable ref for toggleNodeChildren to avoid re-creating callbacks
   const toggleChildrenRef =
@@ -499,18 +509,25 @@ export const FlowCanvas = memo(function FlowCanvas() {
 
     setRenderEdges(projectedEdges);
   }, [projectedNodes, projectedEdges]);
-  useEffect(() => {
-    if (!selectedNode) {
-      return;
+
+  const selectedNode = useMemo(() => {
+    if (!selectedNodeId) {
+      return null;
     }
 
-    const nodeExistsInNewGraph = renderNodes.some(
-      (node) => node.id === selectedNode.id,
-    );
-    if (!nodeExistsInNewGraph) {
-      selectNode(null);
+    const currentNode =
+      renderNodes.find((node) => node.id === selectedNodeId) ??
+      workerNodes?.find((node) => node.id === selectedNodeId) ??
+      reactFlowInstanceRef.current?.getNode(selectedNodeId) ??
+      null;
+
+    if (currentNode) {
+      selectedNodeSnapshotRef.current = currentNode;
+      return currentNode;
     }
-  }, [selectedNode, renderNodes, selectNode]);
+
+    return selectedNodeSnapshotRef.current;
+  }, [renderNodes, selectedNodeId, workerNodes]);
 
   // Unified change handlers for ReactFlow interactivity (drag, select)
   const onNodesChange = useCallback((changes: NodeChange[]) => {
@@ -538,25 +555,45 @@ export const FlowCanvas = memo(function FlowCanvas() {
     [reactFlowInstance],
   );
 
+  useEffect(() => {
+    if (!selectedNodeId || !selectedNode) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      focusNodeSafe(selectedNodeId);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [focusNodeSafe, selectedNode, selectedNodeId]);
+
+  const findNodeById = useCallback(
+    (nodeId: string): Node | null => {
+      const fromRender = renderNodes.find((node) => node.id === nodeId);
+      if (fromRender) {
+        return fromRender;
+      }
+
+      const fromWorker = workerNodes?.find((node) => node.id === nodeId);
+      if (fromWorker) {
+        return fromWorker;
+      }
+
+      return reactFlowInstanceRef.current?.getNode(nodeId) ?? null;
+    },
+    [renderNodes, workerNodes],
+  );
+
   const handlePointerNavigation = useCallback(
     (pointer: string | null | undefined) => {
-      if (!pointer) {
-        selectNode(null);
+      if (!pointer || pointer === GRAPH_ROOT_ID || pointer === '/') {
+        selectNodeId(null);
         return;
       }
 
-      if (pointer === GRAPH_ROOT_ID || pointer === '/') {
-        selectNode(null);
-        return;
-      }
+      selectNodeId(pointer);
 
-      const targetNode =
-        (finalNodesRef.current || []).find(
-          (node: Node) => node.id === pointer,
-        ) || null;
-
-      selectNode(targetNode);
-
+      const targetNode = findNodeById(pointer);
       if (targetNode) {
         focusNodeSafe(pointer);
       }
@@ -573,15 +610,7 @@ export const FlowCanvas = memo(function FlowCanvas() {
         }
       }
     },
-    [selectNode, focusNodeSafe],
-  );
-
-  const handleApplyVisualFeedback = useCallback(
-    (nodeId: string) => {
-      setHighlightedNodeId(nodeId);
-      focusNodeSafe(nodeId);
-    },
-    [focusNodeSafe],
+    [findNodeById, focusNodeSafe, selectNodeId],
   );
 
   const handleFitView = useCallback(() => {
@@ -590,6 +619,28 @@ export const FlowCanvas = memo(function FlowCanvas() {
     }
     safeFitView(reactFlowInstance);
   }, [reactFlowInstance]);
+
+  const restoreSelectionAndFocus = useCallback(
+    (nodeId: string) => {
+      if (!nodeId) {
+        lastFocusedNodeIdRef.current = null;
+        selectNodeId(null);
+        return;
+      }
+
+      if (lastFocusedNodeIdRef.current === nodeId) {
+        return;
+      }
+
+      lastFocusedNodeIdRef.current = nodeId;
+
+      selectNodeId(nodeId);
+      window.requestAnimationFrame(() => {
+        focusNodeSafe(nodeId);
+      });
+    },
+    [focusNodeSafe, selectNodeId],
+  );
 
   const rootNode = useMemo(() => {
     if (!rootNodeId) {
@@ -617,12 +668,13 @@ export const FlowCanvas = memo(function FlowCanvas() {
       searchProjectionMode,
       onSearchProjectionModeChange: setSearchProjectionMode,
       onSearchMatchChange: handleSearchMatchChange,
+      selectedNodeId,
       selectedNode,
       rootNode,
       canEdit: flowData.canEdit,
-      onApplyVisualFeedback: handleApplyVisualFeedback,
+      languageId: flowData.languageId,
       onFitView: handleFitView,
-      graphData: flowData.graphData,
+      onFocusNode: restoreSelectionAndFocus,
     }),
     [
       isDraggable,
@@ -634,12 +686,13 @@ export const FlowCanvas = memo(function FlowCanvas() {
       workerNodes,
       searchProjectionMode,
       handleSearchMatchChange,
+      selectedNodeId,
       selectedNode,
       rootNode,
       flowData.canEdit,
-      handleApplyVisualFeedback,
+      flowData.languageId,
       handleFitView,
-      flowData.graphData,
+      restoreSelectionAndFocus,
     ],
   );
 
@@ -707,17 +760,17 @@ export const FlowCanvas = memo(function FlowCanvas() {
   const handleApplyGraphSelection = useCallback(
     (nodeId?: string) => {
       if (!nodeId) {
-        selectNode(null);
+        selectNodeId(null);
         return;
       }
       handlePointerNavigation(nodeId);
     },
-    [handlePointerNavigation, selectNode],
+    [handlePointerNavigation, selectNodeId],
   );
 
   // Live Sync: wire selection synchronization (Phase 1)
   const { paused: liveSyncPaused, pauseReason } = useEditorSync({
-    selectedNodeId: selectedNode?.id ?? null,
+    selectedNodeId,
     onApplyGraphSelection: handleApplyGraphSelection,
     path: flowData.path,
   });

@@ -107,7 +107,8 @@ export function getDepth(nodeId: string): number {
  * All comparisons are case-insensitive.
  */
 export function evaluateToken(node: InternalNode, token: ParsedToken): boolean {
-  const label = String((node.data as Record<string, unknown>)?.label || '');
+  const nodeData = (node.data as Record<string, unknown>) ?? {};
+  const label = String(nodeData.label || '');
   const lowerLabel = label.toLowerCase();
 
   switch (token.kind) {
@@ -115,12 +116,12 @@ export function evaluateToken(node: InternalNode, token: ParsedToken): boolean {
       return lowerLabel.includes(token.value.toLowerCase());
 
     case 'key':
-      return extractKey(label)
+      return String(nodeData.key ?? extractKey(label))
         .toLowerCase()
         .includes(token.value.toLowerCase());
 
     case 'value':
-      return extractValue(label)
+      return String(nodeData.value ?? extractValue(label))
         .toLowerCase()
         .includes(token.value.toLowerCase());
 

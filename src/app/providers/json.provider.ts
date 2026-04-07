@@ -90,6 +90,22 @@ export class JSONProvider {
    */
   static previewedPath: string | undefined;
 
+  private static mapMutationError(error: string): string {
+    if (error === 'INVALID_RANGE') {
+      return 'Unable to apply change safely';
+    }
+    if (error === 'INVALID_PARENT_TYPE') {
+      return 'This action is not valid for this node';
+    }
+    if (error === 'UNSUPPORTED_NODE_TYPE') {
+      return 'Unsupported node type';
+    }
+    if (error === 'DUPLICATE_KEY') {
+      return 'A key with this name already exists';
+    }
+    return error;
+  }
+
   /**
    * Event fired when provider state changes (split view or live sync)
    */
@@ -136,6 +152,47 @@ export class JSONProvider {
       (message) => {
         if (message?.type === 'nodeEditIntent') {
           const { payload: intent, requestId } = message;
+          const intentType =
+            typeof intent?.type === 'string' ? intent.type : undefined;
+          const validIntentTypes = new Set([
+            'change-value',
+            'rename-key',
+            'create-child',
+            'delete-node',
+          ]);
+
+          if (
+            !intent ||
+            typeof intent !== 'object' ||
+            !intentType ||
+            !validIntentTypes.has(intentType) ||
+            typeof intent.nodeId !== 'string' ||
+            intent.nodeId.length === 0
+          ) {
+            this._panel.webview.postMessage({
+              type: 'mutationDiagnostics',
+              requestId,
+              nodeId:
+                typeof intent?.nodeId === 'string' ? intent.nodeId : undefined,
+              success: false,
+              error: 'INVALID_TARGET',
+              warnings: [],
+            });
+            logger.info('[HOST] RESPONSE_SENT', {
+              requestId,
+              nodeId:
+                typeof intent?.nodeId === 'string' ? intent.nodeId : undefined,
+              success: false,
+              reason: 'INVALID_INTENT_SHAPE',
+            });
+            return;
+          }
+
+          logger.info('[HOST] RECEIVED', {
+            requestId,
+            nodeId: intent?.nodeId,
+            type: intent?.type,
+          });
 
           (async () => {
             try {
@@ -143,8 +200,15 @@ export class JSONProvider {
                 this._panel.webview.postMessage({
                   type: 'mutationDiagnostics',
                   requestId,
+                  nodeId: intent.nodeId,
                   success: false,
                   error: 'DOCUMENT_NOT_FOUND',
+                  warnings: [],
+                });
+                logger.info('[HOST] RESPONSE_SENT', {
+                  requestId,
+                  nodeId: intent.nodeId,
+                  success: false,
                 });
                 return;
               }
@@ -156,13 +220,32 @@ export class JSONProvider {
                 this._panel.webview.postMessage({
                   type: 'mutationDiagnostics',
                   requestId,
+                  nodeId: intent.nodeId,
                   success: false,
                   error: 'DOCUMENT_NOT_FOUND',
+                  warnings: [],
+                });
+                logger.info('[HOST] RESPONSE_SENT', {
+                  requestId,
+                  nodeId: intent.nodeId,
+                  success: false,
                 });
                 return;
               }
 
+              logger.info('[HOST] APPLY_START', {
+                requestId,
+                nodeId: intent.nodeId,
+                type: intent.type,
+              });
+
               const result = await applyNodeEdit(intent, document);
+
+              logger.info('[HOST] APPLY_DONE', {
+                requestId,
+                nodeId: intent.nodeId,
+                type: intent.type,
+              });
 
               const isSuccess =
                 result === undefined ||
@@ -174,11 +257,21 @@ export class JSONProvider {
                   success: false;
                   error: string;
                 };
+                const mappedError = JSONProvider.mapMutationError(
+                  failedResult.error,
+                );
                 this._panel.webview.postMessage({
                   type: 'mutationDiagnostics',
                   requestId,
+                  nodeId: intent.nodeId,
                   success: false,
-                  error: failedResult.error,
+                  error: mappedError,
+                  warnings: [],
+                });
+                logger.info('[HOST] RESPONSE_SENT', {
+                  requestId,
+                  nodeId: intent.nodeId,
+                  success: false,
                 });
                 return;
               }
@@ -191,15 +284,28 @@ export class JSONProvider {
               this._panel.webview.postMessage({
                 type: 'mutationDiagnostics',
                 requestId,
+                nodeId: intent.nodeId,
                 success: true,
                 warnings: successWarnings,
+              });
+              logger.info('[HOST] RESPONSE_SENT', {
+                requestId,
+                nodeId: intent.nodeId,
+                success: true,
               });
             } catch (error) {
               this._panel.webview.postMessage({
                 type: 'mutationDiagnostics',
                 requestId,
+                nodeId: intent.nodeId,
                 success: false,
                 error: String(error),
+                warnings: [],
+              });
+              logger.info('[HOST] RESPONSE_SENT', {
+                requestId,
+                nodeId: intent.nodeId,
+                success: false,
               });
             }
           })();

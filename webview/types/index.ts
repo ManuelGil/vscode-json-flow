@@ -28,6 +28,16 @@ export type SearchProjectionMode =
   | 'focus-context'
   | 'focus-strict';
 
+export type PathSegment = {
+  value: string;
+  kind: 'array-index' | 'object-key';
+};
+
+export type VersionedData = {
+  version: number;
+  data: JsonValue;
+};
+
 /**
  * Extended node data for React Flow nodes. All relationships are by ID.
  * No UI handlers or functions should be included.
@@ -89,8 +99,10 @@ export interface TreeNode {
   isSibling?: boolean;
   data?: {
     type?: string;
-    value?: string;
+    key?: string;
+    value?: unknown;
     line?: number;
+    pathSegments?: PathSegment[];
   };
 }
 
@@ -101,7 +113,7 @@ export interface GraphNode {
   id: string;
   type: string;
   key?: string;
-  value?: string;
+  value?: unknown;
   line?: number;
 }
 

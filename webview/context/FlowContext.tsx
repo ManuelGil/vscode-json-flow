@@ -4,6 +4,7 @@ import type { Direction, GraphSnapshot, JsonValue, TreeMap } from '../types';
 
 export interface FlowState {
   data: JsonValue | null;
+  dataVersion: number;
   treeData: TreeMap | null;
   graphData: GraphSnapshot | null;
   orientation: Direction;
@@ -46,6 +47,7 @@ export function flowReducer(state: FlowState, action: FlowAction): FlowState {
       const graphData = adaptTreeToGraph(treeData);
       return {
         data: action.payload.data,
+        dataVersion: state.dataVersion + 1,
         treeData,
         graphData,
         orientation: action.payload.orientation,
@@ -58,6 +60,7 @@ export function flowReducer(state: FlowState, action: FlowAction): FlowState {
     case 'CLEAR':
       return {
         data: null,
+        dataVersion: state.dataVersion + 1,
         treeData: null,
         graphData: null,
         orientation: 'TB',

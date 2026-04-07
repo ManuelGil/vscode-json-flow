@@ -195,8 +195,8 @@ export class FilesController {
           fileType as FileType,
         );
 
-        // Check if the content is null
-        if (jsonContent === null) {
+        // Check if parsing failed
+        if (jsonContent === undefined) {
           return;
         }
 
@@ -267,8 +267,8 @@ export class FilesController {
     // Parse JSON content
     const jsonContent = parseJsonContent(text, fileType as FileType);
 
-    // Check if the JSON content is null
-    if (jsonContent === null) {
+    // Check if parsing failed
+    if (jsonContent === undefined) {
       return;
     }
 

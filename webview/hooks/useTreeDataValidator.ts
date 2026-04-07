@@ -1,4 +1,5 @@
 import type { TreeMap } from '@webview/types';
+import { validateTreeSafe } from '@webview/utils/validateTreeSafe';
 import { useMemo } from 'react';
 
 /**
@@ -14,8 +15,9 @@ export function useTreeDataValidator(treeData: TreeMap | null | undefined) {
     const safeTreeData =
       treeData && typeof treeData === 'object' ? treeData : {};
 
-    // Tree is valid if it has at least one node
-    const isValidTree = Object.keys(safeTreeData).length > 0;
+    // Legacy gate kept for backward compatibility with existing behavior.
+    const legacyCheck = Object.keys(safeTreeData).length > 0;
+    const isValidTree = legacyCheck && validateTreeSafe(safeTreeData);
 
     return {
       safeTreeData,

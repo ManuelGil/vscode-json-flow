@@ -34,10 +34,13 @@ type CustomControlsProps = {
   searchProjectionMode: SearchProjectionMode;
   onSearchProjectionModeChange: (mode: SearchProjectionMode) => void;
   onSearchMatchChange?: (matchedIds: Set<string>) => void;
+  selectedNodeId: string | null;
   selectedNode: Node | null;
   rootNode: Node | null;
   canEdit: boolean;
+  languageId: string;
   onFitView: () => void;
+  onFocusNode?: (nodeId: string) => void;
 };
 
 /**
@@ -55,10 +58,13 @@ export function CustomControls({
   searchProjectionMode,
   onSearchProjectionModeChange,
   onSearchMatchChange,
+  selectedNodeId,
   selectedNode,
   rootNode,
   canEdit,
+  languageId,
   onFitView,
+  onFocusNode,
 }: CustomControlsProps) {
   return (
     <Panel className="flex justify-between gap-2" position="top-center">
@@ -91,9 +97,13 @@ export function CustomControls({
         onMatchChange={onSearchMatchChange}
       />
       <NodePropertiesPanel
+        selectedNodeId={selectedNodeId}
         node={selectedNode}
         rootNode={rootNode}
+        allNodes={allNodes}
         canEdit={canEdit}
+        languageId={languageId}
+        onFocusNode={onFocusNode}
       />
       <Settings onSettingsChange={onSettingsChange} />
     </Panel>

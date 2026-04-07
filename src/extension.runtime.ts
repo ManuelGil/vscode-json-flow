@@ -882,13 +882,13 @@ export class ExtensionRuntime {
               );
 
               const fileTypeFromResult = (
-                result as { fileType?: string } | null
+                result as { fileType?: string } | undefined
               )?.fileType;
               fileType = (fileTypeFromResult ?? 'json').toLowerCase().trim();
 
               const parsedJsonData = result;
 
-              if (parsedJsonData === null) {
+              if (parsedJsonData === undefined) {
                 return;
               }
 

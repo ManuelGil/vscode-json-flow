@@ -6,8 +6,8 @@ import {
   Input,
 } from '@webview/components';
 import { useDebouncedValue } from '@webview/hooks/useDebouncedValue';
-import { computeMatches } from '@webview/services/searchService';
-import type { SearchProjectionMode } from '@webview/types';
+import { computeMatchesOptimized } from '@webview/services/searchService';
+import type { GraphSnapshot, SearchProjectionMode } from '@webview/types';
 import { focusNode } from '@webview/utils/viewport';
 import type { InternalNode } from '@xyflow/react';
 import { useReactFlow } from '@xyflow/react';
@@ -74,6 +74,7 @@ interface GoToSearchProps {
   nodes: InternalNode[];
   searchableNodes: InternalNode[];
   allNodes?: InternalNode[];
+  graphData?: GraphSnapshot | null;
   searchProjectionMode: SearchProjectionMode;
   onSearchProjectionModeChange: (mode: SearchProjectionMode) => void;
   onMatchChange?: (matchedIds: Set<string>) => void;
@@ -83,6 +84,7 @@ export function GoToSearch({
   nodes,
   searchableNodes,
   allNodes,
+  graphData,
   searchProjectionMode,
   onSearchProjectionModeChange,
   onMatchChange,
@@ -199,14 +201,19 @@ export function GoToSearch({
 
     setSearchError(null);
 
-    const matches = computeMatches(activeSearchTerm, allNodes, labelIndex);
+    const matches = computeMatchesOptimized(
+      activeSearchTerm,
+      allNodes,
+      labelIndex,
+      graphData ?? null,
+    );
     const visibleIdSet = new Set(searchableNodes.map((n) => n.id));
 
     const visible = matches.filter((id) => visibleIdSet.has(id));
     const hiddenCount = matches.filter((id) => !visibleIdSet.has(id)).length;
 
     return { visible, hiddenCount };
-  }, [activeSearchTerm, allNodes, searchableNodes, labelIndex]);
+  }, [activeSearchTerm, allNodes, searchableNodes, labelIndex, graphData]);
 
   // --- Navigation ---
 

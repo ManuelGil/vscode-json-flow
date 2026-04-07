@@ -55,7 +55,9 @@ export function adaptTreeToGraph(tree: TreeMap): GraphSnapshot {
   const edgesBySource = new Map<string, string[]>();
 
   for (const [nodeId, treeNode] of Object.entries(tree)) {
-    const { key, value } = extractKeyValue(treeNode.name);
+    const parsed = extractKeyValue(treeNode.name);
+    const key = treeNode.data?.key ?? parsed.key;
+    const value = treeNode.data?.value ?? parsed.value;
 
     const graphNode: GraphNode = {
       id: nodeId,

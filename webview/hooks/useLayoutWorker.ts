@@ -14,6 +14,7 @@ import { v4 as uuidv4 } from 'uuid'; // Ensure uuid is installed for request tra
 // Worker request options
 export interface LayoutWorkerOptions {
   direction?: Direction;
+  version?: number;
 }
 
 // Hook return type
@@ -52,6 +53,7 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
   // Refs for worker instance and request tracking
   const workerRef = useRef<Worker | null>(null);
   const currentRequestId = useRef<string | null>(null);
+  const currentVersionRef = useRef<number | undefined>(undefined);
 
   // Stable ref for the message handler so ensureWorker can attach it
   // without a circular dependency on handleWorkerMessage.
@@ -162,6 +164,7 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
         setError(`Worker error: ${error.message}`);
         setIsProcessing(false);
         currentRequestId.current = null;
+        currentVersionRef.current = undefined;
         workerRef.current?.terminate();
         workerRef.current = null;
       };
@@ -170,6 +173,7 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
         setError('Worker message error');
         setIsProcessing(false);
         currentRequestId.current = null;
+        currentVersionRef.current = undefined;
         workerRef.current?.terminate();
         workerRef.current = null;
       };
@@ -210,8 +214,11 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
     ) {
       return false;
     }
-    const p = obj.payload as { requestId?: unknown };
+    const p = obj.payload as { requestId?: unknown; version?: unknown };
     if (typeof p.requestId !== 'string') {
+      return false;
+    }
+    if (p.version !== undefined && typeof p.version !== 'number') {
       return false;
     }
     return (
@@ -245,6 +252,16 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
         return;
       }
 
+      // Backward-compatible version gate. If worker payload has no version,
+      // requestId matching remains the source of truth.
+      if (
+        typeof payload.version === 'number' &&
+        typeof currentVersionRef.current === 'number' &&
+        payload.version !== currentVersionRef.current
+      ) {
+        return;
+      }
+
       switch (type) {
         case 'PROCESSING_COMPLETE': {
           // Commit results synchronously to avoid race with hiding the loader
@@ -272,6 +289,7 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
               setIsProcessing(false);
               setProgress(100);
               currentRequestId.current = null;
+              currentVersionRef.current = undefined;
             });
           });
           break;
@@ -297,6 +315,7 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
           setIsProcessing(false);
           setProgress(null);
           currentRequestId.current = null;
+          currentVersionRef.current = undefined;
           break;
         }
 
@@ -310,6 +329,7 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
           setIsProcessing(false);
           setProgress(null);
           currentRequestId.current = null;
+          currentVersionRef.current = undefined;
           break;
         }
       }
@@ -341,6 +361,7 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
         }
         // Immediately clear the requestId to ignore any late messages from the previous job
         currentRequestId.current = null;
+        currentVersionRef.current = undefined;
       }
 
       // Proactively clear any pending progress RAF from previous runs
@@ -359,6 +380,7 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
       // Generate unique request ID for the new job
       const requestId = uuidv4();
       currentRequestId.current = requestId;
+      currentVersionRef.current = options?.version;
 
       // Kick off the async worker initialization + postMessage.
       // The outer function stays sync (returns void) so callers in
@@ -383,6 +405,7 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
               ? { direction: options.direction }
               : undefined,
             requestId,
+            version: options?.version,
           };
           if (IS_DEV) {
             try {
@@ -415,6 +438,7 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
           setIsProcessing(false);
           setProgress(null);
           currentRequestId.current = null;
+          currentVersionRef.current = undefined;
           logger.error('Error setting up worker:', err);
 
           // The worker failed — the error state is now visible to the UI.
@@ -447,6 +471,7 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
     setIsProcessing(false);
     setProgress(null);
     currentRequestId.current = null;
+    currentVersionRef.current = undefined;
   }, []);
 
   return {

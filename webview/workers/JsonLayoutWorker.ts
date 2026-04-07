@@ -26,6 +26,7 @@ type WorkerRequestMessage =
         jsonData: JsonValue | string;
         options?: JsonLayoutOptions;
         requestId: string;
+        version?: number;
       };
     }
   | {
@@ -58,9 +59,10 @@ function toDirection(optionDir: Direction | undefined): Direction {
 function processJsonData(
   jsonData: JsonValue | string,
   requestId: string,
+  version?: number,
   options: JsonLayoutOptions = {},
 ): { nodes: Node[]; edges: Edge[]; processingTime: number } {
-  if (!jsonData) {
+  if (jsonData === undefined) {
     throw new Error('Invalid JSON data provided');
   }
 
@@ -86,7 +88,7 @@ function processJsonData(
     lastProgressValue = progress;
     self.postMessage({
       type: 'PROCESSING_PROGRESS',
-      payload: { progress, requestId },
+      payload: { progress, requestId, version },
     });
   };
 
@@ -156,7 +158,7 @@ self.onmessage = (event: MessageEvent<WorkerRequestMessage>) => {
   try {
     switch (type) {
       case 'PROCESS_JSON': {
-        const { jsonData, options = {}, requestId } = payload;
+        const { jsonData, options = {}, requestId, version } = payload;
 
         // Cancel any active processing
         if (activeRequestId && activeRequestId !== requestId) {
@@ -171,6 +173,7 @@ self.onmessage = (event: MessageEvent<WorkerRequestMessage>) => {
           const { nodes, edges, processingTime } = processJsonData(
             jsonData,
             requestId,
+            version,
             options,
           );
 
@@ -179,6 +182,7 @@ self.onmessage = (event: MessageEvent<WorkerRequestMessage>) => {
             type: 'PROCESSING_COMPLETE',
             payload: {
               requestId,
+              version,
               nodes,
               edges,
               processingTime,
@@ -194,7 +198,7 @@ self.onmessage = (event: MessageEvent<WorkerRequestMessage>) => {
             if (activeRequestId === requestId) {
               self.postMessage({
                 type: 'PROCESSING_CANCELED',
-                payload: { requestId },
+                payload: { requestId, version },
               });
             }
           } else {
@@ -216,7 +220,7 @@ self.onmessage = (event: MessageEvent<WorkerRequestMessage>) => {
           // Immediately notify cancellation to main thread
           self.postMessage({
             type: 'PROCESSING_CANCELED',
-            payload: { requestId },
+            payload: { requestId, version: undefined },
           });
           activeRequestId = null;
         }
@@ -234,6 +238,7 @@ self.onmessage = (event: MessageEvent<WorkerRequestMessage>) => {
         error:
           error instanceof Error ? error.message : 'Unknown error in worker',
         requestId: payload.requestId || 'unknown',
+        version: 'version' in payload ? payload.version : undefined,
       },
     });
   }

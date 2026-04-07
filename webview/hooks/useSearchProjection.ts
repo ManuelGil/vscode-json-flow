@@ -1,7 +1,10 @@
 import type { Edge, Node } from '@xyflow/react';
 import { useMemo } from 'react';
 import type { SearchProjectionMode, TreeMap } from '../types';
-import { normalizePointer } from '../utils/detectInconsistentPaths';
+import {
+  type InconsistentPathInfo,
+  normalizePointer,
+} from '../utils/detectInconsistentPaths';
 
 /**
  * useSearchProjection.ts
@@ -26,7 +29,7 @@ interface UseSearchProjectionParams {
   edgeSettingsSnapshot: EdgeSettingsSnapshot;
   handleToggleChildren: (nodeId: string) => void;
   applyEdgeSettings: (edges: Edge[], settings: EdgeSettingsSnapshot) => Edge[];
-  inconsistentPaths?: Map<string, string[]>;
+  inconsistentPaths?: Map<string, InconsistentPathInfo | string[]>;
 }
 
 interface UseSearchProjectionResult {
@@ -58,6 +61,28 @@ function computeSearchMatch(
   return undefined;
 }
 
+function getDominantType(info: InconsistentPathInfo): string | null {
+  let dominantType: string | null = null;
+  let dominantCount = 0;
+  let hasTie = false;
+
+  for (const [type, nodeIds] of info.nodeIdsByType.entries()) {
+    const count = nodeIds.length;
+    if (count > dominantCount) {
+      dominantType = type;
+      dominantCount = count;
+      hasTie = false;
+      continue;
+    }
+
+    if (count === dominantCount && type !== dominantType) {
+      hasTie = true;
+    }
+  }
+
+  return hasTie ? null : dominantType;
+}
+
 /**
  * Hook that derives renderNodes and renderEdges from worker output.
  * Applies search projection filtering and UI enrichment without mutating worker arrays.
@@ -85,18 +110,25 @@ export function useSearchProjection({
         ? visibleNodes.filter((n) => searchContextSet.has(n.id))
         : visibleNodes;
 
-    const shownInconsistencyForPath = new Set<string>();
-
     return projectedNodes.map((node) => {
       const normalizedPath = normalizePointer(node.id) ?? node.id;
-      const shouldShowInconsistencyIcon = Boolean(
-        normalizedPath &&
-          inconsistentPaths?.has(normalizedPath) &&
-          !shownInconsistencyForPath.has(normalizedPath),
+      const info = normalizedPath
+        ? inconsistentPaths?.get(normalizedPath)
+        : undefined;
+      const nodeType = String(
+        (node.data as { type?: unknown } | undefined)?.type ?? 'unknown',
       );
 
-      if (shouldShowInconsistencyIcon && normalizedPath) {
-        shownInconsistencyForPath.add(normalizedPath);
+      let shouldShowInconsistencyIcon = false;
+
+      if (Array.isArray(info)) {
+        shouldShowInconsistencyIcon = Boolean(
+          normalizedPath && inconsistentPaths?.has(normalizedPath),
+        );
+      } else if (info) {
+        const dominantType = getDominantType(info);
+        shouldShowInconsistencyIcon =
+          dominantType === null ? true : nodeType !== dominantType;
       }
 
       return {

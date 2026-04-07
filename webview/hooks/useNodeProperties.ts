@@ -66,6 +66,8 @@ export function useNodeProperties(
 function createDetails(node: Node): NodePropertyDetails | null {
   const nodeData = (node.data ?? {}) as {
     label?: string;
+    key?: string;
+    value?: unknown;
     type?: string;
     children?: unknown[];
     line?: number;
@@ -73,8 +75,10 @@ function createDetails(node: Node): NodePropertyDetails | null {
 
   const normalizedPointer = normalizeGraphRootPointer(node.id);
   const label = nodeData.label || normalizedPointer;
-  const keyLabel = extractKey(label);
-  const valuePreview = extractValue(label);
+  const keyLabel =
+    typeof nodeData.key === 'string' ? nodeData.key : extractKey(label);
+  const valuePreview =
+    nodeData.value !== undefined ? String(nodeData.value) : extractValue(label);
   const nodeType = nodeData.type || node.type || 'node';
   const parentPointer =
     'parentId' in node && typeof node.parentId === 'string'

@@ -1,4 +1,4 @@
-import type { Node, NodeMouseHandler } from '@xyflow/react';
+import type { NodeMouseHandler } from '@xyflow/react';
 import { useCallback, useState } from 'react';
 
 /**
@@ -6,26 +6,25 @@ import { useCallback, useState } from 'react';
  * Provides stable callbacks for selecting and clearing nodes to prevent unnecessary re-renders.
  *
  * @returns {Object} An object containing:
- *   - selectedNode: The currently selected node or null
+ *   - selectedNodeId: The currently selected node ID or null
  *   - onNodeClick: Stable callback for handling node click events
  *   - clearSelection: Stable callback to clear the current selection
  */
 export function useSelectedNode() {
-  const [selectedNode, setSelectedNode] = useState<Node | null>(null);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
   // Memoized handler to prevent recreation on each render
   const onNodeClick = useCallback<NodeMouseHandler>((_event, node) => {
-    // Only update state if selecting a different node
-    setSelectedNode((prevNode) => (prevNode?.id === node.id ? prevNode : node));
+    setSelectedNodeId(node.id);
   }, []);
 
   // Memoized handler to clear selection
-  const clearSelection = useCallback(() => setSelectedNode(null), []);
+  const clearSelection = useCallback(() => setSelectedNodeId(null), []);
 
   // Programmatic select (for ApplyGraphSelection from VSCode)
-  const selectNode = useCallback((node: Node | null) => {
-    setSelectedNode(node);
+  const selectNodeId = useCallback((nodeId: string | null) => {
+    setSelectedNodeId(nodeId);
   }, []);
 
-  return { selectedNode, onNodeClick, clearSelection, selectNode };
+  return { selectedNodeId, onNodeClick, clearSelection, selectNodeId };
 }

@@ -32,6 +32,8 @@ export type FileType =
   | 'yaml'
   | 'yml';
 
+export type JsonValue = object | string | number | boolean | null;
+
 /**
  * Checks if a value is a supported FileType.
  *
@@ -65,11 +67,11 @@ export const isFileTypeSupported = (value: unknown): value is FileType => {
 
 /**
  * Parses the given string content using the specified file type parser.
- * Returns an object representation or null if parsing fails.
+ * Returns a JSON-compatible value or undefined if parsing fails.
  *
  * @param content The string content to parse.
  * @param type The type of file format to parse as.
- * @returns The parsed object or null if parsing fails.
+ * @returns The parsed value or undefined if parsing fails.
  *
  * @remarks
  * Delegates parsing to modular helpers. Centralizes error handling for consistency.
@@ -81,38 +83,38 @@ export const isFileTypeSupported = (value: unknown): value is FileType => {
 export const parseJsonContent = (
   content: string,
   type: FileType,
-): object | null => {
+): JsonValue | undefined => {
   try {
     // Delegates parsing based on file type to modular helpers.
     switch (type) {
       case 'json':
       case 'jsonc':
       case 'json5':
-        return parseJson(content);
+        return parseJson(content) as JsonValue;
       case 'dockercompose':
       case 'yaml':
       case 'yml':
-        return parseYaml(content);
+        return parseYaml(content) as JsonValue;
       case 'toml':
-        return parseToml(content);
+        return parseToml(content) as JsonValue;
       case 'ini':
       case 'properties':
-        return parseIni(content);
+        return parseIni(content) as JsonValue;
       case 'env':
-        return parseEnv(content);
+        return parseEnv(content) as JsonValue;
       case 'xml':
-        return parseXml(content);
+        return parseXml(content) as JsonValue;
       case 'hcl':
-        return parseHcl(content);
+        return parseHcl(content) as JsonValue;
       case 'csv':
-        return parseCsv(content);
+        return parseCsv(content) as JsonValue;
       case 'tsv':
-        return parseTsv(content);
+        return parseTsv(content) as JsonValue;
       default: {
         // Show a localized error for unsupported file types
         const message = l10n.t('Invalid file type');
         window.showErrorMessage(message);
-        return null;
+        return undefined;
       }
     }
   } catch (error: unknown) {
@@ -123,6 +125,6 @@ export const parseJsonContent = (
     );
 
     window.showErrorMessage(message);
-    return null;
+    return undefined;
   }
 };

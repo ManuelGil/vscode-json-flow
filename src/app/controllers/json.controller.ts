@@ -90,14 +90,14 @@ export class JsonController {
       const result = parseJsonContent(document.getText(), fileType as FileType);
 
       // Guarantee fileType is always available for downstream capability checks.
-      const fileTypeFromResult = (result as { fileType?: string } | null)
+      const fileTypeFromResult = (result as { fileType?: string } | undefined)
         ?.fileType;
       fileType = (fileTypeFromResult ?? 'json').toLowerCase().trim();
 
       const parsedJsonData = result;
 
-      // Check if the JSON content is null
-      if (parsedJsonData === null) {
+      // Check if parsing failed
+      if (parsedJsonData === undefined) {
         window.showErrorMessage(l10n.t('Could not parse JSON for preview'));
         return;
       }
@@ -187,14 +187,14 @@ export class JsonController {
     const result = parseJsonContent(text, fileType as FileType);
 
     // Guarantee fileType is always available for downstream capability checks.
-    const fileTypeFromResult = (result as { fileType?: string } | null)
+    const fileTypeFromResult = (result as { fileType?: string } | undefined)
       ?.fileType;
     fileType = (fileTypeFromResult ?? 'json').toLowerCase().trim();
 
     const parsedJsonData = result;
 
-    // Check if the JSON content is null
-    if (parsedJsonData === null) {
+    // Check if parsing failed
+    if (parsedJsonData === undefined) {
       window.showErrorMessage(l10n.t('Could not parse selected JSON'));
       return;
     }
@@ -269,8 +269,8 @@ export class JsonController {
             'json',
           );
 
-          // Check if the JSON content is null
-          if (parsedJsonData === null) {
+          // Check if parsing failed
+          if (parsedJsonData === undefined) {
             window.showErrorMessage(l10n.t('Could not parse fetched JSON'));
             return;
           }
@@ -281,6 +281,10 @@ export class JsonController {
             'Fetched Data',
             this.config.graphLayoutOrientation,
             'json',
+            {
+              languageId: 'json',
+              canEdit: false,
+            },
           );
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
