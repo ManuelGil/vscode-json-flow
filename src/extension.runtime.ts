@@ -43,6 +43,7 @@ import {
   clearCache,
   type FileType,
   getSelectionMapper,
+  isEditCapableFileType,
   isFileTypeSupported,
   logger,
   parseJsonContent,
@@ -487,6 +488,9 @@ export class ExtensionRuntime {
    */
   private registerJsonController(): void {
     this.jsonController = new JsonController(this.context, this.config);
+    JSONProvider.setNodeEditIntentHandler((intent) =>
+      this.jsonController.handleNodeEditIntent(intent),
+    );
 
     const jsonCommands = [
       {
@@ -894,6 +898,10 @@ export class ExtensionRuntime {
                 orientation: graphLayoutOrientation,
                 path: document.uri.fsPath,
                 fileName,
+                metadata: {
+                  languageId,
+                  canEdit: isEditCapableFileType(fileType),
+                },
               });
             })();
             break;

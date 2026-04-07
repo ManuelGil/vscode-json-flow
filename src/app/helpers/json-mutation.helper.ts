@@ -18,7 +18,12 @@ import {
 export type NodeEditIntent =
   | { nodeId: string; type: 'rename-key'; newKey: string }
   | { nodeId: string; type: 'change-value'; newValue: unknown }
-  | { nodeId: string; type: 'create-child' }
+  | {
+      nodeId: string;
+      type: 'create-child';
+      key?: string;
+      value: unknown;
+    }
   | { nodeId: string; type: 'delete-node' };
 
 /**
@@ -36,7 +41,7 @@ export type MutationError =
  * Result of a mutation operation — either success or a typed error.
  */
 export type MutationResult =
-  | { success: true }
+  | { success: true; warnings?: DiagnosticWarning[] }
   | { success: false; error: MutationError };
 
 /**
@@ -47,10 +52,13 @@ export type DiagnosticWarning = { type: 'FIELD_REMOVED'; pointer: string };
 
 /**
  * O(1) metadata captured from the resolved target node before mutation.
- * Used by `collectDiagnostics` without requiring AST access.
+ * Used by `computeNodeDiagnostics` to compare pre- and post-mutation AST state.
  */
 export interface PreMutationSnapshot {
+  readonly targetExists: boolean;
   readonly parentType: string | undefined;
+  readonly parentChildrenCount: number | undefined;
+  readonly parentNode: AstNode | undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -58,31 +66,50 @@ export interface PreMutationSnapshot {
 // ---------------------------------------------------------------------------
 
 /**
- * Evaluates pre-mutation metadata to detect semantic risks.
- * Pure, deterministic, O(1). Does not access or mutate the AST.
+ * Evaluates pre/post mutation AST metadata to detect semantic risks.
+ * Pure and deterministic. Does not mutate the AST.
  *
  * @param snapshot - Metadata captured before mutation dispatch.
+ * @param root - The mutated AST root after dispatch.
  * @param intent - The edit intent that was executed.
  * @returns An array of diagnostic warnings (empty if none).
  */
-export function collectDiagnostics(
+export function computeNodeDiagnostics(
   snapshot: PreMutationSnapshot,
+  root: AstNode,
   intent: NodeEditIntent,
 ): DiagnosticWarning[] {
-  if (intent.type === 'delete-node' && snapshot.parentType === 'object') {
+  if (intent.type !== 'delete-node') {
+    return [];
+  }
+
+  const postMutationResolved = resolveAstNode(root, intent.nodeId);
+  const postTargetExists = Boolean(postMutationResolved);
+  const postParentChildrenCount = snapshot.parentNode?.children?.length;
+
+  const removedFromObjectParent =
+    snapshot.targetExists &&
+    snapshot.parentType === 'object' &&
+    !postTargetExists &&
+    typeof snapshot.parentChildrenCount === 'number' &&
+    typeof postParentChildrenCount === 'number' &&
+    postParentChildrenCount < snapshot.parentChildrenCount;
+
+  if (removedFromObjectParent) {
     return [{ type: 'FIELD_REMOVED', pointer: intent.nodeId }];
   }
 
   return [];
 }
 
+// Backward-compatible alias for existing imports.
+export const collectDiagnostics = computeNodeDiagnostics;
+
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
 const DEFAULT_INDENT = 2;
-const AUTO_KEY_PREFIX = 'newKey';
-
 // ---------------------------------------------------------------------------
 // Indentation Detection
 // ---------------------------------------------------------------------------
@@ -208,6 +235,215 @@ export function astTypeCategory(node: AstNode): string {
   }
 }
 
+type PrimitiveCategory = 'string' | 'number' | 'boolean' | 'null';
+
+interface ParsedPrimitiveInput {
+  category: PrimitiveCategory | 'object' | 'array' | 'unknown';
+  value: unknown;
+}
+
+/**
+ * Safely parses incoming mutation values.
+ *
+ * Rules:
+ * - numbers/booleans/null pass through
+ * - strings are interpreted as number/boolean/null when unambiguous
+ * - all other strings fall back to string
+ * - object/array are preserved as categories so validation can reject them
+ */
+function parseIncomingPrimitiveInput(raw: unknown): ParsedPrimitiveInput {
+  if (raw === null) {
+    return { category: 'null', value: null };
+  }
+
+  if (typeof raw === 'number') {
+    if (Number.isFinite(raw)) {
+      return { category: 'number', value: raw };
+    }
+    return { category: 'unknown', value: raw };
+  }
+
+  if (typeof raw === 'boolean') {
+    return { category: 'boolean', value: raw };
+  }
+
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+
+    if (trimmed === 'true') {
+      return { category: 'boolean', value: true };
+    }
+    if (trimmed === 'false') {
+      return { category: 'boolean', value: false };
+    }
+    if (trimmed === 'null') {
+      return { category: 'null', value: null };
+    }
+
+    if (/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$/.test(trimmed)) {
+      const parsedNumber = Number(trimmed);
+      if (Number.isFinite(parsedNumber)) {
+        return { category: 'number', value: parsedNumber };
+      }
+    }
+
+    return { category: 'string', value: raw };
+  }
+
+  if (Array.isArray(raw)) {
+    return { category: 'array', value: raw };
+  }
+
+  if (typeof raw === 'object') {
+    return { category: 'object', value: raw };
+  }
+
+  return { category: 'unknown', value: raw };
+}
+
+function findNodeByPointer(root: AstNode, nodeId: string): AstNode | undefined {
+  return resolveAstNode(root, nodeId)?.target;
+}
+
+function serializePrimitive(
+  value: unknown,
+  type: 'string' | 'number' | 'boolean',
+): string {
+  if (type === 'string') {
+    return JSON.stringify(String(value));
+  }
+  if (type === 'number') {
+    return String(value);
+  }
+  return value ? 'true' : 'false';
+}
+
+function serializePrimitiveForInsert(
+  parsedInput: ParsedPrimitiveInput,
+): string | undefined {
+  if (parsedInput.category === 'string') {
+    return JSON.stringify(String(parsedInput.value ?? ''));
+  }
+  if (parsedInput.category === 'number') {
+    return String(parsedInput.value);
+  }
+  if (parsedInput.category === 'boolean') {
+    return parsedInput.value ? 'true' : 'false';
+  }
+  return undefined;
+}
+
+function findLineStart(text: string, offset: number): number {
+  let cursor = Math.max(0, Math.min(offset, text.length));
+  while (cursor > 0 && text[cursor - 1] !== '\n') {
+    cursor--;
+  }
+  return cursor;
+}
+
+function getLineIndentAtOffset(text: string, offset: number): string {
+  const lineStart = findLineStart(text, offset);
+  let cursor = lineStart;
+  while (cursor < text.length) {
+    const char = text[cursor];
+    if (char !== ' ' && char !== '\t') {
+      break;
+    }
+    cursor++;
+  }
+  return text.slice(lineStart, cursor);
+}
+
+function createDefaultChildIndent(text: string, target: AstNode): string {
+  const parentIndent = getLineIndentAtOffset(text, target.offset);
+  if (parentIndent.includes('\t')) {
+    return `${parentIndent}\t`;
+  }
+  return `${parentIndent}${' '.repeat(DEFAULT_INDENT)}`;
+}
+
+function buildCreateInsertText(
+  originalText: string,
+  target: AstNode,
+  intent: Extract<NodeEditIntent, { type: 'create-child' }>,
+): { insertOffset: number; insertText: string } | undefined {
+  const parsedInput = parseIncomingPrimitiveInput(intent.value);
+  const serializedValue = serializePrimitiveForInsert(parsedInput);
+  if (!serializedValue) {
+    return undefined;
+  }
+
+  const insertOffset = target.offset + target.length - 1;
+  if (insertOffset < 0 || insertOffset > originalText.length) {
+    return undefined;
+  }
+
+  const hasChildren = Boolean(target.children && target.children.length > 0);
+  const containerIsMultiline = originalText
+    .slice(target.offset, target.offset + target.length)
+    .includes('\n');
+
+  if (target.type === 'object') {
+    const key = String(intent.key ?? '').trim();
+    if (key.length === 0) {
+      return undefined;
+    }
+
+    const keyText = JSON.stringify(key);
+    if (!hasChildren) {
+      return {
+        insertOffset,
+        insertText: `${keyText}: ${serializedValue}`,
+      };
+    }
+
+    if (containerIsMultiline) {
+      const lastChild = target.children?.[target.children.length - 1];
+      const childIndent = lastChild
+        ? getLineIndentAtOffset(originalText, lastChild.offset)
+        : createDefaultChildIndent(originalText, target);
+
+      return {
+        insertOffset,
+        insertText: `,\n${childIndent}${keyText}: ${serializedValue}`,
+      };
+    }
+
+    return {
+      insertOffset,
+      insertText: `, ${keyText}: ${serializedValue}`,
+    };
+  }
+
+  if (target.type === 'array') {
+    if (!hasChildren) {
+      return {
+        insertOffset,
+        insertText: serializedValue,
+      };
+    }
+
+    if (containerIsMultiline) {
+      const lastChild = target.children?.[target.children.length - 1];
+      const childIndent = lastChild
+        ? getLineIndentAtOffset(originalText, lastChild.offset)
+        : createDefaultChildIndent(originalText, target);
+
+      return {
+        insertOffset,
+        insertText: `,\n${childIndent}${serializedValue}`,
+      };
+    }
+
+    return {
+      insertOffset,
+      insertText: `, ${serializedValue}`,
+    };
+  }
+
+  return undefined;
+}
+
 // ---------------------------------------------------------------------------
 // Pre-Mutation Validation
 // ---------------------------------------------------------------------------
@@ -237,20 +473,19 @@ export function validateMutation(
   switch (intent.type) {
     case 'change-value': {
       const targetType: string = astTypeCategory(target);
-      const newType: string = jsonTypeOf(intent.newValue);
+      const parsedInput = parseIncomingPrimitiveInput(intent.newValue);
 
       // Reject container targets
       if (targetType === 'object' || targetType === 'array') {
         return { success: false, error: 'TYPE_MISMATCH' };
       }
 
-      // Reject container newValues
-      if (newType === 'object' || newType === 'array') {
-        return { success: false, error: 'TYPE_MISMATCH' };
-      }
-
-      // Enforce same-type replacement
-      if (targetType !== newType) {
+      // Allow changes across primitive types, but block non-primitive values.
+      if (
+        parsedInput.category !== 'string' &&
+        parsedInput.category !== 'number' &&
+        parsedInput.category !== 'boolean'
+      ) {
         return { success: false, error: 'TYPE_MISMATCH' };
       }
 
@@ -282,6 +517,35 @@ export function validateMutation(
 
     case 'create-child': {
       const targetType: string = astTypeCategory(target);
+      const parsedInput = parseIncomingPrimitiveInput(intent.value);
+
+      if (
+        parsedInput.category !== 'string' &&
+        parsedInput.category !== 'number' &&
+        parsedInput.category !== 'boolean'
+      ) {
+        return { success: false, error: 'TYPE_MISMATCH' };
+      }
+
+      if (targetType === 'object') {
+        const newKey = String(intent.key ?? '').trim();
+        if (newKey.length === 0) {
+          return { success: false, error: 'INVALID_TARGET' };
+        }
+
+        for (const prop of target.children ?? []) {
+          const keyNode = prop.children?.[0];
+          if (keyNode && String(keyNode.value ?? '') === newKey) {
+            return { success: false, error: 'DUPLICATE_KEY' };
+          }
+        }
+
+        return null;
+      }
+
+      if (targetType === 'array') {
+        return null;
+      }
 
       // Only containers can have children
       if (targetType !== 'object' && targetType !== 'array') {
@@ -294,6 +558,20 @@ export function validateMutation(
     case 'delete-node': {
       // Root deletion is not allowed
       if (!parent) {
+        return { success: false, error: 'INVALID_TARGET' };
+      }
+
+      if (parent.type !== 'object' && parent.type !== 'array') {
+        return { success: false, error: 'TYPE_MISMATCH' };
+      }
+
+      if (parent.type === 'object') {
+        if (!property || property.type !== 'property') {
+          return { success: false, error: 'INVALID_TARGET' };
+        }
+      }
+
+      if (parent.type === 'array' && property) {
         return { success: false, error: 'INVALID_TARGET' };
       }
 
@@ -355,158 +633,109 @@ function renameKey(
   return { success: true };
 }
 
-/**
- * Changes the value of a primitive node in the AST.
- * Rejects type changes and container targets.
- *
- * @param root - The root AST node.
- * @param nodeId - JSON Pointer of the target node.
- * @param newValue - The new value (must match existing type).
- * @returns MutationResult indicating success or error.
- */
-function changeValue(
-  root: AstNode,
-  nodeId: string,
-  newValue: unknown,
-): MutationResult {
-  const resolved = resolveAstNode(root, nodeId);
-  if (!resolved) {
-    return { success: false, error: 'INVALID_TARGET' };
-  }
-
-  const { target } = resolved;
-  const targetCategory: string = astTypeCategory(target);
-  const newCategory: string = jsonTypeOf(newValue);
-
-  // Reject containers
-  if (targetCategory === 'object' || targetCategory === 'array') {
-    return { success: false, error: 'TYPE_MISMATCH' };
-  }
-
-  // Enforce same-type replacement
-  if (targetCategory !== newCategory) {
-    return { success: false, error: 'TYPE_MISMATCH' };
-  }
-
-  // Mutate the value in-place on the AST
-  target.value = newValue as string | number | boolean | null;
-
-  return { success: true };
+function isWhitespace(char: string | undefined): boolean {
+  return char === ' ' || char === '\t' || char === '\n' || char === '\r';
 }
 
-/**
- * Creates a new child entry on a container node in the AST.
- * Objects get a new auto-generated key with null value.
- * Arrays get a null element appended.
- *
- * @param root - The root AST node.
- * @param nodeId - JSON Pointer of the target container.
- * @returns MutationResult indicating success or error.
- */
-function createChild(root: AstNode, nodeId: string): MutationResult {
-  const resolved = resolveAstNode(root, nodeId);
-  if (!resolved) {
-    return { success: false, error: 'INVALID_TARGET' };
-  }
+function computeDeleteRange(
+  originalText: string,
+  parent: AstNode,
+  deleteNodeStart: number,
+  deleteNodeEnd: number,
+  indexInParent: number,
+): { start: number; end: number } | undefined {
+  const siblings = parent.children ?? [];
+  const previousSibling =
+    indexInParent > 0 ? siblings[indexInParent - 1] : undefined;
+  const nextSibling =
+    indexInParent < siblings.length - 1
+      ? siblings[indexInParent + 1]
+      : undefined;
 
-  const { target } = resolved;
+  let start = deleteNodeStart;
+  let end = deleteNodeEnd;
 
-  if (target.type === 'object') {
-    if (!target.children) {
-      target.children = [];
+  const firstNonWsRight = (() => {
+    let cursor = end;
+    while (cursor < originalText.length && isWhitespace(originalText[cursor])) {
+      cursor++;
     }
-    const existingKeys = new Set<string>();
-    for (const prop of target.children) {
-      const keyNode = prop.children?.[0];
-      if (keyNode) {
-        existingKeys.add(String(keyNode.value ?? ''));
+    return cursor;
+  })();
+
+  const trailingComma = originalText[firstNonWsRight] === ',';
+  if (trailingComma) {
+    end = firstNonWsRight + 1;
+    while (
+      end < originalText.length &&
+      (originalText[end] === ' ' || originalText[end] === '\t')
+    ) {
+      end++;
+    }
+    if (previousSibling === undefined && nextSibling !== undefined) {
+      while (
+        end < originalText.length &&
+        (originalText[end] === '\n' || originalText[end] === '\r')
+      ) {
+        end++;
+      }
+      while (
+        end < originalText.length &&
+        (originalText[end] === ' ' || originalText[end] === '\t')
+      ) {
+        end++;
       }
     }
+    return { start, end };
+  }
 
-    // Generate a unique key
-    let candidateKey: string = AUTO_KEY_PREFIX;
-    let counter = 1;
-    while (existingKeys.has(candidateKey)) {
-      candidateKey = `${AUTO_KEY_PREFIX}${counter}`;
-      counter++;
+  const lastNonWsLeft = (() => {
+    let cursor = start - 1;
+    while (cursor >= 0 && isWhitespace(originalText[cursor])) {
+      cursor--;
+    }
+    return cursor;
+  })();
+
+  const leadingComma =
+    lastNonWsLeft >= 0 && originalText[lastNonWsLeft] === ',';
+  if (leadingComma) {
+    start = lastNonWsLeft;
+    while (
+      start > 0 &&
+      (originalText[start - 1] === ' ' || originalText[start - 1] === '\t')
+    ) {
+      start--;
+    }
+    return { start, end };
+  }
+
+  // Single element/property case: remove node and safe surrounding whitespace only.
+  if (!previousSibling && !nextSibling) {
+    while (
+      start > 0 &&
+      isWhitespace(originalText[start - 1]) &&
+      originalText[start - 1] !== '{' &&
+      originalText[start - 1] !== '['
+    ) {
+      start--;
     }
 
-    // Build a synthetic property AST node
-    const newKeyNode: AstNode = {
-      type: 'string',
-      offset: 0,
-      length: 0,
-      value: candidateKey,
-    };
-    const newValueNode: AstNode = {
-      type: 'null',
-      offset: 0,
-      length: 0,
-      value: null,
-    };
-    const newProp: AstNode = {
-      type: 'property',
-      offset: 0,
-      length: 0,
-      children: [newKeyNode, newValueNode],
-    };
-    target.children.push(newProp);
-
-    return { success: true };
-  }
-
-  if (target.type === 'array') {
-    if (!target.children) {
-      target.children = [];
+    while (
+      end < originalText.length &&
+      isWhitespace(originalText[end]) &&
+      originalText[end] !== '}' &&
+      originalText[end] !== ']'
+    ) {
+      end++;
     }
-    const newElement: AstNode = {
-      type: 'null',
-      offset: 0,
-      length: 0,
-      value: null,
-    };
-    target.children.push(newElement);
-
-    return { success: true };
   }
 
-  // Primitive target — cannot add children
-  return { success: false, error: 'TYPE_MISMATCH' };
-}
-
-/**
- * Removes a node from its parent container in the AST.
- * Root deletion is not allowed.
- *
- * @param root - The root AST node.
- * @param nodeId - JSON Pointer of the node to delete.
- * @returns MutationResult indicating success or error.
- */
-function deleteNode(root: AstNode, nodeId: string): MutationResult {
-  const resolved = resolveAstNode(root, nodeId);
-  if (!resolved) {
-    return { success: false, error: 'INVALID_TARGET' };
+  if (start < 0 || end < start || end > originalText.length) {
+    return undefined;
   }
 
-  const { parent, indexInParent } = resolved;
-
-  // Root deletion is not allowed
-  if (!parent) {
-    return { success: false, error: 'INVALID_TARGET' };
-  }
-
-  if (
-    !parent.children ||
-    indexInParent < 0 ||
-    indexInParent >= parent.children.length
-  ) {
-    return { success: false, error: 'INVALID_TARGET' };
-  }
-
-  // Remove the child at the resolved index
-  parent.children.splice(indexInParent, 1);
-
-  return { success: true };
+  return { start, end };
 }
 
 // ---------------------------------------------------------------------------
@@ -561,25 +790,217 @@ export async function applyNodeEdit(
   }
 
   // 3.6. Capture pre-mutation snapshot for diagnostics (O(1) metadata)
-  const diagnosticResolved = resolveAstNode(root, intent.nodeId);
+  const resolvedTargetNode = resolveAstNode(root, intent.nodeId);
   const preMutationSnapshot: PreMutationSnapshot = {
-    parentType: diagnosticResolved?.parent?.type,
+    targetExists: Boolean(resolvedTargetNode),
+    parentType: resolvedTargetNode?.parent?.type,
+    parentChildrenCount: resolvedTargetNode?.parent?.children?.length,
+    parentNode: resolvedTargetNode?.parent,
   };
+
+  if (intent.type === 'change-value') {
+    const targetNode = findNodeByPointer(root, intent.nodeId);
+    if (!targetNode) {
+      return { success: false, error: 'INVALID_TARGET' };
+    }
+
+    const detectedType = astTypeCategory(targetNode);
+    if (
+      detectedType !== 'string' &&
+      detectedType !== 'number' &&
+      detectedType !== 'boolean'
+    ) {
+      return { success: false, error: 'TYPE_MISMATCH' };
+    }
+
+    const parsedInput = parseIncomingPrimitiveInput(intent.newValue);
+    if (
+      parsedInput.category !== 'string' &&
+      parsedInput.category !== 'number' &&
+      parsedInput.category !== 'boolean'
+    ) {
+      return { success: false, error: 'TYPE_MISMATCH' };
+    }
+
+    const start = targetNode.offset;
+    const end = targetNode.offset + targetNode.length;
+    const originalText = document.getText();
+    const newValueText = serializePrimitive(
+      parsedInput.value,
+      parsedInput.category,
+    );
+    const updatedText =
+      originalText.slice(0, start) + newValueText + originalText.slice(end);
+
+    if (
+      start < 0 ||
+      end < start ||
+      end > originalText.length ||
+      updatedText.length === 0
+    ) {
+      return { success: false, error: 'INVALID_TARGET' };
+    }
+
+    if (document.version !== versionAtParse) {
+      return { success: false, error: 'VERSION_CONFLICT' };
+    }
+
+    try {
+      const edit: WorkspaceEdit = new WorkspaceEdit();
+      edit.replace(
+        document.uri,
+        new Range(document.positionAt(start), document.positionAt(end)),
+        newValueText,
+      );
+      const applied: boolean = await workspace.applyEdit(edit);
+      if (!applied) {
+        return { success: false, error: 'UNKNOWN' };
+      }
+    } catch {
+      return { success: false, error: 'UNKNOWN' };
+    }
+
+    try {
+      await document.save();
+    } catch {
+      return { success: false, error: 'UNKNOWN' };
+    }
+
+    if (diagnosticsCallback) {
+      diagnosticsCallback(intent.nodeId, []);
+    }
+
+    const successResult: MutationResult = { success: true, warnings: [] };
+    return successResult;
+  }
+
+  if (intent.type === 'delete-node') {
+    const resolvedDelete = resolveAstNode(root, intent.nodeId);
+    if (!resolvedDelete) {
+      return { success: false, error: 'INVALID_TARGET' };
+    }
+
+    const { target, parent, property, indexInParent } = resolvedDelete;
+    if (!parent || (parent.type !== 'object' && parent.type !== 'array')) {
+      return { success: false, error: 'INVALID_TARGET' };
+    }
+
+    const deletionNode = parent.type === 'object' ? property : target;
+    if (!deletionNode) {
+      return { success: false, error: 'INVALID_TARGET' };
+    }
+
+    const deleteStart = deletionNode.offset;
+    const deleteEnd = deletionNode.offset + deletionNode.length;
+    const originalText = document.getText();
+
+    console.log('[MUTATION] DELETE_START', {
+      nodeId: intent.nodeId,
+      parentType: parent.type,
+      indexInParent,
+    });
+
+    const rangeToDelete = computeDeleteRange(
+      originalText,
+      parent,
+      deleteStart,
+      deleteEnd,
+      indexInParent,
+    );
+
+    if (!rangeToDelete) {
+      return { success: false, error: 'INVALID_TARGET' };
+    }
+
+    console.log('[MUTATION] DELETE_RANGE', rangeToDelete);
+
+    if (document.version !== versionAtParse) {
+      return { success: false, error: 'VERSION_CONFLICT' };
+    }
+
+    try {
+      const edit: WorkspaceEdit = new WorkspaceEdit();
+      edit.replace(
+        document.uri,
+        new Range(
+          document.positionAt(rangeToDelete.start),
+          document.positionAt(rangeToDelete.end),
+        ),
+        '',
+      );
+      const applied: boolean = await workspace.applyEdit(edit);
+      if (!applied) {
+        return { success: false, error: 'UNKNOWN' };
+      }
+    } catch {
+      return { success: false, error: 'UNKNOWN' };
+    }
+
+    try {
+      await document.save();
+    } catch {
+      return { success: false, error: 'UNKNOWN' };
+    }
+
+    if (diagnosticsCallback) {
+      diagnosticsCallback(intent.nodeId, []);
+    }
+
+    console.log('[MUTATION] DELETE_SUCCESS', { nodeId: intent.nodeId });
+    return { success: true, warnings: [] };
+  }
+
+  if (intent.type === 'create-child') {
+    const resolvedCreate = resolveAstNode(root, intent.nodeId);
+    if (!resolvedCreate) {
+      return { success: false, error: 'INVALID_TARGET' };
+    }
+
+    const { target } = resolvedCreate;
+    if (target.type !== 'object' && target.type !== 'array') {
+      return { success: false, error: 'TYPE_MISMATCH' };
+    }
+
+    const originalText = document.getText();
+    const insertion = buildCreateInsertText(originalText, target, intent);
+    if (!insertion) {
+      return { success: false, error: 'INVALID_TARGET' };
+    }
+
+    if (document.version !== versionAtParse) {
+      return { success: false, error: 'VERSION_CONFLICT' };
+    }
+
+    try {
+      const insertPosition = document.positionAt(insertion.insertOffset);
+      const edit: WorkspaceEdit = new WorkspaceEdit();
+      edit.insert(document.uri, insertPosition, insertion.insertText);
+      const applied: boolean = await workspace.applyEdit(edit);
+      if (!applied) {
+        return { success: false, error: 'UNKNOWN' };
+      }
+    } catch {
+      return { success: false, error: 'UNKNOWN' };
+    }
+
+    try {
+      await document.save();
+    } catch {
+      return { success: false, error: 'UNKNOWN' };
+    }
+
+    if (diagnosticsCallback) {
+      diagnosticsCallback(intent.nodeId, []);
+    }
+
+    return { success: true, warnings: [] };
+  }
 
   // 4. Dispatch mutation
   let result: MutationResult;
   switch (intent.type) {
     case 'rename-key':
       result = renameKey(root, intent.nodeId, intent.newKey);
-      break;
-    case 'change-value':
-      result = changeValue(root, intent.nodeId, intent.newValue);
-      break;
-    case 'create-child':
-      result = createChild(root, intent.nodeId);
-      break;
-    case 'delete-node':
-      result = deleteNode(root, intent.nodeId);
       break;
     default:
       return { success: false, error: 'UNKNOWN' };
@@ -590,13 +1011,11 @@ export async function applyNodeEdit(
   }
 
   // 4.5. Collect diagnostics (exactly once, after mutation success, before serialization)
-  const warnings: DiagnosticWarning[] = collectDiagnostics(
+  const warnings: DiagnosticWarning[] = computeNodeDiagnostics(
     preMutationSnapshot,
+    root,
     intent,
   );
-  for (const warning of warnings) {
-    console.warn(`[json-mutation] ${warning.type}: ${warning.pointer}`);
-  }
 
   // 5. Serialize full document from AST
   let serialized: string;
@@ -604,12 +1023,19 @@ export async function applyNodeEdit(
     const indent: string = detectIndent(text);
     const value: unknown = astToValue(root);
     serialized = serializeValue(value, indent);
+    if (typeof serialized !== 'string') {
+      return { success: false, error: 'INVALID_JSON' };
+    }
+    // Safety gate: never apply an edit that cannot be parsed again.
+    if (!parseJsonTolerant(serialized)) {
+      return { success: false, error: 'INVALID_JSON' };
+    }
     // Preserve trailing newline if the original had one
     if (text.endsWith('\n') && !serialized.endsWith('\n')) {
       serialized += '\n';
     }
   } catch {
-    return { success: false, error: 'UNKNOWN' };
+    return { success: false, error: 'INVALID_JSON' };
   }
 
   // 6. Validate version unchanged
@@ -637,8 +1063,7 @@ export async function applyNodeEdit(
   try {
     await document.save();
   } catch {
-    // Log but don't fail if save fails - edit was applied successfully
-    console.warn('[json-mutation] Document save failed (edit was applied)');
+    return { success: false, error: 'UNKNOWN' };
   }
 
   // 9. Invoke diagnostics callback if provided
@@ -646,5 +1071,6 @@ export async function applyNodeEdit(
     diagnosticsCallback(intent.nodeId, warnings);
   }
 
-  return { success: true };
+  const successResult: MutationResult = { success: true, warnings };
+  return successResult;
 }

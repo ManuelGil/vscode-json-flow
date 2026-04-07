@@ -13,12 +13,14 @@ import { EXTENSION_DISPLAY_NAME, ExtensionConfig } from '../configs';
 import {
   applyNodeEdit,
   FileType,
+  isEditCapableFileType,
   isFileTypeSupported,
   logger,
   MutationResult,
   NodeEditIntent,
   normalizeToJsonString,
   parseJsonContent,
+  parseJsonTolerant,
 } from '../helpers';
 import { JSONProvider } from '../providers';
 
@@ -105,6 +107,10 @@ export class JsonController {
         fileName,
         graphLayoutOrientation,
         uri.fsPath,
+        {
+          languageId,
+          canEdit: isEditCapableFileType(fileType),
+        },
         column,
       );
     } catch (error: unknown) {
@@ -198,6 +204,10 @@ export class JsonController {
       fileName,
       graphLayoutOrientation,
       uri.fsPath,
+      {
+        languageId,
+        canEdit: isEditCapableFileType(fileType),
+      },
     );
   }
 
@@ -290,25 +300,23 @@ export class JsonController {
    * @param intent - The edit intent describing what to change.
    * @returns The mutation result.
    */
-  async handleNodeEdit(intent: NodeEditIntent): Promise<MutationResult> {
+  async handleNodeEditIntent(intent: NodeEditIntent): Promise<MutationResult> {
     const editor = window.activeTextEditor;
 
     if (!editor) {
       return { success: false, error: 'INVALID_TARGET' };
     }
 
+    const document = editor.document;
+    const documentText = document.getText();
+
+    // Fail fast if the active document cannot be parsed by the mutation parser.
+    if (!parseJsonTolerant(documentText)) {
+      return { success: false, error: 'INVALID_JSON' };
+    }
+
     try {
-      const result: MutationResult = await applyNodeEdit(
-        intent,
-        editor.document,
-        (nodeId, warnings) => {
-          JSONProvider.postMessageToWebview({
-            command: 'mutationDiagnostics',
-            nodeId,
-            warnings,
-          });
-        },
-      );
+      const result: MutationResult = await applyNodeEdit(intent, document);
 
       if (!result.success) {
         const failedResult = result as { success: false; error: string };
@@ -329,6 +337,10 @@ export class JsonController {
     }
   }
 
+  async handleNodeEdit(intent: NodeEditIntent): Promise<MutationResult> {
+    return this.handleNodeEditIntent(intent);
+  }
+
   /**
    * Helper to create and update the JSON preview panel in a modular way.
    * @param data The parsed JSON data to display.
@@ -341,6 +353,10 @@ export class JsonController {
     fileName: string,
     orientation: string,
     path?: string,
+    metadata: { languageId: string; canEdit: boolean } = {
+      languageId: 'plaintext',
+      canEdit: false,
+    },
     column: ViewColumn = ViewColumn.One,
   ): void {
     const displayName = fileName.split(/[\\/]/).pop() || EXTENSION_DISPLAY_NAME;
@@ -362,6 +378,7 @@ export class JsonController {
         orientation,
         path,
         fileName,
+        metadata,
       });
     }, this._processingDelay);
   }

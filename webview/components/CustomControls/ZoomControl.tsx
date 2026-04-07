@@ -18,9 +18,9 @@ import { useCallback } from 'react';
  * Provides zoom in/out, fit view, and focus node actions.
  * All handlers are memoized for performance.
  */
-export function ZoomControl() {
+export function ZoomControl({ onFitView }: { onFitView: () => void }) {
   const reactFlow = useReactFlow();
-  const { zoomIn, zoomOut, fitView } = reactFlow;
+  const { zoomIn, zoomOut } = reactFlow;
   const { zoom } = useViewport();
 
   /**
@@ -85,7 +85,7 @@ export function ZoomControl() {
           <ZoomOut className="mr-2 h-4 w-4" />
           <span>Zoom out</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => fitView()}>
+        <DropdownMenuItem onClick={onFitView}>
           <Maximize className="mr-2 h-4 w-4" />
           <span>Zoom to fit</span>
         </DropdownMenuItem>

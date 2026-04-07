@@ -1,3 +1,4 @@
+import type { GraphSnapshot } from '@webview/types';
 import type { InternalNode } from '@xyflow/react';
 
 /**
@@ -64,10 +65,10 @@ export function parseSearchTokens(term: string): ParsedToken[] {
       ['>', '<', '='].includes(raw[5])
     ) {
       const op = raw[5] as '>' | '<' | '=';
-      const n = Number.parseInt(raw.slice(6), 10);
+      const depthValue = Number.parseInt(raw.slice(6), 10);
 
-      if (!Number.isNaN(n)) {
-        tokens.push({ kind: 'depth', op, n });
+      if (!Number.isNaN(depthValue)) {
+        tokens.push({ kind: 'depth', op, n: depthValue });
         continue;
       }
     }
@@ -184,4 +185,108 @@ export function computeMatches(
   return nodes
     .filter((node) => tokens.every((token) => evaluateToken(node, token)))
     .map((node) => node.id);
+}
+
+/**
+ * Computes matching node IDs using Graph indexes when available.
+ * Falls back to {@link computeMatches} when indexes are unavailable or not helpful.
+ *
+ * Ordering and final matching semantics remain identical to the canonical path,
+ * because all candidates are validated through {@link evaluateToken}.
+ */
+export function computeMatchesOptimized(
+  term: string,
+  nodes: InternalNode[],
+  labelIndex: Map<string, string[]>,
+  graphData: GraphSnapshot | null,
+): string[] {
+  const tokens = parseSearchTokens(term);
+
+  if (tokens.length === 0) {
+    return [];
+  }
+
+  if (!nodes.length) {
+    return [];
+  }
+
+  // Fallback: no graph data available
+  if (!graphData) {
+    return computeMatches(term, nodes, labelIndex);
+  }
+
+  // Optimization: detect if we can use graph indexes
+  const canUseTypeIndex = tokens.some((token) => token.kind === 'type');
+  const canUseKeyIndex = tokens.some((token) => token.kind === 'key');
+
+  // If no indexable tokens, use canonical path
+  if (!canUseTypeIndex && !canUseKeyIndex) {
+    return computeMatches(term, nodes, labelIndex);
+  }
+
+  // Fast path: use graph indexes to pre-filter candidates
+  let candidateIds: Set<string> | null = null;
+
+  // Apply type index filter
+  for (const token of tokens) {
+    if (token.kind === 'type') {
+      const typeMatches =
+        graphData.nodesByType.get(token.value.toLowerCase() as never) ?? [];
+      if (candidateIds === null) {
+        candidateIds = new Set(typeMatches);
+      } else {
+        const intersection = new Set<string>();
+        for (const id of typeMatches) {
+          if (candidateIds.has(id)) {
+            intersection.add(id);
+          }
+        }
+        candidateIds = intersection;
+      }
+    }
+  }
+
+  // Apply key index filter
+  for (const token of tokens) {
+    if (token.kind === 'key') {
+      const allKeyMatches: string[] = [];
+      for (const [key, nodeIds] of graphData.nodesByKey) {
+        if (key.toLowerCase().includes(token.value.toLowerCase())) {
+          allKeyMatches.push(...nodeIds);
+        }
+      }
+
+      if (candidateIds === null) {
+        candidateIds = new Set(allKeyMatches);
+      } else {
+        const intersection = new Set<string>();
+        for (const id of allKeyMatches) {
+          if (candidateIds.has(id)) {
+            intersection.add(id);
+          }
+        }
+        candidateIds = intersection;
+      }
+    }
+  }
+
+  // If we have candidates from indexes, filter them with remaining tokens
+  if (candidateIds !== null && candidateIds.size > 0) {
+    const nodeById = new Map(nodes.map((node) => [node.id, node]));
+    const candidateNodes = Array.from(candidateIds)
+      .map((id) => nodeById.get(id))
+      .filter((node): node is InternalNode => node !== undefined);
+
+    return candidateNodes
+      .filter((node) => tokens.every((token) => evaluateToken(node, token)))
+      .map((node) => node.id);
+  }
+
+  // If indexes produced empty set, return empty (all tokens must match)
+  if (candidateIds !== null && candidateIds.size === 0) {
+    return [];
+  }
+
+  // Fallback to canonical path if indexes didn't help
+  return computeMatches(term, nodes, labelIndex);
 }

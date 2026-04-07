@@ -1,6 +1,7 @@
 export * from './csv-parser.helper';
 export * from './csv-selection.helper';
 export * from './detect-delimiter.helper';
+export * from './edit-capability.helper';
 export * from './env-parser.helper';
 export * from './env-selection.helper';
 export * from './error-handler.helper';

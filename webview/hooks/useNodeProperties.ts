@@ -1,3 +1,4 @@
+import { GRAPH_ROOT_ID } from '@src/shared/graph-identity';
 import type { Node } from '@xyflow/react';
 import { useMemo } from 'react';
 import { extractKey, extractValue } from '../services/searchService';
@@ -70,20 +71,21 @@ function createDetails(node: Node): NodePropertyDetails | null {
     line?: number;
   };
 
-  const label = nodeData.label || node.id;
+  const normalizedPointer = normalizeGraphRootPointer(node.id);
+  const label = nodeData.label || normalizedPointer;
   const keyLabel = extractKey(label);
   const valuePreview = extractValue(label);
   const nodeType = nodeData.type || node.type || 'node';
   const parentPointer =
     'parentId' in node && typeof node.parentId === 'string'
-      ? node.parentId
+      ? normalizeGraphRootPointer(node.parentId)
       : undefined;
   const childCount = Array.isArray(nodeData.children)
     ? nodeData.children.length
     : 0;
 
   return {
-    pointer: node.id,
+    pointer: normalizedPointer,
     key: keyLabel,
     type: nodeType,
     valuePreview: valuePreview || undefined,
@@ -163,5 +165,10 @@ function extractChildPointers(node: Node): string[] {
       (childPointer): childPointer is string =>
         typeof childPointer === 'string',
     )
+    .map((childPointer) => normalizeGraphRootPointer(childPointer))
     .sort((first, second) => first.localeCompare(second));
+}
+
+function normalizeGraphRootPointer(pointer: string): string {
+  return pointer === GRAPH_ROOT_ID ? '/' : pointer;
 }

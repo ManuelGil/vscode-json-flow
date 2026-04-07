@@ -1,21 +1,23 @@
-import type { Direction, SearchProjectionMode } from '@webview/types';
-import type { InternalNode, Node } from '@xyflow/react';
-import { Panel } from '@xyflow/react';
+import { GoToSearch } from '@webview/components/CustomControls/GoToSearch';
+import { ImageDownload } from '@webview/components/CustomControls/ImageDownload';
+import { InteractivityToggle } from '@webview/components/CustomControls/InteractivityToggle';
+import { ModeToggle } from '@webview/components/CustomControls/ModeToggle';
+import { NodePropertiesPanel } from '@webview/components/CustomControls/NodePropertiesPanel';
+import { RotateLayout } from '@webview/components/CustomControls/RotateLayout';
+import {
+  Settings,
+  type SettingsConfig,
+} from '@webview/components/CustomControls/Settings';
+import { ZoomControl } from '@webview/components/CustomControls/ZoomControl';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '../molecules/Tooltip';
-import { GoToSearch } from './GoToSearch';
-import { ImageDownload } from './ImageDownload';
-import { InteractivityToggle } from './InteractivityToggle';
-import { ModeToggle } from './ModeToggle';
-import { NodePropertiesPanel } from './NodePropertiesPanel';
-import { RotateLayout } from './RotateLayout';
-import type { SettingsConfig } from './Settings';
-import { Settings } from './Settings';
-import { ZoomControl } from './ZoomControl';
+} from '@webview/components/molecules/Tooltip';
+import type { Direction, SearchProjectionMode } from '@webview/types';
+import type { InternalNode, Node } from '@xyflow/react';
+import { Panel } from '@xyflow/react';
 
 /**
  * Props for the {@link CustomControls} component.
@@ -34,7 +36,8 @@ type CustomControlsProps = {
   onSearchMatchChange?: (matchedIds: Set<string>) => void;
   selectedNode: Node | null;
   rootNode: Node | null;
-  onNavigatePointer?: (pointer: string) => void;
+  canEdit: boolean;
+  onFitView: () => void;
 };
 
 /**
@@ -54,7 +57,8 @@ export function CustomControls({
   onSearchMatchChange,
   selectedNode,
   rootNode,
-  onNavigatePointer,
+  canEdit,
+  onFitView,
 }: CustomControlsProps) {
   return (
     <Panel className="flex justify-between gap-2" position="top-center">
@@ -71,7 +75,7 @@ export function CustomControls({
           <TooltipContent>Rotate the layout direction</TooltipContent>
         </Tooltip>
       </TooltipProvider>
-      <ZoomControl />
+      <ZoomControl onFitView={onFitView} />
       <InteractivityToggle
         isInteractive={isDraggable}
         setIsInteractive={setIsDraggable}
@@ -89,7 +93,7 @@ export function CustomControls({
       <NodePropertiesPanel
         node={selectedNode}
         rootNode={rootNode}
-        onNavigatePointer={onNavigatePointer}
+        canEdit={canEdit}
       />
       <Settings onSettingsChange={onSettingsChange} />
     </Panel>

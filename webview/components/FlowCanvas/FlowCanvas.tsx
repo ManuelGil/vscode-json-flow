@@ -1,3 +1,4 @@
+import { GRAPH_ROOT_ID } from '@src/shared/graph-identity';
 import {
   CustomControls,
   CustomNode,
@@ -8,6 +9,8 @@ import {
   type BackgroundMode,
   DEFAULT_SETTINGS,
 } from '@webview/components/CustomControls/Settings';
+import { useSelectedNode } from '@webview/components/FlowCanvas/useSelectedNode';
+import { flowReducer } from '@webview/context/FlowContext';
 import { getVscodeApi } from '@webview/getVscodeApi';
 import { adaptTreeToGraph } from '@webview/helpers/adaptTreeToGraph';
 import { generateTree, getRootId } from '@webview/helpers/generateTree';
@@ -28,7 +31,7 @@ import {
 import { vscodeService } from '@webview/services/vscodeService';
 import type { Direction, SearchProjectionMode, TreeMap } from '@webview/types';
 import { detectInconsistentPaths } from '@webview/utils/detectInconsistentPaths';
-import { fitGraph, focusNode } from '@webview/utils/viewport';
+import { focusNode, safeFitView } from '@webview/utils/viewport';
 import type {
   Connection,
   Edge,
@@ -59,8 +62,6 @@ import {
   useRef,
   useState,
 } from 'react';
-import { flowReducer } from '../../context/FlowContext';
-import { useSelectedNode } from './useSelectedNode';
 
 /**
  * Snapshot of edge appearance settings for re-application after worker sync.
@@ -131,6 +132,8 @@ export const FlowCanvas = memo(function FlowCanvas() {
       orientation: st.orientation,
       path: st.path,
       fileName: st.fileName,
+      languageId: st.languageId,
+      canEdit: st.canEdit,
     };
   }, []);
 
@@ -151,14 +154,12 @@ export const FlowCanvas = memo(function FlowCanvas() {
   // Unified render state: post-processed with collapse filtering and callbacks
   const [renderNodes, setRenderNodes] = useState<Node[]>([]);
   const [renderEdges, setRenderEdges] = useState<Edge[]>([]);
-  const lastAppliedSignature = useRef<string | null>(null);
   const finalNodesRef = useRef<Node[]>([]);
   finalNodesRef.current = renderNodes;
   const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
   const [reactFlowInstance, setReactFlowInstance] =
     useState<ReactFlowInstance | null>(null);
   const lastFileRef = useRef<string | null>(null);
-  const hasFittedRef = useRef(false);
 
   // Search match IDs for highlighting matched nodes
   const [searchMatchIds, setSearchMatchIds] = useState<Set<string>>(
@@ -371,8 +372,7 @@ export const FlowCanvas = memo(function FlowCanvas() {
     });
   }, []);
 
-  const graphReadyRef = useRef(false);
-  // Fit only after nodes are rendered for a file change.
+  // Fit once per file change through viewport utility.
   useEffect(() => {
     if (!reactFlowInstance) {
       return;
@@ -381,40 +381,12 @@ export const FlowCanvas = memo(function FlowCanvas() {
     const filePath = flowData.path ?? '';
     const isNewFile = filePath !== lastFileRef.current;
 
-    if (isNewFile) {
-      lastFileRef.current = filePath;
-      hasFittedRef.current = false;
-    }
-
-    if (hasFittedRef.current) {
+    if (!isNewFile) {
       return;
     }
 
-    requestAnimationFrame(() => {
-      const attempt = () => {
-        const rf = reactFlowInstance;
-        if (!rf) {
-          return;
-        }
-
-        const nodes = rf.getNodes();
-        if (!nodes.length) {
-          requestAnimationFrame(attempt);
-          return;
-        }
-
-        const ready = nodes.every((node) => node.width && node.height);
-        if (!ready) {
-          requestAnimationFrame(attempt);
-          return;
-        }
-
-        hasFittedRef.current = true;
-        fitGraph(rf);
-      };
-
-      attempt();
-    });
+    lastFileRef.current = filePath;
+    safeFitView(reactFlowInstance);
   }, [flowData.path, reactFlowInstance]);
 
   // Clean up debounce timer on unmount
@@ -437,10 +409,6 @@ export const FlowCanvas = memo(function FlowCanvas() {
 
     if (!dataChanged && !directionChanged) {
       return;
-    }
-
-    if (lastDirectionRef.current !== flowData.orientation) {
-      graphReadyRef.current = false;
     }
 
     lastDataRef.current = jsonData;
@@ -471,63 +439,6 @@ export const FlowCanvas = memo(function FlowCanvas() {
       toggleChildrenRef.current(nodeId);
     }
   }, []);
-
-  // ---------------------------------------------------------------------------
-  // Deterministic viewport recovery layer (autonomous safety mechanism)
-  //
-  // This effect operates independently of flags and worker timing.
-  // It guarantees fit() execution when nodes are measurable, with no
-  // external dependencies or race conditions.
-  //
-  // Properties:
-  //   - No flag dependencies (self-contained cancellation token)
-  //   - Single execution per flowData.path change
-  //   - Deferred until all nodes have width and height
-  //   - Observable state only (reactFlowInstance, node.width/height)
-  // ---------------------------------------------------------------------------
-  useEffect(() => {
-    if (!reactFlowInstance) {
-      return;
-    }
-
-    // Consume flowData.path dependency to trigger effect on file change
-    void flowData.path;
-
-    let fitAttempted = false;
-
-    const attemptViewportRecovery = () => {
-      if (fitAttempted) {
-        return;
-      }
-
-      const nodes = reactFlowInstance.getNodes();
-
-      // Wait for nodes to exist
-      if (!nodes.length) {
-        requestAnimationFrame(attemptViewportRecovery);
-        return;
-      }
-
-      // Wait for all nodes to be measured (have width and height)
-      const allMeasured = nodes.every((node) => node.width && node.height);
-
-      if (!allMeasured) {
-        requestAnimationFrame(attemptViewportRecovery);
-        return;
-      }
-
-      // All preconditions met: execute fit and mark as completed
-      fitAttempted = true;
-      fitGraph(reactFlowInstance);
-    };
-
-    requestAnimationFrame(attemptViewportRecovery);
-
-    // Cleanup: prevent execution if dependencies change before fit completes
-    return () => {
-      fitAttempted = true;
-    };
-  }, [flowData.path, reactFlowInstance]);
 
   // ---------------------------------------------------------------------------
   // Projection layer: derives visible render state from Worker output.
@@ -565,12 +476,6 @@ export const FlowCanvas = memo(function FlowCanvas() {
       return;
     }
 
-    const signature = projectedNodes.map((node) => node.id).join(',');
-    if (signature === lastAppliedSignature.current) {
-      return;
-    }
-    lastAppliedSignature.current = signature;
-
     setRenderNodes((previousNodes) => {
       if (!projectedNodes.length && previousNodes.length) {
         return previousNodes;
@@ -580,21 +485,16 @@ export const FlowCanvas = memo(function FlowCanvas() {
         return projectedNodes;
       }
 
-      const isStructuralChange = projectedNodes.length !== previousNodes.length;
-      if (isStructuralChange) {
-        return projectedNodes;
-      }
-
-      const prevNodesMap = new Map(
-        previousNodes.map((node) => [node.id, node] as const),
+      const previousPositions = new Map(
+        previousNodes.map((node) => [node.id, node.position] as const),
       );
 
-      const merged = projectedNodes.map((node) => {
-        const prev = prevNodesMap.get(node.id);
-        return prev ? { ...node, position: prev.position } : node;
+      return projectedNodes.map((node) => {
+        const previousPosition = previousPositions.get(node.id);
+        return previousPosition
+          ? { ...node, position: previousPosition }
+          : node;
       });
-
-      return merged;
     });
 
     setRenderEdges(projectedEdges);
@@ -623,29 +523,17 @@ export const FlowCanvas = memo(function FlowCanvas() {
 
   const focusNodeSafe = useCallback(
     (nodeId: string) => {
-      const tryFocus = () => {
-        const instance = reactFlowInstance;
-        if (!instance) {
-          return;
-        }
+      const instance = reactFlowInstance;
+      if (!instance) {
+        return;
+      }
 
-        const node = instance.getNode(nodeId);
-        if (!node || !node.position) {
-          return;
-        }
+      const node = instance.getNode(nodeId);
+      if (!node || !node.position) {
+        return;
+      }
 
-        const width = node.width ?? node.measured?.width;
-        const height = node.height ?? node.measured?.height;
-
-        if (!width || !height) {
-          requestAnimationFrame(tryFocus);
-          return;
-        }
-
-        focusNode(instance, node);
-      };
-
-      requestAnimationFrame(tryFocus);
+      focusNode(instance, node);
     },
     [reactFlowInstance],
   );
@@ -653,6 +541,11 @@ export const FlowCanvas = memo(function FlowCanvas() {
   const handlePointerNavigation = useCallback(
     (pointer: string | null | undefined) => {
       if (!pointer) {
+        selectNode(null);
+        return;
+      }
+
+      if (pointer === GRAPH_ROOT_ID || pointer === '/') {
         selectNode(null);
         return;
       }
@@ -691,6 +584,13 @@ export const FlowCanvas = memo(function FlowCanvas() {
     [focusNodeSafe],
   );
 
+  const handleFitView = useCallback(() => {
+    if (!reactFlowInstance) {
+      return;
+    }
+    safeFitView(reactFlowInstance);
+  }, [reactFlowInstance]);
+
   const rootNode = useMemo(() => {
     if (!rootNodeId) {
       return null;
@@ -719,8 +619,9 @@ export const FlowCanvas = memo(function FlowCanvas() {
       onSearchMatchChange: handleSearchMatchChange,
       selectedNode,
       rootNode,
-      onNavigatePointer: handlePointerNavigation,
+      canEdit: flowData.canEdit,
       onApplyVisualFeedback: handleApplyVisualFeedback,
+      onFitView: handleFitView,
       graphData: flowData.graphData,
     }),
     [
@@ -735,8 +636,9 @@ export const FlowCanvas = memo(function FlowCanvas() {
       handleSearchMatchChange,
       selectedNode,
       rootNode,
-      handlePointerNavigation,
+      flowData.canEdit,
       handleApplyVisualFeedback,
+      handleFitView,
       flowData.graphData,
     ],
   );
@@ -822,10 +724,6 @@ export const FlowCanvas = memo(function FlowCanvas() {
   const handleReactFlowInit = useCallback((instance: ReactFlowInstance) => {
     reactFlowInstanceRef.current = instance;
     setReactFlowInstance(instance);
-    // Mark graph as ready for ref-based checks
-    requestAnimationFrame(() => {
-      graphReadyRef.current = true;
-    });
   }, []);
 
   const defaultEdgeOptions = useMemo(() => {

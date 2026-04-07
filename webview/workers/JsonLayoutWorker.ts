@@ -198,7 +198,6 @@ self.onmessage = (event: MessageEvent<WorkerRequestMessage>) => {
               });
             }
           } else {
-            console.error(`[JsonLayoutWorker] Processing error:`, error);
             throw error;
           }
         } finally {
@@ -225,12 +224,10 @@ self.onmessage = (event: MessageEvent<WorkerRequestMessage>) => {
       }
 
       default:
-        console.error(`[JsonLayoutWorker] Unknown message type: ${type}`);
         throw new Error(`Unknown message type: ${type}`);
     }
   } catch (error: unknown) {
     // Send error message back to main thread
-    console.error(`[JsonLayoutWorker] Error in message handler:`, error);
     self.postMessage({
       type: 'PROCESSING_ERROR',
       payload: {

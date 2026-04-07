@@ -1,3 +1,11 @@
+import { Button } from '@webview/components/atoms/Button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@webview/components/molecules/Tooltip';
+import { useNodeProperties } from '@webview/hooks/useNodeProperties';
 import type { Node } from '@xyflow/react';
 import { PanelRight } from 'lucide-react';
 import {
@@ -9,29 +17,7 @@ import {
   useState,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { getVscodeApi } from '../../getVscodeApi';
-import {
-  type NodeEditIntent,
-  useNodeEditing,
-} from '../../hooks/useNodeEditing';
-import { useNodeProperties } from '../../hooks/useNodeProperties';
-import type { IncomingVscodeMessage } from '../../services/types';
-import vscodeSyncService from '../../services/vscodeSyncService';
-import { Button } from '../atoms/Button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '../molecules/Tooltip';
 import { NodePropertiesContent } from './NodePropertiesContent';
-
-type DiagnosticsState = {
-  nodeId: string | null;
-  warnings: Array<{ type: string; pointer: string }>;
-};
-
-const EMPTY_DIAGNOSTICS: DiagnosticsState = { nodeId: null, warnings: [] };
 
 /**
  * NodePropertiesPanel is a pure UI inspector that presents JSON node details.
@@ -49,50 +35,17 @@ const EMPTY_DIAGNOSTICS: DiagnosticsState = { nodeId: null, warnings: [] };
 interface NodePropertiesPanelProps {
   node: Node | null;
   rootNode: Node | null;
+  canEdit: boolean;
   onClose?: () => void;
-  onEditIntent?: (intent: NodeEditIntent) => void;
-  onNavigatePointer?: (pointer: string) => void;
 }
 
 export const NodePropertiesPanel = memo(
-  ({
-    node,
-    rootNode,
-    onClose,
-    onEditIntent,
-    onNavigatePointer,
-  }: NodePropertiesPanelProps) => {
-    const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>(
-      'idle',
-    );
+  ({ node, rootNode, canEdit, onClose }: NodePropertiesPanelProps) => {
     const [isOpen, setIsOpen] = useState<boolean>(false);
-    const [diagnostics, setDiagnostics] =
-      useState<DiagnosticsState>(EMPTY_DIAGNOSTICS);
-    const [editingEnabled, setEditingEnabled] = useState<boolean>(false);
 
     const effectiveNode = node ?? rootNode ?? null;
-    const effectiveNodeId = effectiveNode?.id ?? null;
 
     const properties = useNodeProperties(effectiveNode);
-    const handleEditIntent = useCallback(
-      (intent: NodeEditIntent) => {
-        try {
-          const vscode = getVscodeApi();
-          vscode.postMessage({ command: 'nodeEditIntent', payload: intent });
-        } catch {
-          // Silently ignore if VS Code API is unavailable
-        }
-        onEditIntent?.(intent);
-      },
-      [onEditIntent],
-    );
-
-    const editingState = useNodeEditing(
-      effectiveNode,
-      properties,
-      handleEditIntent,
-    );
-    const pendingPathValue = properties?.pathValue ?? null;
 
     useEffect(() => {
       if (!effectiveNode) {
@@ -100,50 +53,6 @@ export const NodePropertiesPanel = memo(
       }
     }, [effectiveNode]);
 
-    useEffect(() => {
-      const handler = (message: IncomingVscodeMessage): void => {
-        if (message.command === 'mutationDiagnostics') {
-          if (
-            typeof message.nodeId === 'string' &&
-            Array.isArray(message.warnings)
-          ) {
-            setDiagnostics({
-              nodeId: message.nodeId,
-              warnings: message.warnings,
-            });
-          }
-          return;
-        }
-        if (message.command === 'editingCapability') {
-          setEditingEnabled(message.enabled);
-          return;
-        }
-      };
-      vscodeSyncService.subscribe(handler);
-      return () => vscodeSyncService.unsubscribe(handler);
-    }, []);
-
-    useEffect(() => {
-      setDiagnostics(EMPTY_DIAGNOSTICS);
-    }, []);
-
-    const resetCopyStatus = useCallback(() => {
-      window.setTimeout(() => setCopyStatus('idle'), 800);
-    }, []);
-
-    const handleCopyPath = useCallback(async () => {
-      if (!pendingPathValue) {
-        return;
-      }
-      try {
-        await navigator.clipboard.writeText(pendingPathValue);
-        setCopyStatus('copied');
-      } catch {
-        setCopyStatus('error');
-      } finally {
-        resetCopyStatus();
-      }
-    }, [pendingPathValue, resetCopyStatus]);
     const handleTogglePanel = useCallback(() => {
       setIsOpen((previous) => !previous);
     }, []);
@@ -167,21 +76,13 @@ export const NodePropertiesPanel = memo(
 
     let panelContent: ReactNode = null;
 
-    const filteredWarnings =
-      diagnostics.nodeId === effectiveNodeId ? diagnostics.warnings : [];
-
     if (shouldRenderPanel && properties && effectiveNode) {
       panelContent = (
         <NodePropertiesContent
           displayKey={displayKey}
           properties={properties}
-          editingState={editingState}
-          copyStatus={copyStatus}
-          onCopyPath={handleCopyPath}
           onClose={handleClosePanel}
-          onNavigatePointer={onNavigatePointer}
-          diagnosticWarnings={filteredWarnings}
-          canEdit={editingEnabled}
+          canEdit={canEdit}
         />
       );
     }
@@ -193,11 +94,10 @@ export const NodePropertiesPanel = memo(
             <span>
               <Button
                 variant={isOpen && effectiveNode ? 'secondary' : 'outline'}
-                size="sm"
                 onClick={handleTogglePanel}
                 aria-label="Show properties"
               >
-                <PanelRight className="h-4 w-4" />
+                <PanelRight />
               </Button>
             </span>
           </TooltipTrigger>

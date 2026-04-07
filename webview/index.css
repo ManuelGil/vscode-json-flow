@@ -87,6 +87,7 @@
 
 .react-flow__node {
   will-change: transform;
+  transition: transform 140ms ease-out, opacity 140ms ease-out;
 }
 
 .react-flow__edge:hover path,

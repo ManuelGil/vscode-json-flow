@@ -9,6 +9,8 @@ export interface FlowState {
   orientation: Direction;
   path: string;
   fileName: string;
+  languageId: string;
+  canEdit: boolean;
 }
 
 // Actions that can be dispatched to the flow reducer
@@ -20,6 +22,8 @@ export type FlowAction =
         orientation: Direction;
         path: string;
         fileName: string;
+        languageId: string;
+        canEdit: boolean;
       };
     }
   | { type: 'CLEAR' }
@@ -47,6 +51,8 @@ export function flowReducer(state: FlowState, action: FlowAction): FlowState {
         orientation: action.payload.orientation,
         path: action.payload.path,
         fileName: action.payload.fileName,
+        languageId: action.payload.languageId,
+        canEdit: action.payload.canEdit,
       };
     }
     case 'CLEAR':
@@ -57,6 +63,8 @@ export function flowReducer(state: FlowState, action: FlowAction): FlowState {
         orientation: 'TB',
         path: '',
         fileName: '',
+        languageId: 'plaintext',
+        canEdit: false,
       };
     case 'SET_ORIENTATION':
       if (state.orientation === action.payload.orientation) {

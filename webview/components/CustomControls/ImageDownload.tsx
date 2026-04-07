@@ -404,7 +404,7 @@ export function ImageDownload() {
                           tooltip="Transparent"
                           className="border border-muted-foreground bg-transparent hover:bg-transparent [&_svg]:size-8"
                         >
-                          <X className="text-red-500" />
+                          <X className="text-destructive" />
                         </Button>
                       </div>
                     </div>

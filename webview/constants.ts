@@ -21,4 +21,6 @@ export const DEFAULT_STATE = {
   orientation: DEFAULT_ORIENTATION as Direction,
   path: '',
   fileName: '',
+  languageId: 'plaintext',
+  canEdit: false,
 } as const;

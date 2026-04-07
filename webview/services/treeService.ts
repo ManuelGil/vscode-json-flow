@@ -25,8 +25,12 @@ export function getDescendantsOf(
     descendants.push(id);
     const node = tree[id];
     if (node?.children?.length) {
-      for (let i = node.children.length - 1; i >= 0; i--) {
-        stack.push(node.children[i]);
+      for (
+        let childIndex = node.children.length - 1;
+        childIndex >= 0;
+        childIndex--
+      ) {
+        stack.push(node.children[childIndex]);
       }
     }
   }

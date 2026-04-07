@@ -1,6 +1,6 @@
+import { DEFAULT_ORIENTATION, DEFAULT_STATE } from '@webview/constants';
+import { getVscodeApi } from '@webview/getVscodeApi';
 import type { Direction, JsonValue } from '@webview/types';
-import { DEFAULT_ORIENTATION, DEFAULT_STATE } from '../constants';
-import { getVscodeApi } from '../getVscodeApi';
 
 export type WebviewState =
   | {
@@ -8,6 +8,8 @@ export type WebviewState =
       orientation?: Direction;
       path?: string;
       fileName?: string;
+      languageId?: string;
+      canEdit?: boolean;
     }
   | undefined;
 
@@ -17,6 +19,8 @@ export type ResolvedWebviewState = {
   orientation: Direction;
   path: string;
   fileName: string;
+  languageId: string;
+  canEdit: boolean;
 };
 
 export const vscodeStateService = {
@@ -43,6 +47,8 @@ export const vscodeStateService = {
       orientation: (state?.orientation ?? DEFAULT_ORIENTATION) as Direction,
       path: state?.path ?? '',
       fileName: state?.fileName ?? '',
+      languageId: state?.languageId ?? DEFAULT_STATE.languageId,
+      canEdit: state?.canEdit ?? DEFAULT_STATE.canEdit,
     };
   },
 };

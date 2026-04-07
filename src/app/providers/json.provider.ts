@@ -3,15 +3,13 @@ import {
   Disposable,
   Event,
   EventEmitter,
-  Range,
-  Selection,
-  TextEditorRevealType,
   Uri,
   ViewColumn,
   Webview,
   WebviewOptions,
   WebviewPanel,
   window,
+  workspace,
 } from 'vscode';
 
 import {
@@ -23,8 +21,8 @@ import {
 import {
   applyNodeEdit,
   getNonce,
-  getSelectionMapper,
   logger,
+  type MutationResult,
   type NodeEditIntent,
 } from '../helpers';
 
@@ -111,10 +109,9 @@ export class JSONProvider {
   private _isDisposed: boolean = false;
 
   /**
-   * Tracks previous visibility so _update() only fires on true
-   * hidden-to-visible transitions, not on every active-state change.
+   * URI of the document currently associated with the preview panel.
    */
-  private _wasVisible: boolean = true;
+  private _documentUri: Uri | undefined;
 
   // -----------------------------------------------------------------
   // Constructor
@@ -137,121 +134,87 @@ export class JSONProvider {
     // Listen for messages from the webview (extend as needed for interactivity).
     this._panel.webview.onDidReceiveMessage(
       (message) => {
+        if (message?.type === 'nodeEditIntent') {
+          const { payload: intent, requestId } = message;
+
+          (async () => {
+            try {
+              if (!this._documentUri) {
+                this._panel.webview.postMessage({
+                  type: 'mutationDiagnostics',
+                  requestId,
+                  success: false,
+                  error: 'DOCUMENT_NOT_FOUND',
+                });
+                return;
+              }
+
+              let document;
+              try {
+                document = await workspace.openTextDocument(this._documentUri);
+              } catch {
+                this._panel.webview.postMessage({
+                  type: 'mutationDiagnostics',
+                  requestId,
+                  success: false,
+                  error: 'DOCUMENT_NOT_FOUND',
+                });
+                return;
+              }
+
+              const result = await applyNodeEdit(intent, document);
+
+              const isSuccess =
+                result === undefined ||
+                result === null ||
+                result.success === true;
+
+              if (!isSuccess) {
+                const failedResult = result as {
+                  success: false;
+                  error: string;
+                };
+                this._panel.webview.postMessage({
+                  type: 'mutationDiagnostics',
+                  requestId,
+                  success: false,
+                  error: failedResult.error,
+                });
+                return;
+              }
+
+              const successWarnings =
+                result && result.success === true
+                  ? (result.warnings ?? [])
+                  : [];
+
+              this._panel.webview.postMessage({
+                type: 'mutationDiagnostics',
+                requestId,
+                success: true,
+                warnings: successWarnings,
+              });
+            } catch (error) {
+              this._panel.webview.postMessage({
+                type: 'mutationDiagnostics',
+                requestId,
+                success: false,
+                error: String(error),
+              });
+            }
+          })();
+
+          return;
+        }
+
         switch (message?.command ?? message?.type) {
           case 'graphSelectionChanged': {
             if (!JSONProvider.liveSyncEnabled) {
               break;
             }
-            // Inbound guards: only accept messages from webview origin.
-            // For backward compatibility with 2.2.1, we still accept messages when origin is omitted,
-            // but we log a warning to encourage explicit origin usage going forward.
             if (message?.origin && message.origin !== 'webview') {
               break;
             }
-            // If message includes a path, it must match the previewedPath, with Windows-insensitive comparison.
-            const maybePath = (message as { path?: string } | undefined)?.path;
-            if (typeof maybePath === 'string' && JSONProvider.previewedPath) {
-              const a = maybePath;
-              const b = JSONProvider.previewedPath;
-              const samePath =
-                process.platform === 'win32'
-                  ? a.toLowerCase() === b.toLowerCase()
-                  : a === b;
-              if (!samePath) {
-                break;
-              }
-            }
-            try {
-              const nodeId = message?.nodeId as string | undefined;
-              if (!nodeId) {
-                break;
-              }
-              // De-duplication: ignore if the same nodeId was just applied from a previous inbound message.
-              if (JSONProvider.lastAppliedNodeId === nodeId) {
-                break;
-              }
-              const editor = window.activeTextEditor;
-              if (!editor) {
-                break;
-              }
-              const doc = editor.document;
-              // Active editor guard: only apply selection if it matches the previewed file
-              const previewPath = JSONProvider.previewedPath;
-              if (!previewPath) {
-                break;
-              }
-              if (doc.uri.fsPath !== previewPath) {
-                break;
-              }
-              const text = doc.getText();
-              const mapper = getSelectionMapper(doc.languageId, doc.fileName);
-              const byteRange = mapper?.rangeFromNodeId(text, nodeId);
-              if (!byteRange) {
-                break;
-              }
-              const start = doc.positionAt(byteRange.start);
-              const end = doc.positionAt(byteRange.end);
-              JSONProvider.suppressEditorSelectionEvent = true;
-              editor.selection = new Selection(start, end);
-              editor.revealRange(
-                new Range(start, end),
-                TextEditorRevealType.InCenterIfOutsideViewport,
-              );
-              JSONProvider.lastAppliedNodeId = nodeId;
-            } finally {
-              // Release suppression on next tick to avoid immediate event
-              setTimeout(() => {
-                JSONProvider.suppressEditorSelectionEvent = false;
-              }, 0);
-            }
-            break;
-          }
-          case 'nodeEditIntent': {
-            const intent = (message as { payload?: NodeEditIntent }).payload;
-            if (
-              !intent ||
-              typeof intent.nodeId !== 'string' ||
-              typeof intent.type !== 'string'
-            ) {
-              break;
-            }
-            const editor = window.activeTextEditor;
-            if (!editor) {
-              break;
-            }
-            if (JSONProvider.previewedPath !== editor.document.uri.fsPath) {
-              break;
-            }
-
-            // Execute edit using existing pipeline helper
-            applyNodeEdit(intent, editor.document, (nodeId, warnings) => {
-              JSONProvider.postMessageToWebview({
-                command: 'mutationDiagnostics',
-                nodeId,
-                warnings,
-              });
-            })
-              .then((result) => {
-                if (!result.success) {
-                  const failedResult = result as {
-                    success: false;
-                    error: string;
-                  };
-                  JSONProvider.postMessageToWebview({
-                    command: 'mutationDiagnostics',
-                    nodeId: intent.nodeId,
-                    warnings: [
-                      { type: failedResult.error, pointer: intent.nodeId },
-                    ],
-                  });
-                }
-              })
-              .catch((error: unknown) => {
-                logger.error('Node edit failed', error, {
-                  nodeId: intent.nodeId,
-                  type: intent.type,
-                });
-              });
             break;
           }
           default:
@@ -261,48 +224,25 @@ export class JSONProvider {
       null,
       this._disposables,
     );
-
-    // Update the webview only when transitioning from hidden to visible.
-    // onDidChangeViewState also fires on active-state changes (focus moves
-    // between editor groups) which must NOT reload the webview.
-    this._panel.onDidChangeViewState(
-      () => {
-        const nowVisible = this._panel.visible;
-        if (nowVisible && !this._wasVisible) {
-          this._update();
-        }
-        this._wasVisible = nowVisible;
-        // Recompute split state based on current view column (non-One implies split)
-        const isSplit = this._panel.viewColumn !== ViewColumn.One;
-        JSONProvider.isSplitView = !!isSplit;
-        commands.executeCommand(
-          'setContext',
-          `${EXTENSION_ID}.${ContextKeys.IsSplitView}`,
-          JSONProvider.isSplitView,
-        );
-        // Notify listeners
-        JSONProvider._onStateChanged.fire({
-          isSplitView: JSONProvider.isSplitView,
-        });
-      },
-      null,
-      this._disposables,
-    );
   }
 
-  // -----------------------------------------------------------------
-  // Methods
-  // -----------------------------------------------------------------
-
   /**
-   * Gets the event emitter for state changes (split view or live sync).
-   * @returns The event emitter for state changes.
+   * Event fired when provider split/live-sync state changes.
    */
   static get onStateChanged(): Event<{
     isSplitView?: boolean;
     liveSyncEnabled?: boolean;
   }> {
     return JSONProvider._onStateChanged.event;
+  }
+
+  /**
+   * Registers the host handler for webview node edit intents.
+   */
+  static setNodeEditIntentHandler(
+    _handler: ((intent: NodeEditIntent) => Promise<MutationResult>) | undefined,
+  ): void {
+    // Mutation intents are handled directly by applyNodeEdit using resolved URI.
   }
 
   /**
@@ -315,6 +255,15 @@ export class JSONProvider {
     extensionUri: Uri,
     column: ViewColumn = ViewColumn.One,
   ): WebviewPanel {
+    const payload = {
+      nodes: [],
+      edges: [],
+      metadata: {
+        languageId: 'plaintext',
+        canEdit: false,
+      },
+    };
+
     if (JSONProvider.currentProvider) {
       JSONProvider.currentProvider._panel.reveal(column);
       JSONProvider.isSplitView = column === ViewColumn.Beside;
@@ -328,7 +277,10 @@ export class JSONProvider {
       JSONProvider._onStateChanged.fire({
         isSplitView: JSONProvider.isSplitView,
       });
-      JSONProvider.currentProvider.sendEditingCapability();
+      JSONProvider.currentProvider._panel.webview.postMessage({
+        type: 'graphData',
+        payload,
+      });
       // Also reflect current Live Sync state to the webview when revealing
       try {
         JSONProvider.postMessageToWebview({
@@ -355,7 +307,10 @@ export class JSONProvider {
     );
 
     JSONProvider.currentProvider = new JSONProvider(panel, extensionUri);
-    JSONProvider.currentProvider.sendEditingCapability();
+    panel.webview.postMessage({
+      type: 'graphData',
+      payload,
+    });
     JSONProvider.isSplitView = column === ViewColumn.Beside;
     commands.executeCommand(
       'setContext',
@@ -628,6 +583,11 @@ export class JSONProvider {
     // the first selection on the new document due to de-duplication.
     const prev = JSONProvider.previewedPath;
     JSONProvider.previewedPath = path;
+    if (JSONProvider.currentProvider) {
+      JSONProvider.currentProvider._documentUri = path
+        ? Uri.file(path)
+        : undefined;
+    }
     if (prev !== path) {
       JSONProvider.lastAppliedNodeId = undefined;
     }
@@ -641,32 +601,6 @@ export class JSONProvider {
     const webview = this._panel.webview;
     const html = this._getHtmlForWebview(webview);
     this._panel.webview.html = html;
-  }
-
-  /**
-   * Sends the current editing capability state to the webview.
-   * Currently, editing is supported for JSON-like files.
-   */
-  public sendEditingCapability(): void {
-    const editor = window.activeTextEditor;
-    if (!editor) {
-      JSONProvider.postMessageToWebview({
-        command: 'editingCapability',
-        enabled: false,
-        path: undefined,
-      });
-      return;
-    }
-
-    const languageId = editor.document.languageId;
-    const isSupported =
-      languageId === 'json' || languageId === 'jsonc' || languageId === 'json5';
-
-    JSONProvider.postMessageToWebview({
-      command: 'editingCapability',
-      enabled: isSupported,
-      path: editor.document.uri.fsPath,
-    });
   }
 
   /**

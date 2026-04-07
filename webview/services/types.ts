@@ -26,6 +26,11 @@ export interface VscodeMessage {
   [key: string]: unknown;
 }
 
+export interface GraphMetadata {
+  languageId: string;
+  canEdit: boolean;
+}
+
 /**
  * VSCode API state structure
  */
@@ -34,6 +39,8 @@ export interface VscodeState {
   orientation?: Direction;
   path?: string;
   fileName?: string;
+  languageId?: string;
+  canEdit?: boolean;
 }
 
 /**
@@ -42,10 +49,11 @@ export interface VscodeState {
 export type IncomingVscodeMessage =
   | {
       command: 'update';
-      data?: JsonValue;
-      orientation?: Direction;
-      path?: string;
-      fileName?: string;
+      data: JsonValue;
+      orientation: Direction;
+      path: string;
+      fileName: string;
+      metadata: GraphMetadata;
     }
   | {
       command: 'clear';
@@ -69,12 +77,9 @@ export type IncomingVscodeMessage =
   // Mutation diagnostics (extension -> webview)
   | {
       command: 'mutationDiagnostics';
+      requestId?: string;
       nodeId: string;
       warnings: Array<{ type: string; pointer: string }>;
-    }
-  // Editing capability (extension -> webview)
-  | {
-      command: 'editingCapability';
-      enabled: boolean;
-      path?: string;
+      success?: boolean;
+      error?: string;
     };

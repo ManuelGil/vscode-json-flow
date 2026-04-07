@@ -1,9 +1,8 @@
+import { getVscodeApi } from '@webview/getVscodeApi';
 import type { LucideIcon } from 'lucide-react';
 import {
-  AlertTriangle,
   Braces,
   Check,
-  ChevronDown,
   Circle,
   Copy,
   Hash,
@@ -12,492 +11,645 @@ import {
   ToggleLeft,
   X,
 } from 'lucide-react';
-import { memo, type ReactNode, useId, useMemo, useState } from 'react';
-import type { NodeEditingState } from '../../hooks/useNodeEditing';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import type { NodePropertiesViewModel } from '../../hooks/useNodeProperties';
 import { Button } from '../atoms/Button';
 import { Input } from '../atoms/Input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../molecules/Tabs';
 
+function parseValueInput(
+  valueInput: string,
+  type: string,
+): { isValid: boolean; parsedValue: unknown } {
+  if (type === 'number') {
+    const trimmed = valueInput.trim();
+    if (trimmed.length === 0) {
+      return { isValid: false, parsedValue: valueInput };
+    }
+    const numericValue = Number(trimmed);
+    if (!Number.isFinite(numericValue)) {
+      return { isValid: false, parsedValue: valueInput };
+    }
+    return { isValid: true, parsedValue: numericValue };
+  }
+
+  if (type === 'boolean') {
+    const normalized = valueInput.trim().toLowerCase();
+    if (normalized === 'true') {
+      return { isValid: true, parsedValue: true };
+    }
+    if (normalized === 'false') {
+      return { isValid: true, parsedValue: false };
+    }
+    return { isValid: false, parsedValue: valueInput };
+  }
+
+  return { isValid: true, parsedValue: valueInput };
+}
+
+function parseCreatePrimitiveInput(valueInput: string): {
+  isValid: boolean;
+  parsedValue: unknown;
+} {
+  const trimmed = valueInput.trim();
+  if (trimmed === 'true') {
+    return { isValid: true, parsedValue: true };
+  }
+  if (trimmed === 'false') {
+    return { isValid: true, parsedValue: false };
+  }
+  if (/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$/.test(trimmed)) {
+    const numericValue = Number(trimmed);
+    if (Number.isFinite(numericValue)) {
+      return { isValid: true, parsedValue: numericValue };
+    }
+  }
+  return { isValid: true, parsedValue: valueInput };
+}
+
 interface NodePropertiesContentProps {
   displayKey: string;
   properties: NodePropertiesViewModel;
-  editingState: NodeEditingState;
-  copyStatus: 'idle' | 'copied' | 'error';
-  onCopyPath: () => void;
   onClose: () => void;
-  onNavigatePointer?: (pointer: string) => void;
-  diagnosticWarnings?: Array<{ type: string; pointer: string }>;
   canEdit: boolean;
-  onApplyVisualFeedback?: () => void;
 }
 
-const DEFAULT_TAB = 'properties';
+type LastAction = 'change' | 'delete' | 'create' | null;
 
 export const NodePropertiesContent = memo(
   ({
     displayKey,
     properties,
-    editingState,
-    copyStatus,
-    onCopyPath,
     onClose,
-    onNavigatePointer,
-    diagnosticWarnings,
     canEdit,
-    onApplyVisualFeedback,
   }: NodePropertiesContentProps) => {
-    const [activeTab, setActiveTab] = useState<string>(DEFAULT_TAB);
-    const [showAddChildForm, setShowAddChildForm] = useState<boolean>(false);
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState<boolean>(false);
-    const [newChildKey, setNewChildKey] = useState<string>('');
-    const [newChildValue, setNewChildValue] = useState<string>('');
-    const [applyFlash, setApplyFlash] = useState<'idle' | 'success'>('idle');
-    const keyInputId = useId();
-    const valueInputId = useId();
-    const newChildKeyInputId = useId();
-    const newChildValueInputId = useId();
+    const valueInputId = 'node-properties-value-input';
+    const keyInputId = 'node-properties-key-input';
+    const createKeyInputId = 'node-properties-create-key-input';
+    const createValueInputId = 'node-properties-create-value-input';
 
     const {
       details,
-      pointerSegments,
       depth,
-      indexInParent,
-      childPointers,
       renderedValuePreview,
       isValueMultiline,
       parentPointerValue,
       pathValue,
     } = properties;
 
-    const copyHelperText = useMemo(() => {
-      if (copyStatus === 'copied') {
-        return 'Copied to clipboard';
-      }
-      if (copyStatus === 'error') {
-        return 'Copy failed';
-      }
-      return undefined;
-    }, [copyStatus]);
+    const [valueInput, setValueInput] = useState<string>(renderedValuePreview);
+    const [keyInput, setKeyInput] = useState<string>(displayKey);
+    const [createKeyInput, setCreateKeyInput] = useState<string>('');
+    const [createValueInput, setCreateValueInput] = useState<string>('');
+    const [copiedPointer, setCopiedPointer] = useState<boolean>(false);
+    const [confirmDelete, setConfirmDelete] = useState<boolean>(false);
+    const [isMutating, setIsMutating] = useState<boolean>(false);
+    const [errorText, setErrorText] = useState<string>('');
+    const [lastAction, setLastAction] = useState<LastAction>(null);
 
-    const diagnosticList = Array.isArray(diagnosticWarnings)
-      ? diagnosticWarnings
-      : [];
-    const hasMutationWarning = diagnosticList.length > 0;
-    const supportsChildren =
-      details.type.toLowerCase() === 'object' ||
-      details.type.toLowerCase() === 'array';
-    const isContainerType = supportsChildren;
-    const canAddChild = canEdit && supportsChildren;
+    useEffect(() => {
+      setValueInput(renderedValuePreview);
+      setKeyInput(displayKey);
+      setConfirmDelete(false);
+      setErrorText('');
+      setLastAction(null);
+    }, [displayKey, renderedValuePreview]);
 
-    const handleApplyClick = () => {
-      if (!canEdit) {
+    useEffect(() => {
+      if (!copiedPointer) {
+        return;
+      }
+      const timer = window.setTimeout(() => setCopiedPointer(false), 1500);
+      return () => window.clearTimeout(timer);
+    }, [copiedPointer]);
+
+    useEffect(() => {
+      const onMessage = (event: MessageEvent) => {
+        const message = event.data;
+
+        if (message?.type !== 'mutationDiagnostics') {
+          return;
+        }
+
+        setIsMutating(false);
+        if (message.success) {
+          setErrorText('');
+          setConfirmDelete(false);
+          if (lastAction === 'create') {
+            setCreateKeyInput('');
+            setCreateValueInput('');
+          }
+          if (lastAction === 'delete') {
+            setValueInput('');
+            setKeyInput('');
+            setCreateKeyInput('');
+            setCreateValueInput('');
+          }
+          setLastAction(null);
+          return;
+        }
+
+        const error = String(message.error ?? 'UNKNOWN');
+        if (error === 'DUPLICATE_KEY') {
+          setErrorText('Property name already exists at this level');
+        } else if (error === 'TYPE_MISMATCH') {
+          setErrorText('Only string, number, or boolean values are allowed');
+        } else {
+          setErrorText('Unable to apply this change');
+        }
+      };
+
+      window.addEventListener('message', onMessage);
+      return () => window.removeEventListener('message', onMessage);
+    }, [lastAction]);
+
+    const isPrimitiveType =
+      details.type === 'string' ||
+      details.type === 'number' ||
+      details.type === 'boolean';
+    const isContainerType =
+      details.type === 'object' || details.type === 'array';
+
+    const canEditPrimitive = canEdit && isPrimitiveType;
+    const canCreateContainer = canEdit && isContainerType && !isMutating;
+
+    const isRoot = pathValue === '/';
+    const validPointer =
+      typeof pathValue === 'string' && pathValue.startsWith('/');
+    const hasParent = Boolean(parentPointerValue);
+    const canDelete = !isRoot && hasParent && validPointer && !isMutating;
+
+    const parsedValueInput = useMemo(
+      () => parseValueInput(valueInput, details.type),
+      [details.type, valueInput],
+    );
+
+    const parsedCreateValue = useMemo(
+      () => parseCreatePrimitiveInput(createValueInput),
+      [createValueInput],
+    );
+
+    const keyTrimmed = keyInput.trim();
+    const keyChanged = keyTrimmed.length > 0 && keyTrimmed !== displayKey;
+    const isObjectParent = hasParent && isPrimitiveType;
+    const keyInvalid =
+      isObjectParent && keyInput.length > 0 && keyTrimmed.length === 0;
+
+    const valueChanged = valueInput !== renderedValuePreview;
+    const valueInvalid = isPrimitiveType && !parsedValueInput.isValid;
+
+    const canRename =
+      canEditPrimitive && isObjectParent && keyChanged && !keyInvalid;
+    const canChangeValue =
+      canEditPrimitive && valueChanged && parsedValueInput.isValid;
+    const canSubmit = !isMutating && (canRename || canChangeValue);
+
+    const createKeyTrimmed = createKeyInput.trim();
+    const createKeyInvalid =
+      details.type === 'object' &&
+      createKeyInput.length > 0 &&
+      createKeyTrimmed.length === 0;
+    const createValueInvalid =
+      createValueInput.length > 0 && !parsedCreateValue.isValid;
+
+    const canCreateChild =
+      canCreateContainer &&
+      parsedCreateValue.isValid &&
+      (details.type === 'array'
+        ? createValueInput.length > 0
+        : createKeyTrimmed.length > 0 && createValueInput.length > 0);
+
+    const handleCopyPointer = useCallback(() => {
+      navigator.clipboard.writeText(pathValue);
+      setCopiedPointer(true);
+    }, [pathValue]);
+
+    const applyChanges = useCallback(() => {
+      if (!canEditPrimitive || !canSubmit) {
         return;
       }
 
-      editingState.handleApplyChanges();
-      onApplyVisualFeedback?.();
-      setApplyFlash('success');
-      window.setTimeout(() => setApplyFlash('idle'), 1200);
-    };
+      if (isObjectParent && keyInput.length > 0 && keyTrimmed.length === 0) {
+        setErrorText('Property name cannot be empty');
+        return;
+      }
+
+      if (isPrimitiveType && !parsedValueInput.isValid) {
+        setErrorText('New value is invalid for this type');
+        return;
+      }
+
+      setIsMutating(true);
+      setErrorText('');
+      setLastAction('change');
+      const vscode = getVscodeApi();
+
+      if (canRename) {
+        vscode.postMessage({
+          type: 'nodeEditIntent',
+          requestId: crypto.randomUUID(),
+          payload: {
+            nodeId: pathValue,
+            type: 'rename-key' as const,
+            newKey: keyTrimmed,
+          },
+        });
+      }
+
+      if (canChangeValue) {
+        vscode.postMessage({
+          type: 'nodeEditIntent',
+          requestId: crypto.randomUUID(),
+          payload: {
+            nodeId: pathValue,
+            type: 'change-value' as const,
+            newValue: parsedValueInput.parsedValue,
+          },
+        });
+      }
+    }, [
+      canChangeValue,
+      canEditPrimitive,
+      canRename,
+      canSubmit,
+      isObjectParent,
+      isPrimitiveType,
+      keyInput,
+      keyTrimmed,
+      parsedValueInput,
+      pathValue,
+    ]);
+
+    const handleCreateChild = useCallback(() => {
+      if (!canCreateChild) {
+        return;
+      }
+
+      setIsMutating(true);
+      setErrorText('');
+      setLastAction('create');
+
+      if (details.type === 'object') {
+        getVscodeApi().postMessage({
+          type: 'nodeEditIntent',
+          requestId: crypto.randomUUID(),
+          payload: {
+            nodeId: pathValue,
+            type: 'create-child' as const,
+            key: createKeyTrimmed,
+            value: parsedCreateValue.parsedValue,
+          },
+        });
+        return;
+      }
+
+      getVscodeApi().postMessage({
+        type: 'nodeEditIntent',
+        requestId: crypto.randomUUID(),
+        payload: {
+          nodeId: pathValue,
+          type: 'create-child' as const,
+          value: parsedCreateValue.parsedValue,
+        },
+      });
+    }, [
+      canCreateChild,
+      createKeyTrimmed,
+      details.type,
+      parsedCreateValue.parsedValue,
+      pathValue,
+    ]);
+
+    const handleConfirmDelete = useCallback(() => {
+      if (!canDelete) {
+        return;
+      }
+
+      setIsMutating(true);
+      setErrorText('');
+      setLastAction('delete');
+      getVscodeApi().postMessage({
+        type: 'nodeEditIntent',
+        requestId: crypto.randomUUID(),
+        payload: {
+          nodeId: pathValue,
+          type: 'delete-node' as const,
+        },
+      });
+    }, [canDelete, pathValue]);
 
     return (
-      <aside className="min-w-[380px] max-w-[560px] rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
-        <header className="flex items-start justify-between gap-2">
-          <div className="min-w-0 flex-1 space-y-3 border-b border-border/60 pb-3">
-            <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Node inspector
-              </p>
-              <h2 className="flex flex-wrap items-center gap-2 text-lg font-semibold text-foreground">
-                <span className="truncate">{displayKey}</span>
-                <TypeBadge typeLabel={details.type} />
-              </h2>
+      <aside className="flex w-[360px] flex-col rounded-lg border border-border bg-card shadow-sm">
+        <header className="flex items-center justify-between px-4 py-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Node Properties
+            </p>
+            <div className="mt-1 flex items-center gap-2">
+              <TypeBadge typeLabel={details.type} />
             </div>
-            <InlineBreadcrumb
-              pointerSegments={pointerSegments}
-              onNavigatePointer={onNavigatePointer}
-            />
           </div>
+
           <Button
             variant="ghost"
             size="icon"
-            aria-label="Close inspector"
             onClick={onClose}
+            className="h-8 w-8"
           >
             <X className="h-4 w-4" />
           </Button>
         </header>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
-          <TabsList className="grid grid-cols-3 gap-1 rounded-lg bg-muted/60 p-1">
-            <TabsTrigger value="properties">Properties</TabsTrigger>
-            <TabsTrigger value="structure">Structure</TabsTrigger>
+        <Tabs defaultValue="info" className="flex flex-1 flex-col">
+          <TabsList className="mx-4 mb-0 grid grid-cols-2">
+            <TabsTrigger value="info">Info</TabsTrigger>
             <TabsTrigger value="edit">Edit</TabsTrigger>
           </TabsList>
 
-          <TabsContent
-            value="properties"
-            className="mt-4 max-h-[65vh] overflow-y-auto focus-visible:outline-none"
-          >
-            <div className="space-y-4">
-              <CollapsibleSection title="Value details">
-                <DetailField
-                  label="Preview"
-                  value={renderedValuePreview}
-                  helperText={
-                    details.isContainer ? 'Container summary' : undefined
-                  }
-                />
-                <DetailField label="Type" value={details.type} monospace />
-              </CollapsibleSection>
-
-              <CollapsibleSection title="Pointer">
-                <DetailField
-                  label="JSON Pointer"
-                  value={pathValue}
-                  monospace
-                  action={
+          <TabsContent value="info" className="mt-0 space-y-6 px-4 py-4">
+            <section className="space-y-2">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Identity
+              </p>
+              <DetailRow label="Key" value={displayKey} />
+              <DetailRow
+                label="Type"
+                value={<TypeBadge typeLabel={details.type} />}
+              />
+              <DetailRow
+                label="Pointer"
+                value={
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate text-xs text-muted-foreground">
+                      {pathValue}
+                    </span>
                     <Button
                       variant="ghost"
-                      size="icon"
-                      aria-label="Copy node path"
-                      onClick={onCopyPath}
+                      size="sm"
+                      onClick={handleCopyPointer}
+                      className="h-7 px-2"
                     >
-                      {copyStatus === 'copied' ? (
-                        <Check className="h-4 w-4 text-emerald-500" />
+                      {copiedPointer ? (
+                        <>
+                          <Check className="h-3.5 w-3.5" />
+                          <span className="ml-1 text-xs">Copied ✓</span>
+                        </>
                       ) : (
-                        <Copy className="h-4 w-4" />
+                        <>
+                          <Copy className="h-3.5 w-3.5" />
+                          <span className="ml-1 text-xs">Copy</span>
+                        </>
                       )}
                     </Button>
-                  }
-                  helperText={copyHelperText}
-                />
-              </CollapsibleSection>
-            </div>
-          </TabsContent>
-
-          <TabsContent
-            value="structure"
-            className="mt-4 max-h-[65vh] overflow-y-auto focus-visible:outline-none"
-          >
-            <div className="space-y-4">
-              <CollapsibleSection title="Structure">
-                <DetailField
-                  label="Parent pointer"
-                  value={parentPointerValue}
-                  monospace
-                />
-                <DetailField label="Children" value={`${details.childCount}`} />
-                {childPointers.length > 0 && (
-                  <div className="space-y-1">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Child pointers
-                    </p>
-                    <div className="rounded-lg border border-border/70 bg-card/60 p-2">
-                      <div className="space-y-1 text-xs text-muted-foreground">
-                        {childPointers.slice(0, 20).map((childPointer) => (
-                          <button
-                            key={childPointer}
-                            type="button"
-                            className="w-full truncate text-left font-mono text-[11px] text-muted-foreground transition hover:text-foreground"
-                            onClick={() => onNavigatePointer?.(childPointer)}
-                            disabled={!onNavigatePointer}
-                          >
-                            {childPointer}
-                          </button>
-                        ))}
-                        {childPointers.length > 20 && (
-                          <p className="text-[11px] font-mono text-muted-foreground">
-                            + {childPointers.length - 20} more…
-                          </p>
-                        )}
-                      </div>
-                    </div>
                   </div>
-                )}
-                <DetailField label="Depth" value={`${depth}`} />
-                <DetailField
-                  label="Index in parent"
-                  value={indexInParent ?? '-'}
-                />
-              </CollapsibleSection>
+                }
+              />
+            </section>
 
-              <CollapsibleSection title="Metadata" defaultOpen={false}>
-                {details.lineNumber ? (
-                  <DetailField
-                    label="Line number"
-                    value={`Line ${details.lineNumber}`}
-                  />
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    No metadata available
-                  </p>
-                )}
-              </CollapsibleSection>
-            </div>
+            <section className="space-y-2">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Value
+              </p>
+              <DetailRow
+                label="Preview"
+                value={
+                  isPrimitiveType ? (
+                    <span className="break-words text-muted-foreground">
+                      {renderedValuePreview}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">
+                      Container node
+                    </span>
+                  )
+                }
+              />
+              {details.type === 'string' && (
+                <DetailRow
+                  label="Length"
+                  value={String(Math.max(0, renderedValuePreview.length - 2))}
+                />
+              )}
+            </section>
+
+            <section className="space-y-2">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Structure
+              </p>
+              <DetailRow label="Children" value={String(details.childCount)} />
+              <DetailRow label="Depth" value={String(depth)} />
+              <DetailRow
+                label="Parent"
+                value={
+                  parentPointerValue ? (
+                    <span className="break-words text-muted-foreground">
+                      {parentPointerValue}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">None</span>
+                  )
+                }
+              />
+              {details.lineNumber !== undefined && (
+                <DetailRow
+                  label="Metadata"
+                  value={`Line ${details.lineNumber}`}
+                />
+              )}
+            </section>
           </TabsContent>
 
-          <TabsContent
-            value="edit"
-            className="mt-4 max-h-[65vh] overflow-y-auto focus-visible:outline-none"
-          >
-            <div className="space-y-4">
-              <CollapsibleSection title="Quick edit">
-                <div className="space-y-4">
-                  <FieldBlock label="Key" htmlFor={keyInputId}>
+          <TabsContent value="edit" className="mt-0 space-y-4 px-4 py-4">
+            {!canEdit && (
+              <p className="text-xs text-muted-foreground">
+                Editing available only for JSON files
+              </p>
+            )}
+
+            {!isPrimitiveType && !isContainerType && canEdit && (
+              <p className="text-xs text-destructive">
+                Editing not supported for this node type
+              </p>
+            )}
+
+            {isPrimitiveType && canEditPrimitive && (
+              <>
+                {isObjectParent && (
+                  <div className="space-y-1">
+                    <label
+                      htmlFor={keyInputId}
+                      className="text-xs font-medium text-muted-foreground"
+                    >
+                      Property name
+                    </label>
                     <Input
                       id={keyInputId}
-                      value={editingState.keyInputValue}
-                      disabled={!canEdit}
-                      onChange={(event) =>
-                        editingState.setDraftKey(event.target.value)
-                      }
-                      onBlur={editingState.handleKeyCommit}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter') {
-                          event.preventDefault();
-                          editingState.handleKeyCommit();
-                        }
-                      }}
+                      value={keyInput}
+                      onChange={(event) => setKeyInput(event.target.value)}
+                      disabled={isMutating}
                     />
-                  </FieldBlock>
-                  <FieldBlock label="Value" htmlFor={valueInputId}>
-                    {isValueMultiline ? (
-                      <textarea
-                        id={valueInputId}
-                        className={`min-h-[60vh] w-full rounded-md border border-input px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-70 ${applyFlash === 'success' ? 'bg-emerald-50 dark:bg-emerald-950/20' : 'bg-background'}`}
-                        value={editingState.valueInputValue}
-                        disabled={!canEdit || isContainerType}
-                        onChange={(event) =>
-                          editingState.setDraftValue(event.target.value)
-                        }
-                        onBlur={editingState.handleValueCommit}
-                        onKeyDown={(event) => {
-                          if (
-                            (event.metaKey || event.ctrlKey) &&
-                            event.key === 'Enter'
-                          ) {
-                            event.preventDefault();
-                            editingState.handleValueCommit();
-                          }
-                        }}
-                      />
-                    ) : (
-                      <Input
-                        id={valueInputId}
-                        value={editingState.valueInputValue}
-                        disabled={!canEdit || isContainerType}
-                        className={
-                          applyFlash === 'success'
-                            ? 'bg-emerald-50 dark:bg-emerald-950/20'
-                            : undefined
-                        }
-                        onChange={(event) =>
-                          editingState.setDraftValue(event.target.value)
-                        }
-                        onBlur={editingState.handleValueCommit}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter') {
-                            event.preventDefault();
-                            editingState.handleValueCommit();
-                          }
-                        }}
-                      />
-                    )}
-                    {isContainerType && canEdit && (
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Use Add Child for object/array nodes.
+                    {keyInvalid && (
+                      <p className="text-xs text-destructive">
+                        Property name cannot be empty
                       </p>
                     )}
-                  </FieldBlock>
-                  <Button
-                    variant="default"
-                    className={`w-full transition-opacity ${applyFlash === 'success' ? 'opacity-85' : 'opacity-100'}`}
-                    disabled={!canEdit}
-                    onClick={handleApplyClick}
+                  </div>
+                )}
+
+                <div className="space-y-1">
+                  <label
+                    htmlFor={valueInputId}
+                    className="text-xs font-medium text-muted-foreground"
                   >
-                    <span className="inline-flex items-center gap-2">
-                      {applyFlash === 'success' && (
-                        <Check className="h-3.5 w-3.5" />
-                      )}
-                      {applyFlash === 'success' ? 'Updated' : 'Apply changes'}
-                    </span>
-                  </Button>
-                  {applyFlash === 'success' && (
-                    <p className="text-xs text-emerald-700 dark:text-emerald-300">
-                      ✓ Updated
-                    </p>
+                    New value
+                  </label>
+                  {isValueMultiline ? (
+                    <textarea
+                      id={valueInputId}
+                      value={valueInput}
+                      onChange={(event) => setValueInput(event.target.value)}
+                      disabled={isMutating}
+                      className="min-h-[96px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
+                    />
+                  ) : (
+                    <Input
+                      id={valueInputId}
+                      value={valueInput}
+                      onChange={(event) => setValueInput(event.target.value)}
+                      disabled={isMutating}
+                    />
                   )}
-                  {hasMutationWarning && (
-                    <p className="text-xs text-amber-700 dark:text-amber-300">
-                      ⚠ Unable to apply change
-                    </p>
-                  )}
-                </div>
-              </CollapsibleSection>
-
-              {!canEdit && (
-                <div className="rounded-lg border border-border/70 bg-muted/40 p-3">
-                  <p className="text-sm font-medium text-foreground">
-                    Editing is available only for JSON-based formats.
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Editing is not supported for this file type.
-                  </p>
-                </div>
-              )}
-
-              {diagnosticList.length > 0 && (
-                <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/30">
-                  <div className="flex items-center gap-2 text-xs font-medium text-amber-800 dark:text-amber-200">
-                    <AlertTriangle className="h-3.5 w-3.5" />
-                    <span>Edit warnings</span>
-                  </div>
-                  <ul className="mt-2 space-y-1 text-xs text-amber-800 dark:text-amber-200">
-                    {diagnosticList.slice(0, 5).map((warning, index) => (
-                      <li key={`${warning.pointer}-${warning.type}-${index}`}>
-                        {formatDiagnosticMessage(warning.type)}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              <CollapsibleSection title="Advanced" defaultOpen={false}>
-                <div className="space-y-3 text-sm text-foreground">
                   <p className="text-xs text-muted-foreground">
-                    Target: {pathValue || '/'}
+                    Allowed: string, number, boolean
                   </p>
-
-                  <div className="space-y-2">
-                    {!showAddChildForm && (
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        disabled={!canAddChild}
-                        onClick={() => setShowAddChildForm(true)}
-                      >
-                        Add child node
-                      </Button>
-                    )}
-                    <p className="text-xs text-muted-foreground">
-                      Creates a new child under this node
+                  {valueInvalid && (
+                    <p className="text-xs text-destructive">
+                      New value is invalid for this type
                     </p>
-                    {!canAddChild && (
-                      <p className="text-xs text-muted-foreground">
-                        Add child node (disabled): Only available for objects
-                        and arrays
+                  )}
+                </div>
+
+                <Button
+                  variant="default"
+                  type="button"
+                  disabled={!canSubmit}
+                  onClick={applyChanges}
+                  className="w-full disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Apply
+                </Button>
+              </>
+            )}
+
+            {isContainerType && (
+              <>
+                {details.type === 'object' && (
+                  <div className="space-y-1">
+                    <label
+                      htmlFor={createKeyInputId}
+                      className="text-xs font-medium text-muted-foreground"
+                    >
+                      Property name
+                    </label>
+                    <Input
+                      id={createKeyInputId}
+                      value={createKeyInput}
+                      onChange={(event) =>
+                        setCreateKeyInput(event.target.value)
+                      }
+                      disabled={!canCreateContainer}
+                    />
+                    {createKeyInvalid && (
+                      <p className="text-xs text-destructive">
+                        Property name is required
                       </p>
                     )}
-
-                    {showAddChildForm && (
-                      <div className="space-y-2 rounded-lg border border-border/70 bg-card/60 p-3">
-                        <FieldBlock
-                          label="Child key"
-                          htmlFor={newChildKeyInputId}
-                        >
-                          <Input
-                            id={newChildKeyInputId}
-                            value={newChildKey}
-                            disabled={!canEdit}
-                            onChange={(event) =>
-                              setNewChildKey(event.target.value)
-                            }
-                          />
-                        </FieldBlock>
-                        <FieldBlock
-                          label="Child value"
-                          htmlFor={newChildValueInputId}
-                        >
-                          <Input
-                            id={newChildValueInputId}
-                            value={newChildValue}
-                            disabled={!canEdit}
-                            onChange={(event) =>
-                              setNewChildValue(event.target.value)
-                            }
-                          />
-                        </FieldBlock>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            className="w-full"
-                            onClick={() => {
-                              setShowAddChildForm(false);
-                              setNewChildKey('');
-                              setNewChildValue('');
-                            }}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            variant="default"
-                            className="w-full"
-                            disabled={!canAddChild}
-                            onClick={() => {
-                              editingState.handleCreateChild(
-                                newChildKey,
-                                newChildValue,
-                              );
-                              setShowAddChildForm(false);
-                              setNewChildKey('');
-                              setNewChildValue('');
-                            }}
-                          >
-                            Confirm
-                          </Button>
-                        </div>
-                      </div>
-                    )}
                   </div>
+                )}
 
-                  <div className="space-y-2">
-                    {!showDeleteConfirm && (
-                      <Button
-                        variant="destructive"
-                        className="w-full"
-                        disabled={!canEdit}
-                        onClick={() => setShowDeleteConfirm(true)}
-                      >
-                        Delete this node
-                      </Button>
-                    )}
-                    <p className="text-xs text-muted-foreground">
-                      Removes this node and its children
+                <div className="space-y-1">
+                  <label
+                    htmlFor={createValueInputId}
+                    className="text-xs font-medium text-muted-foreground"
+                  >
+                    Value
+                  </label>
+                  <Input
+                    id={createValueInputId}
+                    value={createValueInput}
+                    onChange={(event) =>
+                      setCreateValueInput(event.target.value)
+                    }
+                    disabled={!canCreateContainer}
+                    placeholder='e.g. "text", 123, true'
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Allowed: string, number, boolean
+                  </p>
+                  {createValueInvalid && (
+                    <p className="text-xs text-destructive">
+                      Only primitive values are allowed
                     </p>
-
-                    {showDeleteConfirm && (
-                      <div className="space-y-2 rounded-lg border border-border/70 bg-card/60 p-3">
-                        <p className="text-sm text-foreground">
-                          Delete this node?
-                        </p>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            className="w-full"
-                            onClick={() => setShowDeleteConfirm(false)}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            className="w-full"
-                            disabled={!canEdit}
-                            onClick={() => {
-                              editingState.handleDeleteNode();
-                              setShowDeleteConfirm(false);
-                            }}
-                          >
-                            Confirm
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  )}
                 </div>
-              </CollapsibleSection>
-            </div>
+
+                <Button
+                  variant="secondary"
+                  type="button"
+                  onClick={handleCreateChild}
+                  disabled={!canCreateChild}
+                  className="w-full disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Add Child
+                </Button>
+              </>
+            )}
+
+            {confirmDelete ? (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">Are you sure?</p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    type="button"
+                    className="flex-1"
+                    onClick={() => setConfirmDelete(false)}
+                    disabled={isMutating}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    type="button"
+                    className="flex-1"
+                    onClick={handleConfirmDelete}
+                    disabled={!canDelete}
+                  >
+                    Confirm delete
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Button
+                variant="destructive"
+                type="button"
+                className="w-full disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() => setConfirmDelete(true)}
+                disabled={!canDelete}
+              >
+                Delete node
+              </Button>
+            )}
+
+            {!canDelete && (
+              <p className="text-xs text-muted-foreground">
+                Cannot delete this node
+              </p>
+            )}
+
+            {errorText && (
+              <p className="text-xs text-destructive">{errorText}</p>
+            )}
           </TabsContent>
         </Tabs>
       </aside>
@@ -507,56 +659,16 @@ export const NodePropertiesContent = memo(
 
 NodePropertiesContent.displayName = 'NodePropertiesContent';
 
-const EDIT_ERROR_MESSAGES: Record<string, string> = {
-  invalidTarget: 'The edited node is no longer available.',
-  invalidJson: 'The document can no longer be parsed as valid JSON.',
-  typeMismatch: 'That edit is not valid for the selected node.',
-  versionConflict: 'The document changed before the edit could be applied.',
-  unknown: 'The edit could not be applied.',
-};
-
-function formatDiagnosticMessage(type: string | undefined): string {
-  if (!type) {
-    return 'Unknown warning.';
-  }
-
-  const key = type.toLowerCase();
-  return EDIT_ERROR_MESSAGES[key] ?? key.replaceAll('_', ' ');
-}
-
-interface DetailFieldProps {
+interface DetailRowProps {
   label: string;
-  value?: string;
-  monospace?: boolean;
-  action?: ReactNode;
-  helperText?: string;
+  value: React.ReactNode;
 }
 
-function DetailField({
-  label,
-  value,
-  monospace,
-  action,
-  helperText,
-}: DetailFieldProps) {
-  if (value == null || value === '') {
-    return null;
-  }
-
+function DetailRow({ label, value }: DetailRowProps) {
   return (
-    <div className="rounded-lg border border-border/70 bg-card/60 p-3">
-      <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
-        <span>{label}</span>
-        {action}
-      </div>
-      <p
-        className={`mt-1 text-sm text-foreground ${monospace ? 'font-mono text-xs' : ''}`}
-      >
-        {value}
-      </p>
-      {helperText && (
-        <p className="mt-0.5 text-xs text-muted-foreground">{helperText}</p>
-      )}
+    <div className="grid grid-cols-[112px_1fr] items-start gap-3">
+      <span className="text-xs font-medium text-muted-foreground">{label}</span>
+      <div className="min-w-0 text-sm">{value}</div>
     </div>
   );
 }
@@ -584,108 +696,4 @@ function TypeBadge({ typeLabel }: TypeBadgeProps) {
       <span className="capitalize">{typeLabel}</span>
     </span>
   );
-}
-
-interface FieldBlockProps {
-  label: string;
-  htmlFor: string;
-  children: React.ReactNode;
-}
-
-function FieldBlock({ label, htmlFor, children }: FieldBlockProps) {
-  return (
-    <div className="space-y-2">
-      <label
-        className="text-xs font-medium uppercase tracking-wide text-muted-foreground"
-        htmlFor={htmlFor}
-      >
-        {label}
-      </label>
-      {children}
-    </div>
-  );
-}
-
-interface CollapsibleSectionProps {
-  title: string;
-  children: ReactNode;
-  defaultOpen?: boolean;
-}
-
-function CollapsibleSection({
-  title,
-  children,
-  defaultOpen = true,
-}: CollapsibleSectionProps) {
-  const [isOpen, setIsOpen] = useState<boolean>(defaultOpen);
-
-  return (
-    <section className="rounded-xl border border-border/70 bg-background/60 p-3">
-      <button
-        type="button"
-        className="flex w-full items-center justify-between gap-2 text-left text-sm font-semibold text-foreground"
-        onClick={() => setIsOpen((current) => !current)}
-      >
-        <span>{title}</span>
-        <ChevronDown
-          className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-0' : '-rotate-90'}`}
-        />
-      </button>
-      {isOpen && <div className="mt-3">{children}</div>}
-    </section>
-  );
-}
-
-interface InlineBreadcrumbProps {
-  pointerSegments: string[];
-  onNavigatePointer?: (pointer: string) => void;
-}
-
-function InlineBreadcrumb({
-  pointerSegments,
-  onNavigatePointer,
-}: InlineBreadcrumbProps) {
-  const path = buildPath(pointerSegments);
-
-  return (
-    <div className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
-      {pointerSegments.map((segment, index) => {
-        const isLast = index === pointerSegments.length - 1;
-        const pointer = buildPointerFromSegments(
-          pointerSegments.slice(0, index + 1),
-        );
-
-        return (
-          <span key={`${segment}-${index}`} className="flex items-center gap-1">
-            {index > 0 && <span>/</span>}
-            <button
-              type="button"
-              className={`rounded px-1 py-0.5 font-mono ${isLast ? 'text-foreground' : 'hover:text-foreground'}`}
-              onClick={() => onNavigatePointer?.(pointer)}
-              disabled={!onNavigatePointer}
-            >
-              {segment}
-            </button>
-          </span>
-        );
-      })}
-      <span className="sr-only">{path}</span>
-    </div>
-  );
-}
-
-function buildPath(pointerSegments: string[]): string {
-  if (pointerSegments.length <= 1) {
-    return '/';
-  }
-
-  return `/${pointerSegments.slice(1).join('/')}`;
-}
-
-function buildPointerFromSegments(pointerSegments: string[]): string {
-  if (pointerSegments.length <= 1) {
-    return '';
-  }
-
-  return `/${pointerSegments.slice(1).join('/')}`;
 }

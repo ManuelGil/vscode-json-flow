@@ -1,6 +1,5 @@
 export * from './layout-core';
 export * from './searchService';
-export * from './searchServiceOptimized';
 export * from './treeService';
 export * from './types';
 export * from './vscodeMessenger';

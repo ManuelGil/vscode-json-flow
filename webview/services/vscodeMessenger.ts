@@ -1,7 +1,6 @@
+import { getVscodeApi } from '@webview/getVscodeApi';
 import { throwError } from '@webview/helpers';
 import { z } from 'zod';
-
-import { getVscodeApi } from '../getVscodeApi';
 
 /** Union of all webview-to-extension messages */
 const messageSchema = z.discriminatedUnion('command', [

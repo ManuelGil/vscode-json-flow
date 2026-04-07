@@ -17,6 +17,8 @@ type FlowData = {
   orientation: Direction;
   path: string;
   fileName: string;
+  languageId: string;
+  canEdit: boolean;
 };
 
 /**
@@ -46,9 +48,17 @@ export function useFlowSettings(
         orientation: newDirection,
         path: current?.path ?? flowData.path,
         fileName: current?.fileName ?? flowData.fileName,
+        languageId: current?.languageId ?? flowData.languageId,
+        canEdit: current?.canEdit ?? flowData.canEdit,
       });
     },
-    [flowData.data, flowData.path, flowData.fileName],
+    [
+      flowData.data,
+      flowData.path,
+      flowData.fileName,
+      flowData.languageId,
+      flowData.canEdit,
+    ],
   );
 
   // Debounced version of the VSCode state update function

@@ -4,7 +4,6 @@ export * from './useEditorSync';
 export * from './useFlowController';
 export * from './useFlowSettings';
 export * from './useLayoutWorker';
-export * from './useNodeEditing';
 export * from './useNodeProperties';
 export * from './useSearchProjection';
 export * from './useTreeDataValidator';

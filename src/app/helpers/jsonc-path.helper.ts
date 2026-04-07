@@ -15,8 +15,15 @@ export type JsonNodeType =
   | 'null'
   | 'property';
 
-export interface AstNode {
+export interface JsonAstNode {
   type: JsonNodeType;
+  children?: JsonAstNode[];
+  value?: string | number | boolean | null;
+  offset?: number;
+  length?: number;
+}
+
+export interface AstNode extends JsonAstNode {
   offset: number; // start byte (inclusive)
   length: number; // node length in bytes
   children?: AstNode[]; // for object: properties (type: 'property'), for array: elements
@@ -101,19 +108,21 @@ export function rangeFromNodeId(
     }
 
     // Navigate through the AST following the pointer segments
-    let current: AstNode | undefined = root;
+    let current: JsonAstNode | undefined = root;
     for (const segment of segments) {
       // Validate current node can have children
       if (!current || !Array.isArray(current.children)) {
         return undefined;
       }
 
+      const children: JsonAstNode[] = current.children;
+
       // Navigate based on node type
       if (current.type === 'object') {
         // For objects, find the property whose key matches the segment
-        let matched: AstNode | undefined;
-        for (const prop of current.children) {
-          const keyNode = prop.children?.[0];
+        let matched: JsonAstNode | undefined;
+        for (const prop of children) {
+          const keyNode: JsonAstNode | undefined = prop.children?.[0];
           if (keyNode && String(keyNode.value ?? '') === segment) {
             matched = prop.children?.[1] ?? prop;
             break;
@@ -129,7 +138,7 @@ export function rangeFromNodeId(
         if (!Number.isInteger(idx) || idx < 0) {
           return undefined;
         }
-        const child = current.children[idx];
+        const child: JsonAstNode | undefined = children[idx];
         if (!child) {
           return undefined;
         }
@@ -141,7 +150,11 @@ export function rangeFromNodeId(
     }
 
     // Final validation of the target node
-    if (!current) {
+    if (
+      !current ||
+      typeof current.offset !== 'number' ||
+      typeof current.length !== 'number'
+    ) {
       return undefined;
     }
 
@@ -196,9 +209,9 @@ export function resolveAstNode(
     };
   }
 
-  let current: AstNode = root;
-  let parent: AstNode | undefined;
-  let property: AstNode | undefined;
+  let current: JsonAstNode | undefined = root;
+  let parent: JsonAstNode | undefined;
+  let property: JsonAstNode | undefined;
   let indexInParent = -1;
 
   for (const segment of segments) {
@@ -206,16 +219,18 @@ export function resolveAstNode(
       return undefined;
     }
 
+    const children: JsonAstNode[] = current.children;
+
     parent = current;
     property = undefined;
 
     if (current.type === 'object') {
-      let matched: AstNode | undefined;
-      let matchedProp: AstNode | undefined;
+      let matched: JsonAstNode | undefined;
+      let matchedProp: JsonAstNode | undefined;
       let matchedIdx = -1;
-      for (let idx = 0; idx < current.children.length; idx++) {
-        const prop = current.children[idx];
-        const keyNode = prop.children?.[0];
+      for (let idx = 0; idx < children.length; idx++) {
+        const prop: JsonAstNode = children[idx];
+        const keyNode: JsonAstNode | undefined = prop.children?.[0];
         if (keyNode && String(keyNode.value ?? '') === segment) {
           matched = prop.children?.[1] ?? prop;
           matchedProp = prop;
@@ -234,7 +249,7 @@ export function resolveAstNode(
       if (!Number.isInteger(idx) || idx < 0) {
         return undefined;
       }
-      const child = current.children[idx];
+      const child: JsonAstNode | undefined = children[idx];
       if (!child) {
         return undefined;
       }
@@ -246,7 +261,34 @@ export function resolveAstNode(
     }
   }
 
-  return { target: current, parent, property, indexInParent };
+  if (
+    !current ||
+    typeof current.offset !== 'number' ||
+    typeof current.length !== 'number'
+  ) {
+    return undefined;
+  }
+
+  const resolvedParent: AstNode | undefined =
+    parent &&
+    typeof parent.offset === 'number' &&
+    typeof parent.length === 'number'
+      ? (parent as AstNode)
+      : undefined;
+
+  const resolvedProperty: AstNode | undefined =
+    property &&
+    typeof property.offset === 'number' &&
+    typeof property.length === 'number'
+      ? (property as AstNode)
+      : undefined;
+
+  return {
+    target: current as AstNode,
+    parent: resolvedParent,
+    property: resolvedProperty,
+    indexInParent,
+  };
 }
 
 export function parseJsonTolerant(text: string): AstNode | undefined {
@@ -563,7 +605,10 @@ function skipWsAndComments(text: string, i: number): number {
 
 // ...
 
-function contains(node: AstNode, pos: number): boolean {
+function contains(node: JsonAstNode, pos: number): boolean {
+  if (typeof node.offset !== 'number' || typeof node.length !== 'number') {
+    return false;
+  }
   return pos >= node.offset && pos < node.offset + node.length;
 }
 
@@ -573,16 +618,18 @@ function findJsonPathAtOffset(
 ): (string | number)[] | undefined {
   // Descend looking for the child that contains pos. In objects return keys, in arrays indices.
   const path: (string | number)[] = [];
-  let current: AstNode | undefined = root;
+  let current: JsonAstNode | undefined = root;
 
   while (current && Array.isArray(current.children)) {
+    const children: JsonAstNode[] = current.children;
+
     if (current.type === 'object') {
-      let picked: AstNode | undefined;
+      let picked: JsonAstNode | undefined;
       let pickedKey: string | undefined;
-      for (let i = 0; i < current.children.length; i++) {
-        const prop = current.children[i];
-        const keyNode = prop.children?.[0];
-        const valNode = prop.children?.[1] ?? prop;
+      for (let i = 0; i < children.length; i++) {
+        const prop: JsonAstNode = children[i];
+        const keyNode: JsonAstNode | undefined = prop.children?.[0];
+        const valNode: JsonAstNode | undefined = prop.children?.[1] ?? prop;
         if (!keyNode || !valNode) {
           continue;
         }
@@ -598,14 +645,14 @@ function findJsonPathAtOffset(
       }
       if (!picked) {
         // Heuristic: choose the last property whose start is <= pos
-        for (let i = current.children.length - 1; i >= 0; i--) {
-          const prop = current.children[i];
-          const keyNode = prop.children?.[0];
-          const valNode = prop.children?.[1] ?? prop;
+        for (let i = children.length - 1; i >= 0; i--) {
+          const prop: JsonAstNode = children[i];
+          const keyNode: JsonAstNode | undefined = prop.children?.[0];
+          const valNode: JsonAstNode | undefined = prop.children?.[1] ?? prop;
           if (!keyNode || !valNode) {
             continue;
           }
-          if (prop.offset <= pos) {
+          if (typeof prop.offset === 'number' && prop.offset <= pos) {
             picked = valNode;
             pickedKey = String(keyNode.value ?? '');
             break;
@@ -621,8 +668,8 @@ function findJsonPathAtOffset(
     }
     if (current.type === 'array') {
       let foundIndex = -1;
-      for (let i = 0; i < current.children.length; i++) {
-        const child = current.children[i];
+      for (let i = 0; i < children.length; i++) {
+        const child: JsonAstNode = children[i];
         if (contains(child, pos)) {
           foundIndex = i;
           break;
@@ -630,9 +677,9 @@ function findJsonPathAtOffset(
       }
       if (foundIndex < 0) {
         // Heuristic: choose the last element whose start is <= pos
-        for (let i = current.children.length - 1; i >= 0; i--) {
-          const child = current.children[i];
-          if (child.offset <= pos) {
+        for (let i = children.length - 1; i >= 0; i--) {
+          const child: JsonAstNode = children[i];
+          if (typeof child.offset === 'number' && child.offset <= pos) {
             foundIndex = i;
             break;
           }
@@ -642,7 +689,7 @@ function findJsonPathAtOffset(
         break;
       }
       path.push(foundIndex);
-      current = current.children[foundIndex];
+      current = children[foundIndex];
       continue;
     }
     break;
