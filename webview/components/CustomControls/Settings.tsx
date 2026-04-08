@@ -42,6 +42,7 @@ export interface SettingsConfig {
   hasArrow: boolean;
   backgroundVariant: BackgroundMode;
   color: Color;
+  showMinimap: boolean;
 }
 
 const settingsSchema = z.object({
@@ -54,6 +55,7 @@ const settingsSchema = z.object({
       z.literal('none'),
     ]),
     color: z.enum(colors),
+    showMinimap: z.boolean(),
   }),
 });
 
@@ -63,6 +65,7 @@ export const DEFAULT_SETTINGS: SettingsConfig = {
   hasArrow: false,
   backgroundVariant: BackgroundVariant.Lines,
   color: 'neutral',
+  showMinimap: true,
 };
 
 interface SettingsProps {
@@ -282,6 +285,27 @@ export function Settings({ onSettingsChange }: SettingsProps) {
                       <FormLabel className="text-base">Edge Arrows</FormLabel>
                       <FormDescription>
                         Show directional arrows on edges
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="settings.showMinimap"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Show Minimap</FormLabel>
+                      <FormDescription>
+                        Display the minimap in the graph view
                       </FormDescription>
                     </div>
                     <FormControl>

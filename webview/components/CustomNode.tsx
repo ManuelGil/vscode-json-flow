@@ -292,7 +292,7 @@ export const CustomNode = memo<CustomNodeProps>(
   /**
    * Memoization comparator: enumerates identity-relevant and appearance-relevant
    * properties. Structural arrays (children, siblings, spouses) are compared by
-   * length because their element identity is stable from the Worker — content
+   * length because their element identity is stable from the Worker - content
    * changes always accompany length changes in tree regeneration.
    *
    * Visual-only fields (isSearchMatch, isCollapsed) may evolve or be extended

@@ -63,7 +63,7 @@ function collapsedNodesReducer(
 
 /**
  * Hook for collapse state and orientation management.
- * Layout is computed exclusively by the Web Worker — this hook owns no
+ * Layout is computed exclusively by the Web Worker - this hook owns no
  * nodes/edges state.
  *
  * @param treeData - The tree data as a TreeMap

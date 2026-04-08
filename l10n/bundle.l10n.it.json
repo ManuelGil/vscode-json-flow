@@ -45,7 +45,6 @@
 	"The name of the type or structure is required": "Il nome del tipo o dell'interfaccia è obbligatorio.",
 	"Operation canceled": "Operazione annullata.",
 	"Invalid file type": "Tipo di file non valido.",
-	"Error finding files: {0}": "Errore durante la ricerca dei file: {0}",
 	"Fetching JSON...": "Recupero del JSON...",
 	"Enter the REST API URL (GET)": "Inserisci l'URL dell'API REST (GET)",
 	"https://api.example.com/data": "https://api.example.com/data",

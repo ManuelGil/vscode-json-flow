@@ -184,6 +184,22 @@ export const FlowCanvas = memo(function FlowCanvas() {
     settings.backgroundVariant ?? DEFAULT_SETTINGS.backgroundVariant,
   );
 
+  const [showMinimap, setShowMinimap] = useState<boolean>(
+    settings.showMinimap ?? DEFAULT_SETTINGS.showMinimap,
+  );
+
+  // Persist minimap visibility to localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('jsonFlow.showMinimap');
+    if (saved !== null) {
+      setShowMinimap(saved === 'true');
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('jsonFlow.showMinimap', String(showMinimap));
+  }, [showMinimap]);
+
   const edgeSettingsRef = useRef<EdgeSettingsSnapshot>({
     edgeType: settings.edgeType ?? DEFAULT_SETTINGS.edgeType,
     animated: settings.animated ?? DEFAULT_SETTINGS.animated,
@@ -253,6 +269,10 @@ export const FlowCanvas = memo(function FlowCanvas() {
       // Update background variant immediately (no debounce needed for UI)
       if (next.backgroundVariant) {
         setBackgroundVariant(next.backgroundVariant);
+      }
+      // Update minimap visibility immediately
+      if ('showMinimap' in next && typeof next.showMinimap === 'boolean') {
+        setShowMinimap(next.showMinimap);
       }
       if (settingsChangeTimerRef.current) {
         window.clearTimeout(settingsChangeTimerRef.current);
@@ -809,7 +829,7 @@ export const FlowCanvas = memo(function FlowCanvas() {
       >
         <CustomControls {...controlsProps} />
         {backgroundProps && <Background {...backgroundProps} />}
-        {!isWorkerProcessing && <FlowMinimap />}
+        {!isWorkerProcessing && showMinimap && <FlowMinimap />}
       </ReactFlow>
       {liveSyncPaused && (
         <div style={OVERLAY_PAUSE_STYLE}>

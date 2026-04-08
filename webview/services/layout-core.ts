@@ -273,7 +273,7 @@ function buildPathSegments(nodeId: string, tree: TreeMap): PathSegment[] {
  *
  * Uses a BFS traversal from the root to assign each node a depth level
  * and a sibling index within that level.  Positions are computed as
- * simple grid coordinates — no recursion, no expensive graph algorithms.
+ * simple grid coordinates - no recursion, no expensive graph algorithms.
  *
  * The output shape is identical to the entitree-flex path so callers
  * (worker, main thread) are unaware of the switch.

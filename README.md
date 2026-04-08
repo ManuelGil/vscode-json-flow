@@ -7,19 +7,34 @@
 [![GitHub Repo Stars](https://img.shields.io/github/stars/ManuelGil/vscode-json-flow?style=for-the-badge&logo=github)](https://github.com/ManuelGil/vscode-json-flow)
 [![GitHub License](https://img.shields.io/github/license/ManuelGil/vscode-json-flow?style=for-the-badge&logo=github)](https://github.com/ManuelGil/vscode-json-flow/blob/main/LICENSE)
 
-JSON Flow is a VS Code extension for exploring structured data as an interactive graph. Search across the entire graph using structured tokens - `key:`, `value:`, `type:`, `path:`, `depth>` - and apply projection modes to highlight, isolate, or focus matched nodes with their ancestor chain.
+JSON Flow is a VS Code extension for exploring structured data as an interactive graph.
 
-Supports JSON, JSONC, JSON5, YAML, TOML, XML, CSV, HCL, and more through the same graph interface. Editing is available only for JSON-based files. Layout is computed in a background worker. Built for developers working with structured data. Fully local. No telemetry. Open-source.
+Search across the graph using structured tokens such as `key:`, `value:`, `type:`, `path:`, and `depth>`, and apply projection modes to highlight, isolate, or focus matched nodes with their ancestor chain.
 
-![JSON Flow Demo](https://raw.githubusercontent.com/ManuelGil/vscode-json-flow/main/assets/images/json-flow-1.gif)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/ManuelGil/vscode-json-flow/main/assets/images/graph-dark.png" width="48%" alt="JSON Flow graph view in dark mode showing structured data as an interactive node graph" />
+  <img src="https://raw.githubusercontent.com/ManuelGil/vscode-json-flow/main/assets/images/graph-light.png" width="48%" alt="JSON Flow graph view in light mode visualizing nested JSON data with interactive nodes" />
+</p>
+
+Supports visualization for JSON, JSONC, JSON5, YAML, TOML, XML, CSV, HCL, and more through the same graph interface.
+
+Editing is available only for JSON, JSONC, and JSON5. Layout is computed in a background worker.
+
+Built for developers working with structured data. Fully local. No telemetry. Open-source.
+
+⭐ If JSON Flow is useful in your workflow, consider giving it a GitHub star or leaving a rating in the VS Code Marketplace.
 
 ## Why JSON Flow?
 
-- **Explore deeply nested structures** - Navigate JSON as a full node graph where every object, array, and value is a visible, interactive element - regardless of nesting depth.
-- **Search with structured tokens** - Find nodes by key, value, data type, JSON Pointer path, or structural depth (`key:`, `value:`, `type:`, `path:`, `depth>`) with composable AND logic.
+<p align="center">
+  <img src="https://raw.githubusercontent.com/ManuelGil/vscode-json-flow/main/assets/images/node-interaction.png" width="80%" alt="Inspecting a JSON node in JSON Flow with key, type, JSON Pointer path, and structure details" />
+</p>
+
+- **Explore deeply nested structures** - Navigate JSON as a full node graph where every object, array, and value is a visible, interactive element, regardless of nesting depth.
+- **Search with structured tokens** - Find nodes by key, value, data type, JSON Pointer path, or structural depth (`key:`, `value:`, `type:`, `path:`, `depth>`) using composable AND logic.
 - **Project search results in context** - Three projection modes: highlight matches across the full graph, show matches with their ancestor chain, or isolate matches exclusively.
-- **Collapse and expand** - Fold any branch to reduce clutter. Hidden match indicators tell you when search results exist inside collapsed subtrees.
-- **Background layout computation** - Layout is computed in a background worker.
+- **Collapse and expand** - Fold any branch to reduce clutter. Hidden match indicators reveal when search results exist inside collapsed subtrees.
+- **Background layout computation** - Graph layout is computed in a background worker to keep the interface responsive.
 - **Multi-format graph pipeline** - JSON, JSONC, JSON5, YAML, TOML, XML, CSV, INI, ENV, HCL - all parsed and rendered through the same graph interface.
 - **Sync with your editor** - Bidirectional Live Sync links your editor cursor to the graph. Click in one, jump in the other.
 - **Export and generate** - Save graphs as PNG, JPG, or SVG. Convert formats to JSON. Generate typed code in 20+ languages.
@@ -54,7 +69,7 @@ JSON Flow parses your file, converts it into a tree structure, and computes a de
   - [Installation](#installation)
   - [Getting Started](#getting-started)
   - [Interactive JSON Graph Visualization](#interactive-json-graph-visualization)
-  - [Graph Editing (Experimental)](#graph-editing-experimental)
+  - [Graph Editing](#graph-editing)
   - [Editing Constraints](#editing-constraints)
   - [How Editing Works](#how-editing-works)
   - [Safety Model](#safety-model)
@@ -154,16 +169,30 @@ Explore structured data visually in the JSON graph view:
 - **Draggable nodes** - Reposition nodes freely; lockable via the interactivity toggle.
 - **Deterministic layout** - Computed in a background Web Worker.
 
-## Graph Editing (Experimental)
+## Graph Editing
 
 JSON Flow supports direct editing for JSON-based files from the graph view.
 
+Editing features are intentionally designed around safe, explicit operations.
+The system prioritizes structural integrity and predictable behavior over implicit or bulk mutations.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/ManuelGil/vscode-json-flow/main/assets/images/node-editing.png" width="80%" alt="Editing JSON data visually in JSON Flow by updating values and managing object and array nodes in the graph" />
+</p>
+
 Supported actions:
 
-- Rename key
 - Update value
 - Add child node
 - Delete node
+
+**Editing Scope:**
+
+- Values can be edited when they are **primitive types** (string, number, boolean, null).
+- New nodes can be added as children of **objects and arrays** only.
+- Structural changes follow the natural constraints of the underlying data model.
+- Keys are not currently editable to ensure safe and predictable mutations.
+- Keys are treated as part of the structural identity of the document and are not modified to ensure safe, predictable mutations and stable graph behavior.
 
 ## Editing Constraints
 
@@ -210,8 +239,12 @@ Use Fit View before exporting to ensure the full graph is captured.
 
 JSON Flow includes a structured search engine with composable query tokens and three projection modes for filtering the JSON graph view.
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/ManuelGil/vscode-json-flow/main/assets/images/search-projection.png" width="85%" alt="Structured JSON search in JSON Flow using key-based queries and projection mode to focus results within the graph" />
+</p>
+
 - Case-insensitive and debounced (250ms). Minimum 2 characters to activate.
-- Enter commits search immediately, bypassing debounce.
+- Press Enter to commit search immediately, bypassing debounce.
 - Exact full-label match priority with indexed lookup.
 - Prev/Next navigation with match counter.
 - Hidden match indicator when matches exist inside collapsed branches.
@@ -447,7 +480,20 @@ Large or deeply nested files may lead to:
 - Increased memory usage
 - Reduced interactivity
 
-The extension is optimized for small to medium-sized documents and for exploratory analysis rather than full-scale visualization of very large datasets.
+> **Performance Note**
+>
+> Rendering very large graphs may affect responsiveness or visual clarity.
+> This is a known characteristic of current graph visualization libraries such as **React Flow** and **Entitree Flex Tree**, which handle layout and rendering using DOM and SVG and can become computationally expensive at scale.
+>
+> The extension itself does not impose artificial limits, but performance will naturally depend on graph size and the capabilities of the runtime environment.
+>
+> This behavior is common in modern graph visualization tools and not specific to this extension.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/ManuelGil/vscode-json-flow/main/assets/images/performance.png" width="85%" alt="Rendering large JSON graphs in JSON Flow with background layout computation for smooth interaction" />
+</p>
+
+For best results, this tool is optimized for small to medium-sized structures where clarity and interaction remain consistent.
 
 ## Limitations
 
@@ -563,6 +609,15 @@ For a complete list of changes, see the [CHANGELOG.md](https://github.com/Manuel
 If you need help, want to discuss ideas, or have questions about the project:
 
 - Submit an [Issue](https://github.com/ManuelGil/vscode-json-flow/issues)
+
+If you find this extension useful, consider supporting it:
+
+- ⭐ Rate the extension in the VS Code Marketplace
+- ⭐ Star the repository on GitHub
+
+Feedback is especially valuable when it reflects real use cases and current technical constraints.
+
+You can rate the extension directly from the VS Code Marketplace page (Ratings section).
 
 For urgent matters or partnership inquiries, please use the contact information provided in the [repository profile](https://github.com/ManuelGil/vscode-json-flow).
 

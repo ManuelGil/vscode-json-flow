@@ -87,7 +87,7 @@ export function collectAncestors(
  *
  * Walks up from each collapsed node via {@link parentMap}, short-circuiting
  * when an already-visited ancestor is reached.
- * O(|collapsedNodes| × depth) amortized — each node visited at most once.
+ * O(|collapsedNodes| × depth) amortized - each node visited at most once.
  */
 export function computeNodesWithCollapsedDescendants(
   collapsedNodes: Set<string>,

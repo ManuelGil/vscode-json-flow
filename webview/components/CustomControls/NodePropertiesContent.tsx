@@ -1,13 +1,13 @@
 import { getVscodeApi } from '@webview/getVscodeApi';
-import { extractKey } from '@webview/services/searchService';
 import type { InternalNode } from '@xyflow/react';
-import type { LucideIcon } from 'lucide-react';
 import {
   Braces,
+  Check,
   Circle,
   Copy,
   Hash,
   List,
+  LucideIcon,
   Quote,
   ToggleLeft,
   X,
@@ -63,33 +63,6 @@ function decodePointerToken(token: string): string {
   return token.replace(/~1/g, '/').replace(/~0/g, '~');
 }
 
-function pointerDepth(pointer: string): number {
-  if (pointer === '/') {
-    return 0;
-  }
-  return pointer.split('/').length - 1;
-}
-
-function isDirectChildPointer(
-  parentPointer: string,
-  candidate: string,
-): boolean {
-  if (!candidate.startsWith('/')) {
-    return false;
-  }
-
-  const expectedDepth = pointerDepth(parentPointer) + 1;
-  if (pointerDepth(candidate) !== expectedDepth) {
-    return false;
-  }
-
-  if (parentPointer === '/') {
-    return true;
-  }
-
-  return candidate.startsWith(`${parentPointer}/`);
-}
-
 function pointerLastToken(pointer: string): string {
   if (pointer === '/') {
     return '';
@@ -109,12 +82,9 @@ interface NodePropertiesContentProps {
 
 const EDITABLE_FORMATS = new Set(['json', 'jsonc', 'json5']);
 
-type PendingAction = 'apply' | 'rename' | 'add' | 'delete' | null;
+type PendingAction = 'apply' | 'add' | 'delete' | null;
 
-function successLabelForAction(action: Exclude<PendingAction, null>): string {
-  if (action === 'rename') {
-    return '✔ Renamed';
-  }
+function successLabelForAction(_action: Exclude<PendingAction, null>): string {
   return '✔ Updated';
 }
 
@@ -122,14 +92,12 @@ export const NodePropertiesContent = memo(
   ({
     displayKey,
     properties,
-    allNodes,
     onClose,
     canEdit,
     languageId,
     onFocusNode,
   }: NodePropertiesContentProps) => {
     const valueInputId = 'node-properties-value-input';
-    const keyInputId = 'node-properties-key-input';
     const addKeyInputId = 'node-properties-add-key-input';
     const addValueInputId = 'node-properties-add-value-input';
 
@@ -144,7 +112,6 @@ export const NodePropertiesContent = memo(
     } = properties;
 
     const [valueInput, setValueInput] = useState<string>(renderedValuePreview);
-    const [keyInput, setKeyInput] = useState<string>(displayKey);
     const [addKeyInput, setAddKeyInput] = useState<string>('');
     const [addValueInput, setAddValueInput] = useState<string>('');
     const [copiedPointer, setCopiedPointer] = useState<boolean>(false);
@@ -156,13 +123,11 @@ export const NodePropertiesContent = memo(
     );
     const [pendingAction, setPendingAction] = useState<PendingAction>(null);
     const [selectedAction, setSelectedAction] = useState<
-      'apply' | 'rename' | 'add' | 'delete' | null
+      'apply' | 'add' | 'delete' | null
     >(null);
     const [confirmDelete, setConfirmDelete] = useState<boolean>(false);
     const isEditingRef = useRef<boolean>(false);
     const submittedValueRef = useRef<string | null>(null);
-    const submittedKeyRef = useRef<string | null>(null);
-    const latestDisplayKeyRef = useRef<string>(displayKey);
     const latestRenderedValuePreviewRef = useRef<string>(renderedValuePreview);
 
     const normalizedLanguageId = languageId.toLowerCase();
@@ -170,9 +135,8 @@ export const NodePropertiesContent = memo(
       canEdit && EDITABLE_FORMATS.has(normalizedLanguageId);
 
     useEffect(() => {
-      latestDisplayKeyRef.current = displayKey;
       latestRenderedValuePreviewRef.current = renderedValuePreview;
-    }, [displayKey, renderedValuePreview]);
+    }, [renderedValuePreview]);
 
     useEffect(() => {
       if (!pathValue) {
@@ -180,7 +144,6 @@ export const NodePropertiesContent = memo(
       }
 
       setValueInput(latestRenderedValuePreviewRef.current);
-      setKeyInput(latestDisplayKeyRef.current);
       setAddKeyInput('');
       setAddValueInput('');
       setError(null);
@@ -190,7 +153,6 @@ export const NodePropertiesContent = memo(
       setPendingAction(null);
       setConfirmDelete(false);
       submittedValueRef.current = null;
-      submittedKeyRef.current = null;
       isEditingRef.current = false;
     }, [pathValue]);
 
@@ -200,8 +162,7 @@ export const NodePropertiesContent = memo(
       }
 
       setValueInput(renderedValuePreview);
-      setKeyInput(displayKey);
-    }, [displayKey, renderedValuePreview]);
+    }, [renderedValuePreview]);
 
     useEffect(() => {
       if (!copiedPointer) {
@@ -214,26 +175,13 @@ export const NodePropertiesContent = memo(
     const isPrimitiveType =
       details.type === 'string' ||
       details.type === 'number' ||
-      details.type === 'boolean';
+      details.type === 'boolean' ||
+      details.type === 'null';
     const isObjectType = details.type === 'object';
     const isArrayType = details.type === 'array';
     const isContainerType = isObjectType || isArrayType;
 
     const isRoot = pathValue === '/';
-    const hasParent = Boolean(parentPointerValue);
-
-    const parentIsObject = useMemo(() => {
-      if (!parentPointerValue || !allNodes?.length) {
-        return false;
-      }
-      const parentNode = allNodes.find(
-        (node) => node.id === parentPointerValue,
-      );
-      const label = String(
-        (parentNode?.data as { label?: string } | undefined)?.label ?? '',
-      ).trim();
-      return label.startsWith('{') || label.toLowerCase().includes('object');
-    }, [allNodes, parentPointerValue]);
 
     const parsedValueInput = useMemo(
       () => parsePrimitiveInput(valueInput),
@@ -244,28 +192,7 @@ export const NodePropertiesContent = memo(
       [addValueInput],
     );
 
-    const keyTrimmed = keyInput.trim();
-    const keyChanged = keyTrimmed.length > 0 && keyTrimmed !== displayKey;
     const addKeyTrimmed = addKeyInput.trim();
-
-    const siblingKeys = useMemo(() => {
-      if (!parentPointerValue || !allNodes?.length || !parentIsObject) {
-        return new Set<string>();
-      }
-
-      const keys = new Set<string>();
-      for (const node of allNodes) {
-        if (!isDirectChildPointer(parentPointerValue, node.id)) {
-          continue;
-        }
-        const siblingKey =
-          typeof (node.data as { key?: unknown } | undefined)?.key === 'string'
-            ? String((node.data as { key?: string }).key)
-            : extractKey(String(node.data?.label ?? ''));
-        keys.add(siblingKey.trim());
-      }
-      return keys;
-    }, [allNodes, parentIsObject, parentPointerValue]);
 
     const objectChildKeys = useMemo(() => {
       if (!isObjectType) {
@@ -278,15 +205,6 @@ export const NodePropertiesContent = memo(
       return keys;
     }, [childPointers, isObjectType]);
 
-    const keyInvalid =
-      parentIsObject && hasParent && !isRoot && keyTrimmed.length === 0;
-    const keyDuplicate =
-      parentIsObject &&
-      hasParent &&
-      !isRoot &&
-      keyChanged &&
-      siblingKeys.has(keyTrimmed);
-
     const valueInvalid = isPrimitiveType && !parsedValueInput.isValid;
 
     const addKeyInvalid = isObjectType && addKeyTrimmed.length === 0;
@@ -295,14 +213,6 @@ export const NodePropertiesContent = memo(
     const addValueEmpty = addValueInput.trim().length === 0;
 
     const canApplyValue = isEditableFormat && isPrimitiveType && !valueInvalid;
-
-    const canRename =
-      isEditableFormat &&
-      hasParent &&
-      parentIsObject &&
-      !isRoot &&
-      !keyInvalid &&
-      !keyDuplicate;
 
     const canAdd =
       isEditableFormat &&
@@ -316,19 +226,15 @@ export const NodePropertiesContent = memo(
     const availableActions = useMemo(
       () => ({
         apply: isPrimitiveType,
-        rename: hasParent && parentIsObject && !isRoot,
         add: isContainerType,
         delete: !isRoot,
       }),
-      [hasParent, isContainerType, isPrimitiveType, isRoot, parentIsObject],
+      [isContainerType, isPrimitiveType, isRoot],
     );
 
     const defaultAction = useMemo(() => {
       if (availableActions.apply) {
         return 'apply';
-      }
-      if (availableActions.rename) {
-        return 'rename';
       }
       if (availableActions.add) {
         return 'add';
@@ -382,12 +288,6 @@ export const NodePropertiesContent = memo(
               }
             }
 
-            if (pendingAction === 'rename') {
-              if (submittedKeyRef.current !== null) {
-                setKeyInput(submittedKeyRef.current);
-              }
-            }
-
             if (onFocusNode) {
               const nextFocusId =
                 pendingAction === 'delete' && parentPointerValue
@@ -404,7 +304,6 @@ export const NodePropertiesContent = memo(
             }
           }
           submittedValueRef.current = null;
-          submittedKeyRef.current = null;
           if (pendingAction === 'delete') {
             setConfirmDelete(false);
           }
@@ -431,7 +330,6 @@ export const NodePropertiesContent = memo(
           setError(error);
         }
         submittedValueRef.current = null;
-        submittedKeyRef.current = null;
         setPendingAction(null);
       };
 
@@ -451,7 +349,6 @@ export const NodePropertiesContent = memo(
         payload: Record<string, unknown>,
       ) => {
         const requestId = crypto.randomUUID();
-        console.log('[UI] ACTION_CLICK', { action, payload, requestId });
         setIsApplying(true);
         setError(null);
         setSuccessLabel('');
@@ -470,6 +367,20 @@ export const NodePropertiesContent = memo(
     const handleCopyPointer = useCallback(() => {
       navigator.clipboard.writeText(pathValue);
       setCopiedPointer(true);
+    }, [pathValue]);
+
+    const handleRevealInEditor = useCallback(() => {
+      if (!pathValue || typeof pathValue !== 'string') {
+        return;
+      }
+
+      const vscode = getVscodeApi();
+      vscode.postMessage({
+        type: 'revealNodeInEditor',
+        payload: {
+          pointer: pathValue,
+        },
+      });
     }, [pathValue]);
 
     const handleApplyValue = useCallback(() => {
@@ -507,42 +418,6 @@ export const NodePropertiesContent = memo(
       renderedValuePreview,
       valueInput,
       valueInvalid,
-    ]);
-
-    const handleRename = useCallback(() => {
-      if (!canRename) {
-        if (keyInvalid) {
-          setError('Key cannot be empty');
-        } else if (keyDuplicate) {
-          setError('A property with this name already exists');
-        }
-        return;
-      }
-
-      const normalizedNewKey = keyTrimmed;
-      if (normalizedNewKey === displayKey.trim()) {
-        setError(null);
-        setSuccessLabel('Nothing changed');
-        isEditingRef.current = false;
-        return;
-      }
-
-      isEditingRef.current = true;
-      submittedKeyRef.current = normalizedNewKey;
-
-      onEditIntent('rename', {
-        nodeId: pathValue,
-        type: 'rename-key' as const,
-        newKey: normalizedNewKey,
-      });
-    }, [
-      canRename,
-      displayKey,
-      keyDuplicate,
-      keyInvalid,
-      keyTrimmed,
-      pathValue,
-      onEditIntent,
     ]);
 
     const handleAdd = useCallback(() => {
@@ -606,7 +481,90 @@ export const NodePropertiesContent = memo(
       });
     }, [canDelete, confirmDelete, pathValue, onEditIntent]);
 
+    const handleApplyChanges = useCallback(() => {
+      const serializedFinalValue = serializeFinalDraftValue(
+        valueInput,
+        parsedValueInput.parsedValue,
+      );
+      const valueChanged =
+        isPrimitiveType && serializedFinalValue !== renderedValuePreview;
+
+      if (valueChanged) {
+        handleApplyValue();
+        return;
+      }
+
+      setError(null);
+      setSuccessLabel('Nothing changed');
+      isEditingRef.current = false;
+    }, [
+      handleApplyValue,
+      isPrimitiveType,
+      parsedValueInput.parsedValue,
+      renderedValuePreview,
+      valueInput,
+    ]);
+
     const renderActionForm = () => {
+      const renderDeleteAction = () => {
+        if (!canDelete) {
+          return null;
+        }
+
+        return (
+          <div className="space-y-3 rounded-md border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950">
+            <p className="text-xs text-red-800 dark:text-red-200">
+              Remove this node.
+            </p>
+            {!confirmDelete ? (
+              <Button
+                variant="destructive"
+                type="button"
+                className="w-full disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() => {
+                  setError(null);
+                  setConfirmDelete(true);
+                }}
+                disabled={!canDelete || isApplying}
+              >
+                Delete Node
+              </Button>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-red-900 dark:text-red-100">
+                  Are you sure you want to delete this node?
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    type="button"
+                    className="w-full"
+                    onClick={() => {
+                      setError(null);
+                      setConfirmDelete(false);
+                    }}
+                    disabled={isApplying}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    type="button"
+                    className="w-full disabled:cursor-not-allowed disabled:opacity-50"
+                    onClick={handleDelete}
+                    disabled={!canDelete || isApplying}
+                  >
+                    {isApplying && pendingAction === 'delete'
+                      ? 'Deleting...'
+                      : 'Confirm Delete'}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      };
+
       if (!selectedAction) {
         return (
           <p className="text-xs text-muted-foreground">
@@ -619,8 +577,9 @@ export const NodePropertiesContent = memo(
         return (
           <div className="space-y-3">
             <p className="text-xs text-muted-foreground">
-              Update the value of this node.
+              Update the value for this node.
             </p>
+
             {isPrimitiveType && (
               <div className="space-y-2">
                 <label
@@ -667,63 +626,22 @@ export const NodePropertiesContent = memo(
             )}
 
             <Button
-              variant="default"
-              type="button"
-              disabled={!canApplyValue}
-              onClick={handleApplyValue}
-              className="w-full disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isApplying && pendingAction === 'apply'
-                ? 'Applying...'
-                : 'Apply Value'}
-            </Button>
-          </div>
-        );
-      }
-
-      if (selectedAction === 'rename') {
-        return (
-          <div className="space-y-3">
-            <p className="text-xs text-muted-foreground">
-              Change the property name.
-            </p>
-            <div className="space-y-2">
-              <label
-                htmlFor={keyInputId}
-                className="text-xs font-semibold text-foreground"
-              >
-                Key
-              </label>
-              <Input
-                id={keyInputId}
-                value={keyInput}
-                onChange={(event) => {
-                  isEditingRef.current = true;
-                  setError(null);
-                  setKeyInput(event.target.value);
-                }}
-                disabled={isApplying}
-                placeholder="Enter key"
-              />
-              {keyInvalid && (
-                <p className="text-xs text-destructive">Key cannot be empty</p>
-              )}
-              {keyDuplicate && (
-                <p className="text-xs text-destructive">Key already exists</p>
-              )}
-            </div>
-
-            <Button
               variant="secondary"
               type="button"
-              disabled={!canRename}
-              onClick={handleRename}
+              disabled={isApplying || !isPrimitiveType}
+              onClick={handleApplyChanges}
               className="w-full disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {isApplying && pendingAction === 'rename'
-                ? 'Renaming...'
-                : 'Rename Key'}
+              {isApplying
+                ? pendingAction === 'apply'
+                  ? 'Applying...'
+                  : 'Applying...'
+                : 'Apply Changes'}
             </Button>
+
+            <div className="border-t border-border pt-4">
+              {renderDeleteAction()}
+            </div>
           </div>
         );
       }
@@ -797,46 +715,20 @@ export const NodePropertiesContent = memo(
               onClick={handleAdd}
               className="w-full disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {isApplying && pendingAction === 'add' ? 'Adding...' : 'Add Node'}
+              {isApplying && pendingAction === 'add'
+                ? 'Adding...'
+                : 'Add Child'}
             </Button>
+
+            <div className="border-t border-border pt-4">
+              {renderDeleteAction()}
+            </div>
           </div>
         );
       }
 
       if (selectedAction === 'delete') {
-        return (
-          <div className="space-y-3 rounded-md border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950">
-            <p className="text-xs text-red-800 dark:text-red-200">
-              Remove this node.
-            </p>
-            <p className="text-xs font-medium text-red-900 dark:text-red-100">
-              Are you sure you want to delete this node?
-            </p>
-            <label className="flex items-center gap-2 text-xs text-red-900 dark:text-red-100">
-              <input
-                type="checkbox"
-                checked={confirmDelete}
-                onChange={(event) => {
-                  setError(null);
-                  setConfirmDelete(event.target.checked);
-                }}
-                disabled={isApplying}
-              />
-              Confirm deletion
-            </label>
-            <Button
-              variant="destructive"
-              type="button"
-              className="w-full disabled:cursor-not-allowed disabled:opacity-50"
-              onClick={handleDelete}
-              disabled={!canDelete || !confirmDelete}
-            >
-              {isApplying && pendingAction === 'delete'
-                ? 'Deleting...'
-                : 'Delete Node'}
-            </Button>
-          </div>
-        );
+        return renderDeleteAction();
       }
 
       return null;
@@ -870,8 +762,8 @@ export const NodePropertiesContent = memo(
 
         <Tabs defaultValue="info" className="flex flex-1 flex-col">
           <TabsList className="mx-5 mt-4 grid grid-cols-2">
-            <TabsTrigger value="info">Info</TabsTrigger>
-            <TabsTrigger value="edit">Edit</TabsTrigger>
+            <TabsTrigger value="info">Details</TabsTrigger>
+            <TabsTrigger value="edit">Edit Node</TabsTrigger>
           </TabsList>
 
           <TabsContent
@@ -895,17 +787,30 @@ export const NodePropertiesContent = memo(
                       <span className="truncate text-xs text-muted-foreground">
                         {pathValue}
                       </span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleCopyPointer}
-                        className="h-7 px-2"
-                      >
-                        <Copy className="h-3.5 w-3.5" />
-                        <span className="ml-1 text-xs">
-                          {copiedPointer ? 'Copied' : 'Copy Path'}
-                        </span>
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleRevealInEditor}
+                          disabled={isRoot}
+                          className="h-7 px-2 text-xs"
+                          title="Reveal this node in the editor"
+                        >
+                          Reveal
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleCopyPointer}
+                          className="h-7 px-2"
+                        >
+                          {copiedPointer ? (
+                            <Check className="h-3.5 w-3.5" />
+                          ) : (
+                            <Copy className="h-3.5 w-3.5" />
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   }
                 />
@@ -982,94 +887,18 @@ export const NodePropertiesContent = memo(
 
             {isEditableFormat && (
               <section className="space-y-4 rounded-md border border-border px-4 py-4">
-                <div className="space-y-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    {availableActions.apply && (
-                      <Button
-                        variant={
-                          selectedAction === 'apply' ? 'default' : 'secondary'
-                        }
-                        type="button"
-                        disabled={isApplying}
-                        onClick={() => {
-                          setError(null);
-                          setSelectedAction('apply');
-                        }}
-                        className="w-full disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        Edit Value
-                      </Button>
-                    )}
-
-                    {availableActions.rename && (
-                      <Button
-                        variant={
-                          selectedAction === 'rename' ? 'default' : 'secondary'
-                        }
-                        type="button"
-                        disabled={isApplying}
-                        onClick={() => {
-                          setError(null);
-                          setSelectedAction('rename');
-                        }}
-                        className="w-full disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        Rename
-                      </Button>
-                    )}
-
-                    {availableActions.add && (
-                      <Button
-                        variant={
-                          selectedAction === 'add' ? 'default' : 'secondary'
-                        }
-                        type="button"
-                        disabled={isApplying}
-                        onClick={() => {
-                          setError(null);
-                          setSelectedAction('add');
-                        }}
-                        className="w-full disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        Add
-                      </Button>
-                    )}
-
-                    {availableActions.delete && (
-                      <Button
-                        variant={
-                          selectedAction === 'delete'
-                            ? 'destructive'
-                            : 'secondary'
-                        }
-                        type="button"
-                        disabled={isApplying}
-                        onClick={() => {
-                          setError(null);
-                          setSelectedAction('delete');
-                        }}
-                        className="w-full disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        Delete
-                      </Button>
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-between gap-2 border-b border-border pb-3">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-foreground">
-                      Actions
-                    </p>
-                    {successLabel && (
-                      <span className="rounded bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:bg-emerald-900 dark:text-emerald-100">
-                        {successLabel}
-                      </span>
-                    )}
-                  </div>
+                <div className="flex items-center justify-between gap-2 border-b border-border pb-3">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                    Actions
+                  </p>
+                  {successLabel && (
+                    <span className="rounded bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:bg-emerald-900 dark:text-emerald-100">
+                      {successLabel}
+                    </span>
+                  )}
                 </div>
 
-                <div className="space-y-4 border-t border-border pt-4">
-                  {renderActionForm()}
-                </div>
+                <div className="space-y-4 pt-4">{renderActionForm()}</div>
 
                 {error && (
                   <div className="space-y-1 rounded-md border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950">

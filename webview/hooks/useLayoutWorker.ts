@@ -103,7 +103,7 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
       return workerBlobUrlRef.current;
     }
 
-    // Deduplicate concurrent calls — share one in-flight fetch
+    // Deduplicate concurrent calls - share one in-flight fetch
     if (!workerBlobPromiseRef.current) {
       workerBlobPromiseRef.current = (async (): Promise<string> => {
         const scriptUrl = (
@@ -235,7 +235,7 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
    * stale responses from prior requests are discarded.
    *
    * Request correlation via requestId is a structural guard integral
-   * to the Worker communication contract — not an expansion surface.
+   * to the Worker communication contract - not an expansion surface.
    */
   const handleWorkerMessage = useCallback(
     (event: MessageEvent) => {
@@ -417,7 +417,7 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
                   `options: ${JSON.stringify(workerPayload.options)}, requestId: ${requestId}`,
               );
             } catch {
-              // Measurement failed — ignore
+              // Measurement failed - ignore
             }
           }
           if (workerRef.current) {
@@ -441,7 +441,7 @@ export function useLayoutWorker(): UseLayoutWorkerResult {
           currentVersionRef.current = undefined;
           logger.error('Error setting up worker:', err);
 
-          // The worker failed — the error state is now visible to the UI.
+          // The worker failed - the error state is now visible to the UI.
           // FlowCanvas falls back to useFlowController nodes via
           // `finalNodes = workerNodes || nodes` so the graph still renders,
           // but without worker-driven progress or layout optimizations.

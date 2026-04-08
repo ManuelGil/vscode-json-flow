@@ -9,20 +9,9 @@
  * @example
  * throwError('Invalid format', err);
  */
-export function throwError(message: string, originalError?: unknown): never {
-  const details =
-    originalError instanceof Error ? `: ${originalError.message}` : '';
-  throw new Error(`[JSON Flow] ${message}${details}`);
-}
-
-/**
- * Formats an error for display or logging.
- * @param message The error message.
- * @param originalError (Optional) The original error object.
- * @returns Formatted error string.
- */
-export function formatError(message: string, originalError?: unknown): string {
-  const details =
-    originalError instanceof Error ? `: ${originalError.message}` : '';
-  return `[JSON Flow] ${message}${details}`;
+export function throwError(message: string, error?: unknown): never {
+  if (error instanceof Error) {
+    throw new Error(`${message}: ${error.message}`);
+  }
+  throw new Error(message);
 }

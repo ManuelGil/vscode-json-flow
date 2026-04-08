@@ -16,7 +16,6 @@ import {
  * Each variant maps to a specific mutation operation.
  */
 export type NodeEditIntent =
-  | { nodeId: string; type: 'rename-key'; newKey: string }
   | { nodeId: string; type: 'change-value'; newValue: unknown }
   | {
       nodeId: string;
@@ -42,7 +41,7 @@ export type MutationError =
   | 'UNKNOWN';
 
 /**
- * Result of a mutation operation — either success or a typed error.
+ * Result of a mutation operation - either success or a typed error.
  */
 export type MutationResult =
   | { success: true; warnings?: DiagnosticWarning[] }
@@ -416,31 +415,6 @@ export function validateMutation(
       // Allow changes across primitive types, but block non-primitive values.
       if (!isPrimitive(parsedInput.value)) {
         return { success: false, error: 'TYPE_MISMATCH' };
-      }
-
-      return null;
-    }
-
-    case 'rename-key': {
-      const normalizedNewKey = intent.newKey.trim();
-
-      // Parent must be an object
-      if (!parent || parent.type !== 'object' || !property) {
-        return { success: false, error: 'INVALID_PARENT_TYPE' };
-      }
-
-      // newKey must be non-empty after trimming
-      if (normalizedNewKey.length === 0) {
-        return { success: false, error: 'INVALID_TARGET' };
-      }
-
-      // Same key is valid as a no-op; duplicate checks are handled in mutation.
-      const currentKeyNode = property.children?.[0];
-      if (
-        currentKeyNode &&
-        String(currentKeyNode.value ?? '').trim() === normalizedNewKey
-      ) {
-        return null;
       }
 
       return null;
@@ -851,95 +825,6 @@ export async function applyNodeEdit(
       const insertPosition = document.positionAt(insertion.insertOffset);
       const edit: WorkspaceEdit = new WorkspaceEdit();
       edit.insert(document.uri, insertPosition, insertion.insertText);
-      const applied: boolean = await workspace.applyEdit(edit);
-      if (!applied) {
-        return { success: false, error: 'UNKNOWN' };
-      }
-    } catch {
-      return { success: false, error: 'UNKNOWN' };
-    }
-
-    try {
-      await document.save();
-    } catch {
-      return { success: false, error: 'UNKNOWN' };
-    }
-
-    if (diagnosticsCallback) {
-      diagnosticsCallback(intent.nodeId, []);
-    }
-
-    return { success: true, warnings: [] };
-  }
-
-  if (intent.type === 'rename-key') {
-    const resolvedRename = resolveAstNode(root, intent.nodeId);
-    if (!resolvedRename) {
-      return { success: false, error: 'INVALID_TARGET' };
-    }
-
-    const { parent, property } = resolvedRename;
-    if (!parent || parent.type !== 'object' || !property) {
-      return { success: false, error: 'INVALID_PARENT_TYPE' };
-    }
-
-    const normalizedNewKey = intent.newKey.trim();
-    if (normalizedNewKey.length === 0) {
-      return { success: false, error: 'INVALID_TARGET' };
-    }
-
-    const keyNode = property.children?.[0];
-    if (!keyNode) {
-      return { success: false, error: 'INVALID_TARGET' };
-    }
-
-    if (keyNode.type !== 'string') {
-      return { success: false, error: 'UNSUPPORTED_NODE_TYPE' };
-    }
-
-    for (const siblingProperty of parent.children ?? []) {
-      if (siblingProperty === property) {
-        continue;
-      }
-      const siblingKeyNode = siblingProperty.children?.[0];
-      if (
-        siblingKeyNode &&
-        String(siblingKeyNode.value ?? '').trim() === normalizedNewKey
-      ) {
-        return { success: false, error: 'DUPLICATE_KEY' };
-      }
-    }
-
-    const start = keyNode.offset;
-    const end = keyNode.offset + keyNode.length;
-    const originalText = document.getText();
-    const newKeyText = JSON.stringify(normalizedNewKey);
-    const currentKeyText = originalText.slice(start, end);
-
-    if (!isValidReplaceRange(start, end, originalText.length)) {
-      return { success: false, error: 'INVALID_RANGE' };
-    }
-
-    const currentKeyFromAst = JSON.stringify(String(keyNode.value ?? ''));
-    if (currentKeyFromAst === newKeyText) {
-      return { success: false, error: 'NO_TEXT_CHANGE' };
-    }
-
-    if (currentKeyText === newKeyText) {
-      return { success: false, error: 'NO_TEXT_CHANGE' };
-    }
-
-    if (document.version !== versionAtParse) {
-      return { success: false, error: 'VERSION_CONFLICT' };
-    }
-
-    try {
-      const edit: WorkspaceEdit = new WorkspaceEdit();
-      edit.replace(
-        document.uri,
-        new Range(document.positionAt(start), document.positionAt(end)),
-        newKeyText,
-      );
       const applied: boolean = await workspace.applyEdit(edit);
       if (!applied) {
         return { success: false, error: 'UNKNOWN' };

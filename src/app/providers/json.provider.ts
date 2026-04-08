@@ -1,8 +1,12 @@
+import { basename } from 'path';
 import {
   commands,
   Disposable,
   Event,
   EventEmitter,
+  Range,
+  Selection,
+  TextEditorRevealType,
   Uri,
   ViewColumn,
   Webview,
@@ -11,7 +15,6 @@ import {
   window,
   workspace,
 } from 'vscode';
-
 import {
   ContextKeys,
   EXTENSION_DISPLAY_NAME,
@@ -24,6 +27,8 @@ import {
   logger,
   type MutationResult,
   type NodeEditIntent,
+  parseJsonTolerant,
+  resolveAstNode,
 } from '../helpers';
 
 /**
@@ -156,7 +161,6 @@ export class JSONProvider {
             typeof intent?.type === 'string' ? intent.type : undefined;
           const validIntentTypes = new Set([
             'change-value',
-            'rename-key',
             'create-child',
             'delete-node',
           ]);
@@ -178,21 +182,9 @@ export class JSONProvider {
               error: 'INVALID_TARGET',
               warnings: [],
             });
-            logger.info('[HOST] RESPONSE_SENT', {
-              requestId,
-              nodeId:
-                typeof intent?.nodeId === 'string' ? intent.nodeId : undefined,
-              success: false,
-              reason: 'INVALID_INTENT_SHAPE',
-            });
+
             return;
           }
-
-          logger.info('[HOST] RECEIVED', {
-            requestId,
-            nodeId: intent?.nodeId,
-            type: intent?.type,
-          });
 
           (async () => {
             try {
@@ -205,11 +197,7 @@ export class JSONProvider {
                   error: 'DOCUMENT_NOT_FOUND',
                   warnings: [],
                 });
-                logger.info('[HOST] RESPONSE_SENT', {
-                  requestId,
-                  nodeId: intent.nodeId,
-                  success: false,
-                });
+
                 return;
               }
 
@@ -225,27 +213,11 @@ export class JSONProvider {
                   error: 'DOCUMENT_NOT_FOUND',
                   warnings: [],
                 });
-                logger.info('[HOST] RESPONSE_SENT', {
-                  requestId,
-                  nodeId: intent.nodeId,
-                  success: false,
-                });
+
                 return;
               }
 
-              logger.info('[HOST] APPLY_START', {
-                requestId,
-                nodeId: intent.nodeId,
-                type: intent.type,
-              });
-
               const result = await applyNodeEdit(intent, document);
-
-              logger.info('[HOST] APPLY_DONE', {
-                requestId,
-                nodeId: intent.nodeId,
-                type: intent.type,
-              });
 
               const isSuccess =
                 result === undefined ||
@@ -268,11 +240,7 @@ export class JSONProvider {
                   error: mappedError,
                   warnings: [],
                 });
-                logger.info('[HOST] RESPONSE_SENT', {
-                  requestId,
-                  nodeId: intent.nodeId,
-                  success: false,
-                });
+
                 return;
               }
 
@@ -288,11 +256,6 @@ export class JSONProvider {
                 success: true,
                 warnings: successWarnings,
               });
-              logger.info('[HOST] RESPONSE_SENT', {
-                requestId,
-                nodeId: intent.nodeId,
-                success: true,
-              });
             } catch (error) {
               this._panel.webview.postMessage({
                 type: 'mutationDiagnostics',
@@ -302,11 +265,77 @@ export class JSONProvider {
                 error: String(error),
                 warnings: [],
               });
-              logger.info('[HOST] RESPONSE_SENT', {
-                requestId,
-                nodeId: intent.nodeId,
-                success: false,
-              });
+            }
+          })();
+
+          return;
+        }
+
+        // Handle reveal node in editor request
+        if (message?.type === 'revealNodeInEditor') {
+          (async () => {
+            const pointer = message.payload?.pointer;
+
+            if (typeof pointer !== 'string') {
+              return;
+            }
+
+            let editor = window.activeTextEditor;
+
+            try {
+              if (!editor) {
+                const documentUri = this._documentUri;
+                if (!documentUri) {
+                  return;
+                }
+                const doc = await workspace.openTextDocument(documentUri);
+                editor = await window.showTextDocument(doc, {
+                  preview: false,
+                  preserveFocus: false,
+                });
+              }
+
+              if (!editor) {
+                return;
+              }
+
+              const document = editor.document;
+
+              const text = document.getText();
+
+              const root = parseJsonTolerant(text);
+              const resolved = resolveAstNode(root, pointer);
+
+              if (!resolved) {
+                return;
+              }
+
+              let offset = 0;
+
+              if (
+                resolved?.target &&
+                typeof resolved.target.offset === 'number'
+              ) {
+                offset = resolved.target.offset;
+              } else if (
+                (resolved as { range?: { offset?: number } }).range &&
+                typeof (resolved as { range?: { offset?: number } }).range
+                  ?.offset === 'number'
+              ) {
+                offset = (resolved as unknown as { range: { offset: number } })
+                  .range.offset;
+              }
+
+              const position = document.positionAt(offset);
+
+              editor.selection = new Selection(position, position);
+
+              editor.revealRange(
+                new Range(position, position),
+                TextEditorRevealType.InCenter,
+              );
+            } catch (error) {
+              void error;
             }
           })();
 
@@ -690,9 +719,20 @@ export class JSONProvider {
     const prev = JSONProvider.previewedPath;
     JSONProvider.previewedPath = path;
     if (JSONProvider.currentProvider) {
-      JSONProvider.currentProvider._documentUri = path
-        ? Uri.file(path)
-        : undefined;
+      const provider = JSONProvider.currentProvider;
+
+      provider._documentUri = path ? Uri.file(path) : undefined;
+
+      const fileName = path ? basename(path) : undefined;
+      provider._panel.title = fileName
+        ? `${EXTENSION_DISPLAY_NAME} - ${fileName}`
+        : EXTENSION_DISPLAY_NAME;
+
+      provider._panel.iconPath = Uri.joinPath(
+        provider._extensionUri,
+        './assets',
+        'icon.svg',
+      );
     }
     if (prev !== path) {
       JSONProvider.lastAppliedNodeId = undefined;

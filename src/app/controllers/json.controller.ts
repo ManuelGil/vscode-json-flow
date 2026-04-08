@@ -9,7 +9,7 @@ import {
   workspace,
 } from 'vscode';
 
-import { EXTENSION_DISPLAY_NAME, ExtensionConfig } from '../configs';
+import { ExtensionConfig } from '../configs';
 import {
   applyNodeEdit,
   FileType,
@@ -363,10 +363,7 @@ export class JsonController {
     },
     column: ViewColumn = ViewColumn.One,
   ): void {
-    const displayName = fileName.split(/[\\/]/).pop() || EXTENSION_DISPLAY_NAME;
     const panel = JSONProvider.createPanel(this.context.extensionUri, column);
-
-    panel.title = displayName;
 
     // Track the previewed path so selection sync can filter to the active document
     try {

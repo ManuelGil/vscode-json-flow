@@ -72,7 +72,7 @@
 	"files": [
 		"out",
 		"dist",
-		"assets/logo.svg",
+		"assets/icon.svg",
 		"package*.json",
 		"README.md",
 		"LICENSE",
@@ -248,7 +248,7 @@
 				"command": "jsonFlow.view.enableSplitView",
 				"title": "%jsonFlow.view.enableSplitView%",
 				"category": "%jsonFlow.category%",
-				"icon": "./assets/logo.svg"
+				"icon": "./assets/icon.svg"
 			},
 			{
 				"command": "jsonFlow.view.disableSplitView",
@@ -423,7 +423,7 @@
 				{
 					"id": "json-explorer",
 					"title": "%jsonFlow.activitybar.title%",
-					"icon": "./assets/logo.svg"
+					"icon": "./assets/icon.svg"
 				}
 			]
 		},
@@ -542,18 +542,25 @@
 		"glob": "^13.0.6",
 		"husky": "^9.1.7",
 		"lint-staged": "^16.4.0",
-		"postcss": "^8.5.8",
+		"postcss": "^8.5.9",
 		"release-it": "^19.2.4",
 		"rimraf": "^6.1.3",
 		"tailwindcss": "^3.4.19",
 		"typescript": "^5.9.3",
-		"vite": "^7.3.1"
+		"vite": "^7.3.2"
 	},
 	"pnpm": {
 		"overrides": {
 			"axios": "^1.13.5",
-			"basic-ftp": "^5.2.0",
-			"rollup": "^4.59.0"
+			"basic-ftp": "^5.2.1",
+			"brace-expansion": "^5.0.5",
+			"defu": "^6.1.5",
+			"diff": "^8.0.3",
+			"lodash": "^4.18.0",
+			"picomatch": "^2.3.2",
+			"picomatch@^4": "^4.0.4",
+			"serialize-javascript": "^7.0.5",
+			"undici": "^6.24.0"
 		},
 		"onlyBuiltDependencies": [
 			"esbuild"

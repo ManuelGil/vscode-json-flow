@@ -1,4 +1,4 @@
-# JSON Flow — Architecture
+# JSON Flow - Architecture
 
 This document describes the internal architecture, data pipeline, identity model, and structural guarantees of JSON Flow. It is intended for contributors and developers working on the codebase.
 
@@ -44,11 +44,11 @@ renderNodes / renderEdges → ReactFlow
 
 ### Layer Responsibilities
 
-**Extension Host** — Runs inside the VS Code process. Parses all supported file formats, handles commands and file system operations, manages Live Sync state and format gating, validates all messages received from the webview, and handles localization. The extension host never renders UI and never runs layout algorithms.
+**Extension Host** - Runs inside the VS Code process. Parses all supported file formats, handles commands and file system operations, manages Live Sync state and format gating, validates all messages received from the webview, and handles localization. The extension host never renders UI and never runs layout algorithms.
 
-**Webview** — A sandboxed iframe running React. Renders the interactive graph, manages UI state (collapse, search, projection, settings), persists appearance settings, and computes collapse filtering, search matching, and projection. Communicates with the extension host exclusively via structured message passing. Has no access to the VS Code API, the filesystem, or extension host state.
+**Webview** - A sandboxed iframe running React. Renders the interactive graph, manages UI state (collapse, search, projection, settings), persists appearance settings, and computes collapse filtering, search matching, and projection. Communicates with the extension host exclusively via structured message passing. Has no access to the VS Code API, the filesystem, or extension host state.
 
-**Web Worker** — The sole layout authority. Receives parsed JSON data and a layout direction. Executes the layout pipeline deterministically via `generateTree()`, `getRootId()`, and `layoutElementsCore()`. Returns positioned nodes and edges. Stateless: processes each request independently with no state preserved between requests. Contains no DOM dependencies or React runtime. No layout logic runs in the main thread.
+**Web Worker** - The sole layout authority. Receives parsed JSON data and a layout direction. Executes the layout pipeline deterministically via `generateTree()`, `getRootId()`, and `layoutElementsCore()`. Returns positioned nodes and edges. Stateless: processes each request independently with no state preserved between requests. Contains no DOM dependencies or React runtime. No layout logic runs in the main thread.
 
 ## Identity Model
 
@@ -60,7 +60,7 @@ All data nodes are identified by RFC 6901 JSON Pointer strings (e.g. `/users/0/n
 
 ### Graph Root Identity
 
-The graph structural root uses a sentinel identifier `GRAPH_ROOT_ID` (value: `'__GRAPH_ROOT__'`), defined in `src/shared/graph-identity.ts`. This sentinel is intentionally not a valid JSON Pointer — it does not start with `/` — so it can never collide with any RFC 6901 pointer derived from document content.
+The graph structural root uses a sentinel identifier `GRAPH_ROOT_ID` (value: `'__GRAPH_ROOT__'`), defined in `src/shared/graph-identity.ts`. This sentinel is intentionally not a valid JSON Pointer - it does not start with `/` - so it can never collide with any RFC 6901 pointer derived from document content.
 
 A development-only assertion in `generateTree()` verifies at runtime that `GRAPH_ROOT_ID` does not start with `/`.
 
@@ -135,13 +135,13 @@ Search is implemented in `webview/services/searchService.ts` as a set of pure fu
 
 `parseSearchTokens(term)` splits the search string on whitespace and classifies each segment into a `ParsedToken`:
 
-| Kind | Prefix | Behavior |
-| --- | --- | --- |
-| `text` | (none) | Case-insensitive substring match against node label |
-| `key` | `key:` | Match the key portion of a leaf label (before `": "`) |
-| `value` | `value:` | Match the value portion of a leaf label (after `": "`) |
-| `type` | `type:` | Exact match against `node.data.type` |
-| `path` | `path:` | Case-insensitive substring match against node ID |
+| Kind    | Prefix                       | Behavior                                                         |
+| ------- | ---------------------------- | ---------------------------------------------------------------- |
+| `text`  | (none)                       | Case-insensitive substring match against node label              |
+| `key`   | `key:`                       | Match the key portion of a leaf label (before `": "`)            |
+| `value` | `value:`                     | Match the value portion of a leaf label (after `": "`)           |
+| `type`  | `type:`                      | Exact match against `node.data.type`                             |
+| `path`  | `path:`                      | Case-insensitive substring match against node ID                 |
 | `depth` | `depth>`, `depth<`, `depth=` | Compare depth (from JSON Pointer segmentation) against threshold |
 
 Tokens are combined with AND semantics: a node matches only when all tokens evaluate to true.
@@ -175,7 +175,7 @@ Collapse is managed by `useFlowController` in the webview. State is a `Set<strin
 
 ### On-Demand Descendant Traversal
 
-`getDescendantsOf(nodeId, tree)` in `webview/services/treeService.ts` collects all descendant IDs via iterative stack-based traversal. Complexity is O(subtree). This function is called on-demand per collapse toggle — there is no persistent descendant cache or eager precomputation.
+`getDescendantsOf(nodeId, tree)` in `webview/services/treeService.ts` collects all descendant IDs via iterative stack-based traversal. Complexity is O(subtree). This function is called on-demand per collapse toggle - there is no persistent descendant cache or eager precomputation.
 
 ### isCollapsed Computation
 
@@ -209,11 +209,11 @@ When `searchContextSet` is non-null, `visibleNodes` are filtered to only those p
 
 `computeSearchMatch(nodeId, searchMatchIds, searchProjectionMode)` returns a tri-state value per node:
 
-| Mode | Match | Non-match | No search |
-| --- | --- | --- | --- |
-| `highlight` | `true` (ring) | `false` (opacity 50%) | `undefined` |
-| `focus-context` | `true` (ring) | `undefined` (ancestor, normal) | `undefined` |
-| `focus-strict` | `undefined` (all projected are matches) | — | `undefined` |
+| Mode            | Match                                   | Non-match                      | No search   |
+| --------------- | --------------------------------------- | ------------------------------ | ----------- |
+| `highlight`     | `true` (ring)                           | `false` (opacity 50%)          | `undefined` |
+| `focus-context` | `true` (ring)                           | `undefined` (ancestor, normal) | `undefined` |
+| `focus-strict`  | `undefined` (all projected are matches) | -                              | `undefined` |
 
 ### Edge Filtering
 
@@ -232,7 +232,7 @@ All stages of the pipeline are designed to operate in linear time relative to th
 - **Collapse filter**: Single `.filter()` pass over `workerNodes`. O(N).
 - **Parent map** (`buildParentMap`): Single pass over tree nodes and their children arrays. O(N).
 - **Search** (`computeMatches`): Evaluates each token per node. O(N × T) where T is the number of tokens. Each token evaluation is O(1).
-- **Ancestor collection** (`collectAncestors`): Walks parent chain per match. O(N) amortized — each node is visited at most once across all walks.
+- **Ancestor collection** (`collectAncestors`): Walks parent chain per match. O(N) amortized - each node is visited at most once across all walks.
 - **Descendant collection** (`getDescendantsOf`): O(subtree) per toggle invocation. On-demand, not cached.
 - **Projection** (`useSearchProjection`): Filters and maps `visibleNodes`. O(N).
 

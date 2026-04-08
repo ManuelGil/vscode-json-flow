@@ -45,7 +45,6 @@
 	"Error fetching JSON: {0}": "Error al obtener JSON: {0}",
 	"No active editor. Open a file to use this command": "No hay un editor activo. Abre un archivo para usar este comando.",
 	"No selection. Select some text and try again": "No hay ninguna selección. Selecciona texto y vuelve a intentarlo.",
-	"Error finding files: {0}": "Error al buscar archivos: {0}",
 	"Fetching JSON...": "Obteniendo JSON...",
 	"Enter the REST API URL (GET)": "Introduce la URL de la API REST (GET)",
 	"https://api.example.com/data": "https://api.example.com/data",
