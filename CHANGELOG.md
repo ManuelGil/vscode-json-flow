@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.8.0] - 2026-04-08
+
 ### Added
 
 * feat: enhance node selection and tree validation features ([bbaf332](https://github.com/ManuelGil/vscode-json-flow/commit/bbaf332))
@@ -241,7 +243,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * build: add webview path ([960fb18](https://github.com/ManuelGil/vscode-json-flow/commit/960fb18))
 * fix: :rotating_light: fix compilation settings ([1ccbfa5](https://github.com/ManuelGil/vscode-json-flow/commit/1ccbfa5))
 
-[Unreleased]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.7.0...HEAD
+[Unreleased]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.8.0...HEAD
+[2.8.0]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.7.0...v2.8.0
 [2.7.0]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.6.1...v2.7.0
 [2.6.1]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.6.0...v2.6.1
 [2.6.0]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.5.0...v2.6.0
