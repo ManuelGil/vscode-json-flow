@@ -29,6 +29,7 @@ import {
   EXTENSION_DISPLAY_NAME,
   EXTENSION_ID,
   EXTENSION_NAME,
+  EXTENSION_REPOSITORY_URL,
   EXTENSION_USER_PUBLISHER,
   ExtensionConfig,
   ViewIds,
@@ -252,11 +253,8 @@ export class ExtensionRuntime {
       );
 
       if (option === releaseNotesItem) {
-        env.openExternal(
-          Uri.parse(
-            `https://marketplace.visualstudio.com/items/${EXTENSION_USER_PUBLISHER}.${EXTENSION_NAME}/changelog`,
-          ),
-        );
+        const changelogUrl = `${EXTENSION_REPOSITORY_URL}/blob/main/CHANGELOG.md`;
+        env.openExternal(Uri.parse(changelogUrl));
       }
 
       this.context.globalState.update('version', currentVersion);
