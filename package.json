@@ -519,7 +519,7 @@
 		"toml": "^3.0.0",
 		"uuid": "^13.0.1",
 		"vscode-marketplace-client": "^1.2.1",
-		"yaml": "^2.8.3",
+		"yaml": "^2.8.4",
 		"zod": "^3.25.76"
 	},
 	"devDependencies": {
@@ -531,7 +531,7 @@
 		"@types/react": "^19.2.14",
 		"@types/react-dom": "^19.2.3",
 		"@types/uuid": "^10.0.0",
-		"@types/vscode": "^1.102.0",
+		"@types/vscode": "^1.118.0",
 		"@vitejs/plugin-react": "^5.2.0",
 		"@vscode/l10n-dev": "^0.0.35",
 		"@vscode/test-cli": "^0.0.12",
