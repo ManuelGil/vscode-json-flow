@@ -531,7 +531,7 @@
 		"@types/react": "^19.2.14",
 		"@types/react-dom": "^19.2.3",
 		"@types/uuid": "^10.0.0",
-		"@types/vscode": "^1.118.0",
+		"@types/vscode": "^1.102.0",
 		"@vitejs/plugin-react": "^5.2.0",
 		"@vscode/l10n-dev": "^0.0.35",
 		"@vscode/test-cli": "^0.0.12",

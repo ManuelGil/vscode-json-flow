@@ -21,6 +21,8 @@ updates:
       - dependency-name: "*"
         update-types:
           - "version-update:semver-major"
+      - dependency-name: "vscode"
+      - dependency-name: "@types/vscode"
 
     # Group minor and patch updates together for cleaner review cycles
     groups:
