@@ -3,6 +3,7 @@ import {
   l10n,
   ProgressLocation,
   Range,
+  TextDocument,
   Uri,
   ViewColumn,
   window,
@@ -13,14 +14,15 @@ import { ExtensionConfig } from '../configs';
 import {
   applyNodeEdit,
   FileType,
-  isEditCapableFileType,
-  isFileTypeSupported,
+  isDocumentMutationCapable,
+  isSameUriIdentity,
   logger,
   MutationResult,
   NodeEditIntent,
   normalizeToJsonString,
   parseJsonContent,
   parseJsonTolerant,
+  resolveFileTypeHint,
 } from '../helpers';
 import { JSONProvider } from '../providers';
 
@@ -58,41 +60,38 @@ export class JsonController {
 
   /**
    * Displays a JSON preview for the given file URI in a webview panel.
+   * Falls back to the active editor when no URI is provided.
    * Shows error messages for invalid files or parsing errors.
    * @param uri The file URI to preview.
    */
   async showPreview(
-    uri: Uri,
+    uri?: Uri,
     column: ViewColumn = ViewColumn.One,
   ): Promise<void> {
     try {
-      const document = await workspace.openTextDocument(uri.fsPath);
-      const { graphLayoutOrientation } = this.config;
-      // Get the language ID and file name
-      const { languageId, fileName } = document;
+      const document = await this.resolvePreviewDocument(uri);
 
-      // Determine the file type, defaulting to 'json' if unsupported
-      let fileType = languageId;
-
-      if (!isFileTypeSupported(fileType)) {
-        const baseName = fileName.split(/[\\\/]/).pop() ?? fileName;
-        if (/^\.env(\..*)?$/i.test(baseName)) {
-          fileType = 'env';
-        } else {
-          const fileExtension = fileName.split('.').pop();
-          fileType = isFileTypeSupported(fileExtension)
-            ? fileExtension
-            : 'json';
-        }
+      if (!document) {
+        return;
       }
 
+      const { graphLayoutOrientation } = this.config;
+      // Get the language ID and file name
+      const { languageId, fileName, uri: documentUri } = document;
+
+      // Resolve a parser hint, but keep preview eligibility content-first.
+      let fileType =
+        resolveFileTypeHint(languageId, fileName, 'json') ?? 'json';
+
       // Parse JSON content
-      const result = parseJsonContent(document.getText(), fileType as FileType);
+      const result = parseJsonContent(document.getText(), fileType);
 
       // Guarantee fileType is always available for downstream capability checks.
       const fileTypeFromResult = (result as { fileType?: string } | undefined)
         ?.fileType;
-      fileType = (fileTypeFromResult ?? 'json').toLowerCase().trim();
+      const resolvedFileType = (fileTypeFromResult ?? fileType)
+        .toLowerCase()
+        .trim() as FileType;
 
       const parsedJsonData = result;
 
@@ -106,10 +105,11 @@ export class JsonController {
         parsedJsonData,
         fileName,
         graphLayoutOrientation,
-        uri.fsPath,
+        documentUri,
+        document.fileName,
         {
           languageId,
-          canEdit: isEditCapableFileType(fileType),
+          canEdit: isDocumentMutationCapable(document, resolvedFileType),
         },
         column,
       );
@@ -118,7 +118,7 @@ export class JsonController {
         error instanceof Error ? error.message : String(error);
 
       logger.error('Failed to open JSON preview', error, {
-        uri: uri.fsPath,
+        uri: uri?.toString(),
         column: column,
       });
 
@@ -166,30 +166,23 @@ export class JsonController {
     // Get the language ID and file name
     const { languageId, fileName, uri } = editor.document;
 
-    let fileType = languageId;
     let text = editor.document.getText(selectionRange);
     // Normalize JSON string and detect type
-    const { normalized, detectedType } = normalizeToJsonString(text, fileType);
-    fileType = detectedType;
+    const { normalized } = normalizeToJsonString(text, languageId);
     text = normalized;
 
-    if (!isFileTypeSupported(fileType)) {
-      const baseName = fileName.split(/[\\\/]/).pop() ?? fileName;
-      if (/^\.env(\..*)?$/i.test(baseName)) {
-        fileType = 'env';
-      } else {
-        const fileExtension = fileName.split('.').pop();
-        fileType = isFileTypeSupported(fileExtension) ? fileExtension : 'jsonc';
-      }
-    }
+    let fileType =
+      resolveFileTypeHint(languageId, fileName, 'jsonc') ?? 'jsonc';
 
     // Parse JSON content
-    const result = parseJsonContent(text, fileType as FileType);
+    const result = parseJsonContent(text, fileType);
 
     // Guarantee fileType is always available for downstream capability checks.
     const fileTypeFromResult = (result as { fileType?: string } | undefined)
       ?.fileType;
-    fileType = (fileTypeFromResult ?? 'json').toLowerCase().trim();
+    const resolvedFileType = (fileTypeFromResult ?? fileType)
+      .toLowerCase()
+      .trim() as FileType;
 
     const parsedJsonData = result;
 
@@ -203,10 +196,11 @@ export class JsonController {
       parsedJsonData,
       fileName,
       graphLayoutOrientation,
-      uri.fsPath,
+      uri,
+      editor.document.fileName,
       {
         languageId,
-        canEdit: isEditCapableFileType(fileType),
+        canEdit: isDocumentMutationCapable(editor.document, resolvedFileType),
       },
     );
   }
@@ -280,6 +274,7 @@ export class JsonController {
             parsedJsonData,
             'Fetched Data',
             this.config.graphLayoutOrientation,
+            undefined,
             'json',
             {
               languageId: 'json',
@@ -345,17 +340,42 @@ export class JsonController {
     return this.handleNodeEditIntent(intent);
   }
 
+  private async resolvePreviewDocument(
+    uri?: Uri,
+  ): Promise<TextDocument | undefined> {
+    const activeDocument = window.activeTextEditor?.document;
+
+    if (uri) {
+      if (activeDocument && isSameUriIdentity(activeDocument.uri, uri)) {
+        return activeDocument;
+      }
+
+      return workspace.openTextDocument(uri);
+    }
+
+    if (!activeDocument) {
+      window.showErrorMessage(
+        l10n.t('No active editor. Open a file to use this command'),
+      );
+      return undefined;
+    }
+
+    return activeDocument;
+  }
+
   /**
    * Helper to create and update the JSON preview panel in a modular way.
    * @param data The parsed JSON data to display.
    * @param fileName The name of the file for panel title.
    * @param orientation The orientation for the graph layout.
-   * @param path The file path (optional).
+   * @param uri The source URI used for identity and sync (optional).
+   * @param path The display path sent to the webview (optional).
    */
   private showJsonPanel(
     data: unknown,
     fileName: string,
     orientation: string,
+    uri?: Uri,
     path?: string,
     metadata: { languageId: string; canEdit: boolean } = {
       languageId: 'plaintext',
@@ -365,11 +385,11 @@ export class JsonController {
   ): void {
     const panel = JSONProvider.createPanel(this.context.extensionUri, column);
 
-    // Track the previewed path so selection sync can filter to the active document
+    // Track the previewed URI so selection sync can filter by resource identity.
     try {
-      JSONProvider.setPreviewedPath(path);
+      JSONProvider.setPreviewedUri(uri, path);
     } catch (error: unknown) {
-      logger.error('Failed to set previewed path', error);
+      logger.error('Failed to set previewed URI', error);
     }
 
     setTimeout(() => {

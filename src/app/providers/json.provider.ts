@@ -24,11 +24,13 @@ import {
 import {
   applyNodeEdit,
   getNonce,
+  isSameUriIdentity,
   logger,
   type MutationResult,
   type NodeEditIntent,
   parseJsonTolerant,
   resolveAstNode,
+  toUriIdentityKey,
 } from '../helpers';
 
 /**
@@ -91,9 +93,14 @@ export class JSONProvider {
   static lastAppliedNodeId: string | undefined;
 
   /**
-   * Path of the document currently previewed in the webview (fsPath)
+   * URI of the document currently previewed in the webview.
    */
-  static previewedPath: string | undefined;
+  static previewedUri: Uri | undefined;
+
+  /**
+   * Stable identity key of the document currently previewed.
+   */
+  static previewedUriKey: string | undefined;
 
   private static mapMutationError(error: string): string {
     if (error === 'INVALID_RANGE') {
@@ -107,6 +114,9 @@ export class JSONProvider {
     }
     if (error === 'DUPLICATE_KEY') {
       return 'A key with this name already exists';
+    }
+    if (error === 'READ_ONLY') {
+      return 'The current document is read-only';
     }
     return error;
   }
@@ -187,8 +197,11 @@ export class JSONProvider {
           }
 
           (async () => {
+            const targetUri = this._documentUri;
+            const targetUriKey = toUriIdentityKey(targetUri);
+
             try {
-              if (!this._documentUri) {
+              if (!targetUri || !targetUriKey) {
                 this._panel.webview.postMessage({
                   type: 'mutationDiagnostics',
                   requestId,
@@ -203,7 +216,7 @@ export class JSONProvider {
 
               let document;
               try {
-                document = await workspace.openTextDocument(this._documentUri);
+                document = await workspace.openTextDocument(targetUri);
               } catch {
                 this._panel.webview.postMessage({
                   type: 'mutationDiagnostics',
@@ -211,6 +224,19 @@ export class JSONProvider {
                   nodeId: intent.nodeId,
                   success: false,
                   error: 'DOCUMENT_NOT_FOUND',
+                  warnings: [],
+                });
+
+                return;
+              }
+
+              if (targetUriKey !== toUriIdentityKey(this._documentUri)) {
+                this._panel.webview.postMessage({
+                  type: 'mutationDiagnostics',
+                  requestId,
+                  nodeId: intent.nodeId,
+                  success: false,
+                  error: 'INVALID_TARGET',
                   warnings: [],
                 });
 
@@ -280,19 +306,33 @@ export class JSONProvider {
               return;
             }
 
+            const documentUri = this._documentUri;
+            const documentUriKey = toUriIdentityKey(documentUri);
             let editor = window.activeTextEditor;
 
             try {
-              if (!editor) {
-                const documentUri = this._documentUri;
-                if (!documentUri) {
+              if (!documentUri || !documentUriKey) {
+                return;
+              }
+
+              if (
+                !editor ||
+                !isSameUriIdentity(editor.document.uri, documentUri)
+              ) {
+                const doc = await workspace.openTextDocument(documentUri);
+
+                if (documentUriKey !== toUriIdentityKey(this._documentUri)) {
                   return;
                 }
-                const doc = await workspace.openTextDocument(documentUri);
+
                 editor = await window.showTextDocument(doc, {
                   preview: false,
                   preserveFocus: false,
                 });
+              }
+
+              if (documentUriKey !== toUriIdentityKey(this._documentUri)) {
+                return;
               }
 
               if (!editor) {
@@ -541,7 +581,8 @@ export class JSONProvider {
     // Remove reference to the current provider
     JSONProvider.currentProvider = undefined;
     JSONProvider.isSplitView = false;
-    JSONProvider.previewedPath = undefined;
+    JSONProvider.previewedUri = undefined;
+    JSONProvider.previewedUriKey = undefined;
     // Reflect state in context for menus/UX
     commands.executeCommand(
       'setContext',
@@ -692,7 +733,8 @@ export class JSONProvider {
     // Reset flags
     JSONProvider.liveSyncEnabled = false;
     JSONProvider.isSplitView = false;
-    JSONProvider.previewedPath = undefined;
+    JSONProvider.previewedUri = undefined;
+    JSONProvider.previewedUriKey = undefined;
     JSONProvider.liveSyncPaused = false;
     JSONProvider.liveSyncPauseReason = undefined;
     JSONProvider.hostThrottleMs = undefined;
@@ -712,18 +754,21 @@ export class JSONProvider {
     });
   }
 
-  /** Update the path of the document currently previewed (used for sync filtering) */
-  static setPreviewedPath(path?: string) {
-    // If the previewed path changes, clear lastAppliedNodeId so we don't suppress
+  /** Update the URI of the document currently previewed (used for sync filtering) */
+  static setPreviewedUri(uri?: Uri, path?: string) {
+    // If the previewed document changes, clear lastAppliedNodeId so we don't suppress
     // the first selection on the new document due to de-duplication.
-    const prev = JSONProvider.previewedPath;
-    JSONProvider.previewedPath = path;
+    const prev = JSONProvider.previewedUriKey;
+    JSONProvider.previewedUri = uri;
+    JSONProvider.previewedUriKey = toUriIdentityKey(uri);
+
     if (JSONProvider.currentProvider) {
       const provider = JSONProvider.currentProvider;
 
-      provider._documentUri = path ? Uri.file(path) : undefined;
+      provider._documentUri = uri;
 
-      const fileName = path ? basename(path) : undefined;
+      const fileName =
+        path || uri?.path ? basename(path || uri?.path || '') : undefined;
       provider._panel.title = fileName
         ? `${EXTENSION_DISPLAY_NAME} - ${fileName}`
         : EXTENSION_DISPLAY_NAME;
@@ -734,7 +779,7 @@ export class JSONProvider {
         'icon.svg',
       );
     }
-    if (prev !== path) {
+    if (prev !== JSONProvider.previewedUriKey) {
       JSONProvider.lastAppliedNodeId = undefined;
     }
   }

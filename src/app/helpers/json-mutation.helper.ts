@@ -1,6 +1,7 @@
 import { Range, TextDocument, WorkspaceEdit, workspace } from 'vscode';
 
 import { parsePointer } from '../../shared/node-pointer';
+import { shouldPersistDocumentAfterEdit } from './edit-capability.helper';
 import {
   AstNode,
   parseJsonTolerant,
@@ -38,6 +39,7 @@ export type MutationError =
   | 'INVALID_JSON'
   | 'VERSION_CONFLICT'
   | 'NO_TEXT_CHANGE'
+  | 'READ_ONLY'
   | 'UNKNOWN';
 
 /**
@@ -621,6 +623,13 @@ export async function applyNodeEdit(
   document: TextDocument,
   diagnosticsCallback?: (nodeId: string, warnings: DiagnosticWarning[]) => void,
 ): Promise<MutationResult> {
+  const isReadOnlyTarget =
+    workspace.fs.isWritableFileSystem(document.uri.scheme) === false;
+
+  if (isReadOnlyTarget) {
+    return { success: false, error: 'READ_ONLY' };
+  }
+
   // 1. Capture version
   const versionAtParse: number = document.version;
 
@@ -703,10 +712,15 @@ export async function applyNodeEdit(
       return { success: false, error: 'UNKNOWN' };
     }
 
-    try {
-      await document.save();
-    } catch {
-      return { success: false, error: 'UNKNOWN' };
+    if (shouldPersistDocumentAfterEdit(document)) {
+      try {
+        const saved = await document.save();
+        if (!saved) {
+          return { success: false, error: 'UNKNOWN' };
+        }
+      } catch {
+        return { success: false, error: 'UNKNOWN' };
+      }
     }
 
     if (diagnosticsCallback) {
@@ -781,10 +795,15 @@ export async function applyNodeEdit(
       return { success: false, error: 'UNKNOWN' };
     }
 
-    try {
-      await document.save();
-    } catch {
-      return { success: false, error: 'UNKNOWN' };
+    if (shouldPersistDocumentAfterEdit(document)) {
+      try {
+        const saved = await document.save();
+        if (!saved) {
+          return { success: false, error: 'UNKNOWN' };
+        }
+      } catch {
+        return { success: false, error: 'UNKNOWN' };
+      }
     }
 
     if (diagnosticsCallback) {
@@ -833,10 +852,15 @@ export async function applyNodeEdit(
       return { success: false, error: 'UNKNOWN' };
     }
 
-    try {
-      await document.save();
-    } catch {
-      return { success: false, error: 'UNKNOWN' };
+    if (shouldPersistDocumentAfterEdit(document)) {
+      try {
+        const saved = await document.save();
+        if (!saved) {
+          return { success: false, error: 'UNKNOWN' };
+        }
+      } catch {
+        return { success: false, error: 'UNKNOWN' };
+      }
     }
 
     if (diagnosticsCallback) {

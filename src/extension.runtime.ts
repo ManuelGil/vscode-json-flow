@@ -8,11 +8,14 @@
 
 import {
   commands,
+  Disposable,
   ExtensionContext,
   env,
   l10n,
   MessageItem,
   StatusBarAlignment,
+  TextDocument,
+  TextEditor,
   TextEditorSelectionChangeKind,
   Uri,
   ViewColumn,
@@ -44,10 +47,11 @@ import {
   clearCache,
   type FileType,
   getSelectionMapper,
-  isEditCapableFileType,
-  isFileTypeSupported,
+  isDocumentMutationCapable,
   logger,
   parseJsonContent,
+  resolveFileTypeHint,
+  toUriIdentityKey,
 } from './app/helpers';
 import { NodeModel } from './app/models';
 import { FeedbackProvider, FilesProvider, JSONProvider } from './app/providers';
@@ -123,6 +127,11 @@ export class ExtensionRuntime {
     await commands.executeCommand(
       'setContext',
       `${EXTENSION_ID}.${ContextKeys.LiveSyncEnabled}`,
+      false,
+    );
+    await commands.executeCommand(
+      'setContext',
+      `${EXTENSION_ID}.${ContextKeys.IsSupportedFileType}`,
       false,
     );
 
@@ -211,6 +220,9 @@ export class ExtensionRuntime {
 
     // Register listeners after providers are ready
     this.registerLiveSyncListeners();
+
+    // Context watcher should be registered after all providers and commands are set up, as it may trigger context updates that affect command visibility and provider behavior.
+    this.registerContextWatcher();
 
     // Register filesystem watcher only when file patterns are configured
     if (this.config.includedFilePatterns?.length) {
@@ -493,7 +505,7 @@ export class ExtensionRuntime {
     const jsonCommands = [
       {
         id: CommandIds.JsonShowPreview,
-        handler: (uri: Uri) => this.jsonController.showPreview(uri),
+        handler: (uri?: Uri) => this.jsonController.showPreview(uri),
       },
       {
         id: CommandIds.JsonShowPartialPreview,
@@ -510,7 +522,7 @@ export class ExtensionRuntime {
         `${EXTENSION_ID}.${id}`,
         async (arg?: unknown) => {
           if (this.isExtensionEnabled()) {
-            await handler(arg as Uri);
+            await handler(arg as Uri | undefined);
           }
         },
       );
@@ -849,66 +861,91 @@ export class ExtensionRuntime {
       }
     });
 
+    let previewUpdateTimer: NodeJS.Timeout | undefined;
+
+    const flushPreviewUpdate = (
+      document: TextDocument,
+      versionAtSchedule: number,
+    ) => {
+      const scheduledUriKey = toUriIdentityKey(document.uri);
+
+      if (!scheduledUriKey) {
+        return;
+      }
+
+      if (JSONProvider.previewedUriKey !== scheduledUriKey) {
+        return;
+      }
+
+      if (document.version !== versionAtSchedule) {
+        return;
+      }
+
+      const { graphLayoutOrientation } = this.config;
+      const { languageId, fileName } = document;
+
+      let fileType =
+        resolveFileTypeHint(languageId, fileName, 'json') ?? 'json';
+
+      const result = parseJsonContent(document.getText(), fileType as FileType);
+      const fileTypeFromResult = (result as { fileType?: string } | undefined)
+        ?.fileType;
+      const resolvedFileType = (fileTypeFromResult ?? fileType)
+        .toLowerCase()
+        .trim();
+
+      const parsedJsonData = result;
+
+      if (parsedJsonData === undefined) {
+        return;
+      }
+
+      JSONProvider.postMessageToWebview({
+        command: 'update',
+        data: parsedJsonData,
+        orientation: graphLayoutOrientation,
+        path: document.fileName,
+        fileName,
+        metadata: {
+          languageId,
+          canEdit: isDocumentMutationCapable(document, resolvedFileType),
+        },
+      });
+    };
+
     const changeDisposable = workspace.onDidChangeTextDocument((event) => {
       const document = event.document;
-      const fileName = document.fileName;
 
-      // Only refresh if it's one of the watched extensions and matches the currently previewed path
-      if (JSONProvider.previewedPath === document.uri.fsPath) {
-        for (const ext of extensions) {
-          if (fileName.endsWith(`.${ext}`)) {
-            void (async () => {
-              const { graphLayoutOrientation } = this.config;
-              const { languageId } = document;
+      // Refresh only for the document currently previewed, independent of file-backed storage.
+      if (JSONProvider.previewedUriKey !== toUriIdentityKey(document.uri)) {
+        return;
+      }
 
-              let fileType = languageId;
-              if (!isFileTypeSupported(fileType)) {
-                const baseName = fileName.split(/[\\\/]/).pop() ?? fileName;
-                if (/^\.env(\..*)?$/i.test(baseName)) {
-                  fileType = 'env';
-                } else {
-                  const fileExtension = fileName.split('.').pop();
-                  fileType = isFileTypeSupported(fileExtension)
-                    ? fileExtension
-                    : 'json';
-                }
-              }
+      if (previewUpdateTimer) {
+        clearTimeout(previewUpdateTimer);
+      }
 
-              const result = parseJsonContent(
-                document.getText(),
-                fileType as FileType,
-              );
+      const versionAtSchedule = document.version;
 
-              const fileTypeFromResult = (
-                result as { fileType?: string } | undefined
-              )?.fileType;
-              fileType = (fileTypeFromResult ?? 'json').toLowerCase().trim();
+      previewUpdateTimer = setTimeout(() => {
+        previewUpdateTimer = undefined;
+        flushPreviewUpdate(document, versionAtSchedule);
+      }, 80);
+    });
 
-              const parsedJsonData = result;
-
-              if (parsedJsonData === undefined) {
-                return;
-              }
-
-              JSONProvider.postMessageToWebview({
-                command: 'update',
-                data: parsedJsonData,
-                orientation: graphLayoutOrientation,
-                path: document.uri.fsPath,
-                fileName,
-                metadata: {
-                  languageId,
-                  canEdit: isEditCapableFileType(fileType),
-                },
-              });
-            })();
-            break;
-          }
-        }
+    const previewUpdateTimerDisposable = new Disposable(() => {
+      if (previewUpdateTimer) {
+        clearTimeout(previewUpdateTimer);
+        previewUpdateTimer = undefined;
       }
     });
 
-    this.context.subscriptions.push(watcher, saveDisposable, changeDisposable);
+    this.context.subscriptions.push(
+      watcher,
+      saveDisposable,
+      changeDisposable,
+      previewUpdateTimerDisposable,
+    );
   }
 
   /**
@@ -978,8 +1015,8 @@ export class ExtensionRuntime {
         return;
       }
 
-      const previewPath = JSONProvider.previewedPath;
-      if (!previewPath || doc.uri.fsPath !== previewPath) {
+      const previewUriKey = JSONProvider.previewedUriKey;
+      if (!previewUriKey || toUriIdentityKey(doc.uri) !== previewUriKey) {
         return;
       }
 
@@ -989,22 +1026,9 @@ export class ExtensionRuntime {
 
       const { languageId, fileName } = doc;
 
-      let fileType: string = languageId;
+      const fileType = resolveFileTypeHint(languageId, fileName);
 
-      if (!isFileTypeSupported(fileType)) {
-        const baseName = fileName.split(/[\/\\]/).pop() ?? fileName;
-
-        if (/^\.env(\..*)?$/i.test(baseName)) {
-          fileType = 'env';
-        } else {
-          const fileExtension = fileName.split('.').pop() ?? '';
-          fileType = isFileTypeSupported(fileExtension)
-            ? fileExtension
-            : 'json';
-        }
-      }
-
-      if (!isLiveSyncSupported(fileType)) {
+      if (!fileType || !isLiveSyncSupported(fileType)) {
         return;
       }
 
@@ -1055,6 +1079,48 @@ export class ExtensionRuntime {
     });
 
     this.context.subscriptions.push(selectionListener);
+  }
+
+  /**
+   * Registers a watcher for updating context keys based on the active text editor.
+   * This is workspace-independent.
+   */
+  private registerContextWatcher(): void {
+    const updateContextKeys = async (editor?: TextEditor): Promise<void> => {
+      if (!editor) {
+        await commands.executeCommand(
+          'setContext',
+          `${EXTENSION_ID}.${ContextKeys.IsSupportedFileType}`,
+          false,
+        );
+
+        return;
+      }
+
+      const fileName = editor.document.fileName;
+
+      const supported = this.config.includedFilePatterns.some((ext) =>
+        fileName.endsWith(`.${ext}`),
+      );
+
+      await commands.executeCommand(
+        'setContext',
+        `${EXTENSION_ID}.${ContextKeys.IsSupportedFileType}`,
+        supported,
+      );
+    };
+
+    // Initial state
+    void updateContextKeys(window.activeTextEditor);
+
+    // Watch active editor changes
+    const activeEditorDisposable = window.onDidChangeActiveTextEditor(
+      (editor) => {
+        void updateContextKeys(editor);
+      },
+    );
+
+    this.context.subscriptions.push(activeEditorDisposable);
   }
 
   /**

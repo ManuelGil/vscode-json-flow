@@ -40,6 +40,10 @@ export async function activate(
       `${EXTENSION_ID}.${ContextKeys.LiveSyncEnabled}`,
       JSONProvider.liveSyncEnabled,
     );
+    await vscode.commands.executeCommand(
+      'setContext',
+      `${EXTENSION_ID}.${ContextKeys.IsSupportedFileType}`,
+    );
 
     const runtime = new ExtensionRuntime(context);
 

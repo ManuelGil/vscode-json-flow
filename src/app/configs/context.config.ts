@@ -5,4 +5,5 @@
 export enum ContextKeys {
   IsSplitView = 'isSplitView',
   LiveSyncEnabled = 'liveSyncEnabled',
+  IsSupportedFileType = 'isSupportedFileType',
 }

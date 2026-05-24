@@ -2,7 +2,7 @@
 	"name": "vscode-json-flow",
 	"displayName": "JSON Flow - Graph Explorer",
 	"description": "VS Code JSON graph explorer with structured search and projection modes for complex, deeply nested data. Supports JSON, YAML, XML, CSV, HCL, and more.",
-	"version": "2.8.0",
+	"version": "2.9.0",
 	"icon": "icon.png",
 	"license": "MIT",
 	"publisher": "imgildev",
@@ -67,6 +67,9 @@
 	"extensionKind": [
 		"workspace"
 	],
+	"activationEvents": [
+		"onStartupFinished"
+	],
 	"main": "./out/extension.js",
 	"l10n": "./l10n",
 	"files": [
@@ -78,8 +81,7 @@
 		"LICENSE",
 		"icon.png",
 		"schemas",
-		"l10n",
-		"!out/**/*.map"
+		"l10n"
 	],
 	"capabilities": {
 		"untrustedWorkspaces": {
@@ -351,6 +353,11 @@
 			],
 			"editor/context": [
 				{
+					"submenu": "jsonFlow.explorer.submenu",
+					"group": "1_modification",
+					"when": "editorTextFocus && (resourceExtname =~ /^\\.(json|jsonc|json5|cfg|csv|hcl|ini|properties|toml|tsv|xml|yaml|yml)$/ || resourceFilename =~ /^\\.env(\\..*)?$/)"
+				},
+				{
 					"submenu": "jsonFlow.editor.submenu",
 					"group": "1_modification",
 					"when": "editorHasSelection && (resourceExtname =~ /^\\.(json|jsonc|json5|cfg|csv|hcl|ini|properties|toml|tsv|xml|yaml|yml)$/ || resourceFilename =~ /^\\.env(\\..*)?$/)"
@@ -410,6 +417,76 @@
 					"title": "%jsonFlow.files.copyContentPartialAsJson%",
 					"when": "(resourceExtname =~ /^\\.(cfg|csv|hcl|ini|properties|toml|tsv|xml|yaml|yml)$/ || resourceFilename =~ /^\\.env(\\..*)?$/)",
 					"group": "3_cutcopypaste"
+				}
+			],
+			"commandPalette": [
+				{
+					"command": "jsonFlow.files.refreshList",
+					"when": "false"
+				},
+				{
+					"command": "jsonFlow.files.openFile",
+					"when": "false"
+				},
+				{
+					"command": "jsonFlow.files.copyContent",
+					"when": "false"
+				},
+				{
+					"command": "jsonFlow.files.copyContentAsJson",
+					"when": "false"
+				},
+				{
+					"command": "jsonFlow.files.copyContentPartialAsJson",
+					"when": "false"
+				},
+				{
+					"command": "jsonFlow.files.getFileProperties",
+					"when": "false"
+				},
+				{
+					"command": "jsonFlow.json.showPartialPreview",
+					"when": "false"
+				},
+				{
+					"command": "jsonFlow.files.convertToJson",
+					"when": "false"
+				},
+				{
+					"command": "jsonFlow.files.convertPartialToJson",
+					"when": "false"
+				},
+				{
+					"command": "jsonFlow.files.convertToType",
+					"when": "false"
+				},
+				{
+					"command": "jsonFlow.files.convertPartialToType",
+					"when": "false"
+				},
+				{
+					"command": "jsonFlow.view.enableLiveSync",
+					"when": "false"
+				},
+				{
+					"command": "jsonFlow.view.disableLiveSync",
+					"when": "false"
+				},
+				{
+					"command": "jsonFlow.json.showPreview",
+					"when": "jsonFlow.isSupportedFileType"
+				},
+				{
+					"command": "jsonFlow.json.fetchJsonData",
+					"when": "true"
+				},
+				{
+					"command": "jsonFlow.view.enableSplitView",
+					"when": "!jsonFlow.isSplitView && jsonFlow.isSupportedFileType"
+				},
+				{
+					"command": "jsonFlow.view.disableSplitView",
+					"when": "jsonFlow.isSplitView"
 				}
 			]
 		},
@@ -485,7 +562,7 @@
 		"release": "release-it"
 	},
 	"dependencies": {
-		"@hookform/resolvers": "^5.2.2",
+		"@hookform/resolvers": "^5.4.0",
 		"@radix-ui/react-dialog": "^1.1.15",
 		"@radix-ui/react-dropdown-menu": "^2.1.16",
 		"@radix-ui/react-label": "^2.1.8",
@@ -514,7 +591,7 @@
 		"react": "^19.2.6",
 		"react-colorful": "^5.7.0",
 		"react-dom": "^19.2.6",
-		"react-hook-form": "^7.76.0",
+		"react-hook-form": "^7.76.1",
 		"tailwind-merge": "^3.6.0",
 		"tailwindcss-animate": "^1.0.7",
 		"toml": "^3.0.0",
@@ -548,7 +625,7 @@
 		"rimraf": "^6.1.3",
 		"tailwindcss": "^3.4.19",
 		"typescript": "^5.9.3",
-		"vite": "^8.0.13"
+		"vite": "^8.0.14"
 	},
 	"pnpm": {
 		"overrides": {

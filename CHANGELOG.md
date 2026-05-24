@@ -5,6 +5,26 @@ All notable changes to the "JSON Flow" extension will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.0] - 2026-05-24
+
+### Added
+
+- Add `jsonFlow.isSupportedFileType` context key to control command visibility.
+- Add stable URI-based preview identity for webview previews.
+
+### Changed
+
+- Make `jsonFlow.json.showPreview` fallback to the active editor when invoked without a resource; improves handling for untitled and remote files.
+- Migrate preview identity to use URIs and improve live-sync, selection sync, and mutation safety.
+- Make the preview pipeline document-first and resolve file-type hints for better parsing.
+- Improve edit-capability detection to avoid editing read-only providers and untitled behavior.
+- Debounce preview updates and add guards to prevent stale update races.
+
+### Fixed
+
+- Fix crash when invoking `jsonFlow.json.showPreview` from the Command Palette with no URI.
+- Fix race conditions between the webview and document changes that could lead to stale mutations.
+
 ## [Unreleased]
 
 ## [2.8.0] - 2026-04-08
@@ -243,7 +263,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * build: add webview path ([960fb18](https://github.com/ManuelGil/vscode-json-flow/commit/960fb18))
 * fix: :rotating_light: fix compilation settings ([1ccbfa5](https://github.com/ManuelGil/vscode-json-flow/commit/1ccbfa5))
 
-[Unreleased]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.8.0...HEAD
+[Unreleased]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.9.0...HEAD
+[2.9.0]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.8.0...v2.9.0
 [2.8.0]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.7.0...v2.8.0
 [2.7.0]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.6.1...v2.7.0
 [2.6.1]: https://github.com/ManuelGil/vscode-json-flow/compare/v2.6.0...v2.6.1
