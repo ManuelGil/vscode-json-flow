@@ -14,8 +14,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.8.0] - 2026-04-08
 
-### Added
-
 * feat: enhance node selection and tree validation features ([bbaf332](https://github.com/ManuelGil/vscode-json-flow/commit/bbaf332))
 * feat: enhance flow context with languageId and canEdit properties ([cb8a01c](https://github.com/ManuelGil/vscode-json-flow/commit/cb8a01c))
 * feat: introduce graph adaptation and editing capabilities ([60f1ee0](https://github.com/ManuelGil/vscode-json-flow/commit/60f1ee0))
