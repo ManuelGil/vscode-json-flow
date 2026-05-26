@@ -5,27 +5,12 @@ All notable changes to the "JSON Flow" extension will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
 ## [2.9.0] - 2026-05-24
 
-### Added
-
-- Add `jsonFlow.isSupportedFileType` context key to control command visibility.
-- Add stable URI-based preview identity for webview previews.
-
-### Changed
-
-- Make `jsonFlow.json.showPreview` fallback to the active editor when invoked without a resource; improves handling for untitled and remote files.
-- Migrate preview identity to use URIs and improve live-sync, selection sync, and mutation safety.
-- Make the preview pipeline document-first and resolve file-type hints for better parsing.
-- Improve edit-capability detection to avoid editing read-only providers and untitled behavior.
-- Debounce preview updates and add guards to prevent stale update races.
-
-### Fixed
-
-- Fix crash when invoking `jsonFlow.json.showPreview` from the Command Palette with no URI.
-- Fix race conditions between the webview and document changes that could lead to stale mutations.
-
-## [Unreleased]
+* feat: add support for file type context and improve JSON preview handling ([3725e7c](https://github.com/ManuelGil/vscode-json-flow/commit/3725e7c))
+* refactor: update TypeScript and Vite configurations for improved compatibility and performance ([a518c4c](https://github.com/ManuelGil/vscode-json-flow/commit/a518c4c))
 
 ## [2.8.0] - 2026-04-08
 
