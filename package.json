@@ -562,7 +562,7 @@
 		"release": "release-it"
 	},
 	"dependencies": {
-		"@hookform/resolvers": "^5.7.1",
+		"@hookform/resolvers": "^5.8.0",
 		"@radix-ui/react-dialog": "^1.1.23",
 		"@radix-ui/react-dropdown-menu": "^2.1.24",
 		"@radix-ui/react-label": "^2.1.15",
@@ -574,7 +574,7 @@
 		"@radix-ui/react-tabs": "^1.1.21",
 		"@radix-ui/react-tooltip": "^1.2.16",
 		"@supercharge/promise-pool": "^3.3.0",
-		"@xyflow/react": "^12.11.2",
+		"@xyflow/react": "^12.11.3",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
 		"dotenv": "^17.4.2",
@@ -591,7 +591,7 @@
 		"react": "^19.2.8",
 		"react-colorful": "^5.8.0",
 		"react-dom": "^19.2.8",
-		"react-hook-form": "^7.84.0",
+		"react-hook-form": "^7.85.0",
 		"tailwind-merge": "^3.6.0",
 		"tailwindcss-animate": "^1.0.7",
 		"toml": "^3.0.0",
@@ -601,7 +601,7 @@
 		"zod": "^3.25.76"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.5.7",
+		"@biomejs/biome": "2.5.8",
 		"@commitlint/cli": "^19.8.1",
 		"@commitlint/config-conventional": "^19.8.1",
 		"@types/mocha": "^10.0.10",
@@ -616,7 +616,7 @@
 		"@vscode/test-electron": "^2.5.2",
 		"autoprefixer": "^10.5.4",
 		"cpy-cli": "^5.0.0",
-		"esbuild": "^0.28.1",
+		"esbuild": "^0.28.2",
 		"glob": "^13.0.6",
 		"husky": "^9.1.7",
 		"lint-staged": "^16.4.0",
