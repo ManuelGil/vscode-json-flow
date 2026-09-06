@@ -5,6 +5,7 @@ import { parseEnv } from './env-parser.helper';
 import { parseHcl } from './hcl-parser.helper';
 import { parseIni } from './ini-parser.helper';
 import { parseJson } from './json-parser.helper';
+import { parseMdx } from './mdx-parser.helper';
 import { parseToml } from './toml-parser.helper';
 import { parseTsv } from './tsv-parser.helper';
 import { parseXml } from './xml-parser.helper';
@@ -25,6 +26,7 @@ export type FileType =
   | 'json'
   | 'json5'
   | 'jsonc'
+  | 'mdx'
   | 'properties'
   | 'toml'
   | 'tsv'
@@ -54,6 +56,7 @@ export const isFileTypeSupported = (value: unknown): value is FileType => {
     'json',
     'json5',
     'jsonc',
+    'mdx',
     'properties',
     'toml',
     'tsv',
@@ -95,6 +98,10 @@ export const parseJsonContent = (
       case 'yaml':
       case 'yml':
         return parseYaml(content) as JsonValue;
+      // MDX is only supported through its YAML frontmatter; the Markdown/JSX
+      // body is never parsed.
+      case 'mdx':
+        return parseMdx(content) as JsonValue;
       case 'toml':
         return parseToml(content) as JsonValue;
       case 'ini':

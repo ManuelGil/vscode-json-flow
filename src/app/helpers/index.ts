@@ -18,6 +18,7 @@ export * from './json-parser.helper';
 export * from './json-selection.helper';
 export * from './jsonc-path.helper';
 export * from './logger.helper';
+export * from './mdx-parser.helper';
 export * from './normalize.helper';
 export * from './path-format.helper';
 export * from './read-file-content.helper';

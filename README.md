@@ -113,8 +113,11 @@ JSON Flow supports preview, conversion, and graph visualization for:
 - CSV / TSV
 - HCL
 - Docker Compose
+- MDX (`.mdx`) - YAML frontmatter only
 
 Editing is supported only for JSON, JSONC, and JSON5.
+
+MDX files can be previewed through their YAML frontmatter. Markdown and JSX content are intentionally ignored: only the block between the opening and closing `---` delimiters becomes the graph, and an `.mdx` file without valid frontmatter simply reports a parsing error instead of being interpreted.
 
 ## Format Capability Matrix
 
@@ -134,6 +137,9 @@ Editing is supported only for JSON, JSONC, and JSON5.
 | TSV            | ✓     | ✓             | ✓               | ✓               | ✗         | Standard      |
 | HCL            | ✓     | ✓             | ✓               | ✓               | ✗         | Standard      |
 | Docker Compose | ✓     | ✓             | ✓               | ✓               | ✗         | -             |
+| MDX (.mdx)     | ✓¹    | ✓¹            | ✗               | ✗               | ✗         | -             |
+
+¹ MDX is limited to its YAML frontmatter: the Markdown/JSX body is never parsed, and editing, conversion, and code generation are not offered for `.mdx`.
 
 Live Sync is available for `json`, `jsonc`, `json5`, `yaml`, and `yml` only. Formats like `toml` and `dockercompose` are explicitly excluded.
 
@@ -433,7 +439,8 @@ Configured via `jsonFlow` settings in VS Code.
     "csv", "tsv",
     "env",
     "hcl",
-    "properties"
+    "properties",
+    "mdx"
   ],
   "jsonFlow.files.excludedFilePatterns": [
     "**/node_modules/**",

@@ -35,6 +35,7 @@ export const DEFAULT_INCLUDE_PATTERNS: string[] = [
   'env',
   'hcl',
   'ini',
+  'mdx',
   'properties',
   'toml',
   'tsv',

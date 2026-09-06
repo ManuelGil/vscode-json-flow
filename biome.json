@@ -1,5 +1,5 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.4.15/schema.json",
+	"$schema": "https://biomejs.dev/schemas/2.5.12/schema.json",
 	"vcs": { "enabled": false, "clientKind": "git", "useIgnoreFile": false },
 	"files": {
 		"includes": [
@@ -36,7 +36,7 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": false,
+			"preset": "none",
 			"complexity": {
 				"noBannedTypes": "error",
 				"noExtraBooleanCast": "error",

@@ -112,6 +112,7 @@
 						"env",
 						"hcl",
 						"ini",
+						"mdx",
 						"properties",
 						"toml",
 						"tsv",
@@ -286,7 +287,7 @@
 			"editor/title": [
 				{
 					"command": "jsonFlow.view.enableSplitView",
-					"when": "!jsonFlow.isSplitView && (resourceExtname =~ /^\\.(json|jsonc|json5|cfg|csv|hcl|ini|properties|toml|tsv|xml|yaml|yml)$/ || resourceFilename =~ /^\\.env(\\..*)?$/)",
+					"when": "!jsonFlow.isSplitView && (resourceExtname =~ /^\\.(json|jsonc|json5|cfg|csv|hcl|ini|mdx|properties|toml|tsv|xml|yaml|yml)$/ || resourceFilename =~ /^\\.env(\\..*)?$/)",
 					"group": "navigation@-100"
 				},
 				{
@@ -315,7 +316,7 @@
 			"view/item/context": [
 				{
 					"command": "jsonFlow.files.openFile",
-					"when": "view == jsonFlow.filesView && (viewItem =~ /\\.(json|jsonc|json5|cfg|csv|hcl|ini|properties|toml|tsv|xml|yaml|yml)$/ || viewItem =~ /(^|[\\\\/])\\.env(\\..*)?$/)",
+					"when": "view == jsonFlow.filesView && (viewItem =~ /\\.(json|jsonc|json5|cfg|csv|hcl|ini|mdx|properties|toml|tsv|xml|yaml|yml)$/ || viewItem =~ /(^|[\\\\/])\\.env(\\..*)?$/)",
 					"group": "1_navigation"
 				},
 				{
@@ -348,14 +349,14 @@
 				{
 					"submenu": "jsonFlow.explorer.submenu",
 					"group": "2_workspace",
-					"when": "(resourceExtname =~ /^\\.(json|jsonc|json5|cfg|csv|hcl|ini|properties|toml|tsv|xml|yaml|yml)$/ || resourceFilename =~ /^\\.env(\\..*)?$/)"
+					"when": "(resourceExtname =~ /^\\.(json|jsonc|json5|cfg|csv|hcl|ini|mdx|properties|toml|tsv|xml|yaml|yml)$/ || resourceFilename =~ /^\\.env(\\..*)?$/)"
 				}
 			],
 			"editor/context": [
 				{
 					"submenu": "jsonFlow.explorer.submenu",
 					"group": "1_modification",
-					"when": "editorTextFocus && (resourceExtname =~ /^\\.(json|jsonc|json5|cfg|csv|hcl|ini|properties|toml|tsv|xml|yaml|yml)$/ || resourceFilename =~ /^\\.env(\\..*)?$/)"
+					"when": "editorTextFocus && (resourceExtname =~ /^\\.(json|jsonc|json5|cfg|csv|hcl|ini|mdx|properties|toml|tsv|xml|yaml|yml)$/ || resourceFilename =~ /^\\.env(\\..*)?$/)"
 				},
 				{
 					"submenu": "jsonFlow.editor.submenu",
@@ -532,7 +533,7 @@
 				"command": "jsonFlow.view.enableSplitView",
 				"key": "ctrl+alt+f",
 				"mac": "cmd+alt+f",
-				"when": "!jsonFlow.isSplitView && editorTextFocus && (resourceExtname =~ /^\\.(json|jsonc|json5|cfg|csv|hcl|ini|properties|toml|tsv|xml|yaml|yml)$/ || resourceFilename =~ /^\\.env(\\..*)?$/)"
+				"when": "!jsonFlow.isSplitView && editorTextFocus && (resourceExtname =~ /^\\.(json|jsonc|json5|cfg|csv|hcl|ini|mdx|properties|toml|tsv|xml|yaml|yml)$/ || resourceFilename =~ /^\\.env(\\..*)?$/)"
 			},
 			{
 				"command": "jsonFlow.view.disableSplitView",
@@ -574,7 +575,7 @@
 		"@radix-ui/react-tabs": "^1.1.21",
 		"@radix-ui/react-tooltip": "^1.2.16",
 		"@supercharge/promise-pool": "^3.3.0",
-		"@xyflow/react": "^12.11.5",
+		"@xyflow/react": "^12.11.6",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
 		"dotenv": "^17.4.2",
@@ -583,15 +584,15 @@
 		"fast-xml-parser": "^5.11.1",
 		"hcl-parser": "^0.1.1",
 		"html-to-image": "^1.11.13",
-		"ignore": "^7.0.6",
+		"ignore": "^7.0.8",
 		"ini": "^5.0.0",
 		"json5": "^2.2.3",
 		"lucide-react": "^0.577.0",
 		"quicktype-core": "23.3.25",
 		"react": "^19.2.8",
-		"react-colorful": "^5.8.0",
+		"react-colorful": "^5.8.1",
 		"react-dom": "^19.2.8",
-		"react-hook-form": "^7.86.0",
+		"react-hook-form": "^7.87.0",
 		"tailwind-merge": "^3.6.0",
 		"tailwindcss-animate": "^1.0.7",
 		"toml": "^3.0.0",
@@ -601,26 +602,26 @@
 		"zod": "^3.25.76"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.5.11",
+		"@biomejs/biome": "2.5.12",
 		"@commitlint/cli": "^19.8.1",
 		"@commitlint/config-conventional": "^19.8.1",
 		"@types/mocha": "^10.0.10",
 		"@types/node": "^22.20.1",
 		"@types/react": "^19.2.18",
-		"@types/react-dom": "^19.2.5",
+		"@types/react-dom": "^19.2.7",
 		"@types/uuid": "^10.0.0",
 		"@types/vscode": "^1.102.0",
 		"@vitejs/plugin-react": "^5.2.0",
 		"@vscode/l10n-dev": "^0.0.35",
 		"@vscode/test-cli": "^0.0.15",
 		"@vscode/test-electron": "^2.5.2",
-		"autoprefixer": "^10.5.4",
+		"autoprefixer": "^10.5.5",
 		"cpy-cli": "^5.0.0",
 		"esbuild": "^0.28.2",
 		"glob": "^13.0.6",
 		"husky": "^9.1.7",
 		"lint-staged": "^16.4.0",
-		"postcss": "^8.5.26",
+		"postcss": "^8.5.28",
 		"release-it": "^19.2.4",
 		"rimraf": "^6.1.3",
 		"tailwindcss": "^3.4.19",
